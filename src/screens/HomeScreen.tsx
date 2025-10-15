@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import CollarCard from '../components/CollarCard';
 import { connectToCollar, subscribeToStatus } from '../ble/bleManager';
 import { generateMockSystemStatePacket } from '../utils/mockPackets';
@@ -16,29 +24,18 @@ interface Collar {
 
 export default function HomeScreen() {
   const [collars, setCollars] = useState<Collar[]>([
-    {
-      id: '1',
-      name: 'COLLAR 1',
-      connected: false,
-      engaged: false,
-      lastSync: '—',
-    },
-    {
-      id: '2',
-      name: 'COLLAR 2',
-      connected: false,
-      engaged: false,
-      lastSync: '—',
-    },
+    { id: '1', name: 'COLLAR 1', connected: false, engaged: false, lastSync: '—' },
+    { id: '2', name: 'COLLAR 2', connected: false, engaged: false, lastSync: '—' },
   ]);
 
-  // Toggle this to switch between real BLE and simulation
   const [simulationMode, setSimulationMode] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [connectedDeviceName, setConnectedDeviceName] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // --- SIMULATION MODE ---
+  /* ---------------- SIMULATION MODE ---------------- */
   const simulateUpdate = (id: string) => {
     const mockPacket = generateMockSystemStatePacket();
-
     setCollars(prev =>
       prev.map(c =>
         c.id === id
@@ -46,16 +43,13 @@ export default function HomeScreen() {
               ...c,
               connected: true,
               engaged: mockPacket.system_state_packet.engage_state,
-              battery:
-                mockPacket.system_state_packet.battery_state?.percentage ?? 0,
+              battery: mockPacket.system_state_packet.battery_state?.percentage ?? 0,
               lastSync: new Date(mockPacket.header.epoch).toLocaleTimeString(),
-              packet: mockPacket, // store for debugging
             }
-          : { ...c, connected: false, engaged: false },
-      ),
+          : { ...c, connected: false, engaged: false }
+      )
     );
-
-    console.log('Simulated packet:', mockPacket);
+    console.log('🔧 Simulated packet:', mockPacket);
   };
 
   const simulateDisconnect = (id: string) => {
@@ -63,17 +57,19 @@ export default function HomeScreen() {
       prev.map(c =>
         c.id === id
           ? { ...c, connected: false, engaged: false, lastSync: '1 month ago' }
-          : c,
-      ),
+          : c
+      )
     );
-
-    console.log(`Collar ${id} disconnected`);
+    console.log(`🔌 Collar ${id} disconnected`);
   };
 
-  // --- REAL BLE MODE ---
-  const handleBLEPress = async (id: string) => {
+  /* ---------------- REAL BLE MODE ---------------- */
+  const handleBLEConnect = async () => {
+    setLoading(true);
+    setErrorMsg(null);
+
     try {
-      // Disconnect any currently connected collars
+      // Disconnect existing collars
       for (const c of collars) {
         if (c.connected && c.device) {
           console.log('Disconnecting', c.name);
@@ -81,18 +77,22 @@ export default function HomeScreen() {
         }
       }
 
-      // Connect to the selected collar
+      console.log('🔍 Scanning for CollarID_xxxxxx devices...');
       const device = await connectToCollar();
-      if (!device) return;
+      if (!device) {
+        setErrorMsg('No CollarID device found');
+        return;
+      }
 
-      console.log('Connected to:', device.name);
+      console.log('✅ Connected to:', device.name);
+      setConnectedDeviceName(device.name ?? 'Unknown Device');
 
-      // Subscribe to BLE status updates
+      // Subscribe for live system state packets
       subscribeToStatus(device, data => {
         const packet = data.system_state_packet;
         setCollars(prev =>
           prev.map(c =>
-            c.id === id
+            c.id === '1' // currently assuming single device for BLE mode
               ? {
                   ...c,
                   connected: true,
@@ -101,25 +101,22 @@ export default function HomeScreen() {
                   lastSync: new Date().toLocaleTimeString(),
                   device,
                 }
-              : { ...c, connected: false },
-          ),
+              : c
+          )
         );
       });
-    } catch (error) {
-      console.error('BLE connection failed:', error);
+    } catch (err: any) {
+      console.error('❌ BLE connection failed:', err);
+      setErrorMsg(err.message ?? 'Connection failed');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handlePress = (id: string) => {
-    if (simulationMode) {
-      simulateUpdate(id);
-    } else {
-      handleBLEPress(id);
-    }
-  };
-
+  /* ---------------- MAIN RENDER ---------------- */
   return (
     <ScrollView style={styles.container}>
+      {/* Header */}
       <View style={styles.headerRow}>
         <Text style={styles.title}>HOME</Text>
         <View style={styles.simRow}>
@@ -128,6 +125,29 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* BLE Connect Section */}
+      {!simulationMode && (
+        <View style={styles.center}>
+          {loading ? (
+            <>
+              <ActivityIndicator size="large" color="#f8b26a" />
+              <Text style={styles.statusText}>Scanning for CollarID...</Text>
+            </>
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleBLEConnect}>
+              <Text style={styles.buttonText}>CONNECT TO COLLAR</Text>
+            </TouchableOpacity>
+          )}
+
+          {connectedDeviceName && (
+            <Text style={styles.successText}>✅ Connected to {connectedDeviceName}</Text>
+          )}
+
+          {errorMsg && <Text style={styles.errorText}>⚠️ {errorMsg}</Text>}
+        </View>
+      )}
+
+      {/* Collars List */}
       {collars.map(c => (
         <CollarCard
           key={c.id}
@@ -137,7 +157,11 @@ export default function HomeScreen() {
           battery={c.battery}
           lastSync={c.lastSync}
           onPress={() =>
-            c.connected ? simulateDisconnect(c.id) : simulateUpdate(c.id)
+            simulationMode
+              ? c.connected
+                ? simulateDisconnect(c.id)
+                : simulateUpdate(c.id)
+              : undefined
           }
         />
       ))}
@@ -145,6 +169,7 @@ export default function HomeScreen() {
   );
 }
 
+/* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fffaf6' },
   headerRow: {
@@ -156,4 +181,16 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800' },
   simRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   simText: { fontSize: 16, fontWeight: '500' },
+  center: { alignItems: 'center', marginVertical: 30 },
+  button: {
+    backgroundColor: '#f8b26a',
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+  },
+  buttonText: { color: '#fff', fontWeight: '700', fontSize: 18 },
+  statusText: { marginTop: 10, fontSize: 16, color: '#444' },
+  successText: { marginTop: 10, fontSize: 16, color: '#1a7d33' },
+  errorText: { marginTop: 10, fontSize: 16, color: '#b22222' },
 });
+

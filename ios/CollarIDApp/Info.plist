@@ -49,5 +49,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to connect to CollarID devices.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>This app connects to CollarID collars via Bluetooth Low Energy.</string>
 </dict>
 </plist>

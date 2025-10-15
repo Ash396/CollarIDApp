@@ -1,5 +1,3 @@
-// mockPackets.ts — Simulates packets from a CollarID device
-
 export function generateMockSystemStatePacket() {
   const now = Date.now();
 
