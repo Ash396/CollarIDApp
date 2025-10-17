@@ -7,61 +7,44 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { ScheduleStackParamList } from "../navigation/ScheduleNavigator";
 import { useSchedules } from "../context/SchedulesContext";
-import * as PB from "../proto/message_pb.js";
-import { Buffer } from "buffer";
+import { buildSchedulePacketFromAppState, sendConfig } from "../ble/bleManager";
+
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, "Schedules">;
 
 export default function SchedulesScreen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<any>();
+  const { device } = route.params || {};
   const { schedules, addSchedule } = useSchedules();
 
   const handleAddSchedule = () => {
     const newSchedule = {
       id: Date.now().toString(),
       name: `New Schedule ${schedules.length + 1}`,
-      window: { start_hour: 0, end_hour: 0 },
+      window: { start_hour: 8, end_hour: 20 },
       gps: { enabled: true, sample_interval_min: 10 },
+      // you can add light/microphone/etc here if you store them in context
     };
     addSchedule(newSchedule);
   };
 
-  const handleSendToDevice = () => {
-    // Convert your schedule objects into protobuf-compatible structure
-    const pbPacket = {
-      schedules: schedules.map((s) => ({
-        name: s.name,
-        window: s.window,
-        light: s.light,
-        gps: s.gps,
-        microphone: s.microphone,
-        accelerometer: s.accelerometer,
-      })),
-    };
-
+  const handleSendToDevice = async () => {
     try {
-      // Encode to binary
-      const encoded = PB.encodeScheduleConfigPacket(pbPacket);
+      const packet = buildSchedulePacketFromAppState(schedules);
+      const ack = await sendConfig(device, packet);
 
-      // Convert to Base64 for BLE
-      const base64data = Buffer.from(encoded).toString("base64");
-
-      console.log("📡 Encoded ScheduleConfigPacket:", pbPacket);
-      console.log("Base64 Payload:", base64data.slice(0, 80) + "...");
-
-      // In the real app, this is where we would call:
-      // await sendConfig(device, pbPacket);
-
-      Alert.alert("Packet Ready", "Protobuf config encoded successfully!");
+      if (ack) Alert.alert("✅ Success", "Schedule sent and acknowledged!");
+      else Alert.alert("⚠️ Sent", "Sent to device but no ACK received.");
     } catch (err) {
-      console.error("Encoding error:", err);
-      Alert.alert("Error", "Failed to encode protobuf packet.");
+      Alert.alert("Error", "Failed to send schedule config.");
     }
   };
+
 
   return (
     <ScrollView style={styles.container}>
@@ -78,14 +61,9 @@ export default function SchedulesScreen() {
           <Text style={styles.cardText}>
             {`${s.window.start_hour}:00 - ${s.window.end_hour}:00`}
           </Text>
-          {s.gps && s.gps.enabled && (
+          {s.gps?.enabled && (
             <Text style={styles.cardText}>
               GPS every {s.gps.sample_interval_min} min
-            </Text>
-          )}
-          {s.light && s.light.enabled && (
-            <Text style={styles.cardText}>
-              Light every {s.light.sample_interval_min} min
             </Text>
           )}
         </TouchableOpacity>

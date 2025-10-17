@@ -1,196 +1,280 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
-  Switch,
-  TouchableOpacity,
   ActivityIndicator,
-} from 'react-native';
-import CollarCard from '../components/CollarCard';
-import { connectToCollar, subscribeToStatus } from '../ble/bleManager';
-import { generateMockSystemStatePacket } from '../utils/mockPackets';
+  PermissionsAndroid,
+  Platform,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { State } from "react-native-ble-plx";
+import { Buffer } from "buffer";
+import * as PB from "../proto/message_pb.js";
+import CollarCard from "../components/CollarCard";
+import {
+  manager,
+  COLLAR_SERVICE_UUID,
+  STATUS_CHAR_UUID,
+  connectToCollar,
+  disconnectFromCollar,
+} from "../ble/bleManager";
 
 interface Collar {
   id: string;
   name: string;
-  connected: boolean;
-  engaged: boolean;
   battery?: number;
-  lastSync?: string;
+  sdRemaining?: number;
+  sdTotal?: number;
+  connected: boolean;
   device?: any;
+  lastUpdate?: string;
 }
 
 export default function HomeScreen() {
-  const [collars, setCollars] = useState<Collar[]>([
-    { id: '1', name: 'COLLAR 1', connected: false, engaged: false, lastSync: '—' },
-    { id: '2', name: 'COLLAR 2', connected: false, engaged: false, lastSync: '—' },
-  ]);
+  const [collars, setCollars] = useState<Collar[]>([]);
+  const [scanning, setScanning] = useState(false);
+  const navigation = useNavigation<any>();
 
-  const [simulationMode, setSimulationMode] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [connectedDeviceName, setConnectedDeviceName] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  /* ---------------- Ensure Bluetooth Ready ---------------- */
+  async function ensureBluetoothReady() {
+    if (Platform.OS === "android") {
+      await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      ]);
+    }
 
-  /* ---------------- SIMULATION MODE ---------------- */
-  const simulateUpdate = (id: string) => {
-    const mockPacket = generateMockSystemStatePacket();
-    setCollars(prev =>
-      prev.map(c =>
-        c.id === id
-          ? {
-              ...c,
-              connected: true,
-              engaged: mockPacket.system_state_packet.engage_state,
-              battery: mockPacket.system_state_packet.battery_state?.percentage ?? 0,
-              lastSync: new Date(mockPacket.header.epoch).toLocaleTimeString(),
-            }
-          : { ...c, connected: false, engaged: false }
-      )
-    );
-    console.log('🔧 Simulated packet:', mockPacket);
-  };
+    let state = await manager.state();
+    if (state !== State.PoweredOn) {
+      console.log(`Bluetooth state = ${state}. Waiting...`);
+      await new Promise<void>((resolve) => {
+        const sub = manager.onStateChange((newState) => {
+          if (newState === State.PoweredOn) {
+            console.log("✅ Bluetooth powered on.");
+            sub.remove();
+            resolve();
+          }
+        }, true);
+      });
+    } else {
+      console.log("✅ Bluetooth already ON.");
+    }
+  }
 
-  const simulateDisconnect = (id: string) => {
-    setCollars(prev =>
-      prev.map(c =>
-        c.id === id
-          ? { ...c, connected: false, engaged: false, lastSync: '1 month ago' }
-          : c
-      )
-    );
-    console.log(`🔌 Collar ${id} disconnected`);
-  };
+  /* ---------------- Continuous Scan ---------------- */
+  useEffect(() => {
+    let isCancelled = false;
 
-  /* ---------------- REAL BLE MODE ---------------- */
-  const handleBLEConnect = async () => {
-    setLoading(true);
-    setErrorMsg(null);
+    const initAndScan = async () => {
+      try {
+        await ensureBluetoothReady();
+        console.log("🔍 Starting continuous BLE scan...");
+        setScanning(true);
 
+        manager.startDeviceScan(null, null, async (error, device) => {
+          if (isCancelled) return;
+          if (error) {
+            console.error("❌ Scan error:", error);
+            setScanning(false);
+            return;
+          }
+
+          if (!device?.name?.startsWith("CollarID")) return;
+
+          // Add new collars to list
+          setCollars((prev) => {
+            if (prev.some((c) => c.id === device.id)) return prev;
+            return [
+              ...prev,
+              { id: device.id, name: device.name ?? "Unknown Collar", connected: false },
+            ];
+          });
+        });
+      } catch (err) {
+        console.error("🚫 BLE init error:", err);
+        setScanning(false);
+      }
+    };
+
+    initAndScan();
+
+    return () => {
+      console.log("🛑 Stopping BLE scan...");
+      isCancelled = true;
+      manager.stopDeviceScan();
+      setScanning(false);
+    };
+  }, []);
+
+  /* ---------------- Connect & Fetch Metadata ---------------- */
+  const handleConnect = async (collar: Collar) => {
     try {
-      // Disconnect existing collars
-      for (const c of collars) {
-        if (c.connected && c.device) {
-          console.log('Disconnecting', c.name);
-          await c.device.cancelConnection();
-        }
+      console.log("🔗 Connecting to", collar.name);
+
+      const currentlyConnected = collars.find((c) => c.connected);
+      if (currentlyConnected && currentlyConnected.id !== collar.id) {
+        console.log("⚠️ Disconnecting from", currentlyConnected.name);
+        await disconnectFromCollar(currentlyConnected.device);
+        setCollars((prev) =>
+          prev.map((c) =>
+            c.id === currentlyConnected.id ? { ...c, connected: false, device: undefined } : c
+          )
+        );
       }
 
-      console.log('🔍 Scanning for CollarID_xxxxxx devices...');
-      const device = await connectToCollar();
-      if (!device) {
-        setErrorMsg('No CollarID device found');
+      const targetDevice = await manager.devices([collar.id]).then((d) => d[0]);
+      if (!targetDevice) {
+        console.warn("Device not found:", collar.id);
         return;
       }
 
-      console.log('✅ Connected to:', device.name);
-      setConnectedDeviceName(device.name ?? 'Unknown Device');
+      const connectedDevice = await connectToCollar(targetDevice);
+      if (!connectedDevice) {
+        console.warn("Connection failed");
+        return;
+      }
 
-      // Subscribe for live system state packets
-      subscribeToStatus(device, data => {
-        const packet = data.system_state_packet;
-        setCollars(prev =>
-          prev.map(c =>
-            c.id === '1' // currently assuming single device for BLE mode
-              ? {
-                  ...c,
-                  connected: true,
-                  engaged: packet.engage_state,
-                  battery: packet.battery_state?.percentage ?? 0,
-                  lastSync: new Date().toLocaleTimeString(),
-                  device,
-                }
-              : c
-          )
+      console.log("✅ Connected to", connectedDevice.name);
+
+      // 🔋 Fetch metadata now that we're connected
+      try {
+        const characteristic = await connectedDevice.readCharacteristicForService(
+          COLLAR_SERVICE_UUID,
+          STATUS_CHAR_UUID
         );
+        console.log("📩 Connected read:", characteristic?.value);
+
+        if (characteristic?.value) {
+          const bytes = Buffer.from(characteristic.value, "base64");
+          const decoded = PB.decodePacket(bytes);
+          console.log("🧩 Decoded packet:", decoded);
+
+          if (decoded?.system_state_packet) {
+            const sys = decoded.system_state_packet;
+
+
+            const toUint64 = (obj: any): number => {
+              if (!obj) return 0;
+              const low = typeof obj.low === "number" ? obj.low : 0;
+              const high = typeof obj.high === "number" ? obj.high : 0;
+              return low + high * 2 ** 32;
+            };
+
+            const spaceRemaining = toUint64(sys.sdcard_state?.space_remaining);
+            const totalSpace = toUint64(sys.sdcard_state?.total_space);
+
+            setCollars((prev) =>
+              prev.map((c) =>
+                c.id === collar.id
+                  ? {
+                      ...c,
+                      connected: true,
+                      device: connectedDevice,
+                      battery: sys.battery_state?.percentage ?? 0,
+                      sdRemaining: spaceRemaining,
+                      sdTotal: totalSpace,
+                      lastUpdate: new Date().toLocaleTimeString(),
+                    }
+                  : c
+              )
+            );
+          } else {
+            console.warn("⚠️ No system_state_packet found in decoded data");
+          }
+        } else {
+          console.warn("⚠️ No characteristic value found after connection");
+        }
+      } catch (readErr) {
+        console.error("⚠️ Failed to read metadata after connect:", readErr);
+      }
+
+      // ✅ Navigate to Schedules screen
+      navigation.navigate("SchedulesTab", {
+        screen: "Schedules",
+        params: { device: connectedDevice },
       });
-    } catch (err: any) {
-      console.error('❌ BLE connection failed:', err);
-      setErrorMsg(err.message ?? 'Connection failed');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error("Connection failed:", err);
     }
   };
 
-  /* ---------------- MAIN RENDER ---------------- */
+  /* ---------------- Disconnect ---------------- */
+  const handleDisconnect = async (collar: Collar) => {
+    if (!collar.device) return;
+    try {
+      await disconnectFromCollar(collar.device);
+      setCollars((prev) =>
+        prev.map((c) =>
+          c.id === collar.id ? { ...c, connected: false, device: undefined } : c
+        )
+      );
+      console.log("🔌 Disconnected from", collar.name);
+    } catch (err) {
+      console.error("Failed to disconnect:", err);
+    }
+  };
+
+  /* ---------------- UI ---------------- */
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>HOME</Text>
-        <View style={styles.simRow}>
-          <Text style={styles.simText}>Simulate</Text>
-          <Switch value={simulationMode} onValueChange={setSimulationMode} />
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>Nearby Collars</Text>
       </View>
 
-      {/* BLE Connect Section */}
-      {!simulationMode && (
+      {scanning ? (
         <View style={styles.center}>
-          {loading ? (
-            <>
-              <ActivityIndicator size="large" color="#f8b26a" />
-              <Text style={styles.statusText}>Scanning for CollarID...</Text>
-            </>
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={handleBLEConnect}>
-              <Text style={styles.buttonText}>CONNECT TO COLLAR</Text>
-            </TouchableOpacity>
-          )}
-
-          {connectedDeviceName && (
-            <Text style={styles.successText}>✅ Connected to {connectedDeviceName}</Text>
-          )}
-
-          {errorMsg && <Text style={styles.errorText}>⚠️ {errorMsg}</Text>}
+          <ActivityIndicator size="large" color="#f8b26a" />
+          <Text style={styles.subtext}>Scanning for CollarID devices...</Text>
+        </View>
+      ) : (
+        <View style={styles.center}>
+          <Text style={styles.subtext}>Stopped scanning</Text>
         </View>
       )}
 
-      {/* Collars List */}
-      {collars.map(c => (
+      {collars.map((collar) => (
         <CollarCard
-          key={c.id}
-          name={c.name}
-          engaged={c.engaged}
-          connected={c.connected}
-          battery={c.battery}
-          lastSync={c.lastSync}
-          onPress={() =>
-            simulationMode
-              ? c.connected
-                ? simulateDisconnect(c.id)
-                : simulateUpdate(c.id)
-              : undefined
-          }
+          key={collar.id}
+          name={collar.name}
+          battery={collar.battery}
+          sdRemaining={collar.sdRemaining}
+          sdTotal={collar.sdTotal}
+          connected={collar.connected}
+          lastUpdate={collar.lastUpdate}
+          onConnect={() => handleConnect(collar)}
+          onDisconnect={() => handleDisconnect(collar)}
         />
       ))}
+
+      {collars.length === 0 && (
+        <View style={styles.center}>
+          <Text style={styles.subtext}>No CollarID devices detected yet.</Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
 
 /* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fffaf6' },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+  container: { flex: 1, padding: 20, backgroundColor: "#fffaf6" },
+  header: {
+    marginBottom: 15,
   },
-  title: { fontSize: 28, fontWeight: '800' },
-  simRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  simText: { fontSize: 16, fontWeight: '500' },
-  center: { alignItems: 'center', marginVertical: 30 },
-  button: {
-    backgroundColor: '#f8b26a',
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 12,
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
   },
-  buttonText: { color: '#fff', fontWeight: '700', fontSize: 18 },
-  statusText: { marginTop: 10, fontSize: 16, color: '#444' },
-  successText: { marginTop: 10, fontSize: 16, color: '#1a7d33' },
-  errorText: { marginTop: 10, fontSize: 16, color: '#b22222' },
+  center: {
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  subtext: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#444",
+  },
 });
-
