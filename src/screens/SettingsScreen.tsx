@@ -5,14 +5,15 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Settings</Text>
-      <View style={styles.card}>
+      <Text>Coming Soon</Text>
+      {/* <View style={styles.card}>
         <Text>Region: ---</Text>
         <Text>Auth: ---</Text>
         <Text>Transmit Power: ---</Text>
       </View>
       <View style={styles.card}>
         <Text>Firmware Version: ---</Text>
-      </View>
+      </View> */}
     </View>
   );
 }

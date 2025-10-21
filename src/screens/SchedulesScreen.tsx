@@ -49,7 +49,10 @@ export default function SchedulesScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>SCHEDULES</Text>
-      <Text style={styles.sub}>Configure sampling and time windows</Text>
+      <Text style={styles.sub}>
+        Configure sampling and time windows
+        {device?.name ? ` for ${device.name}` : ""}
+      </Text>
 
       {schedules.map((s) => (
         <TouchableOpacity
@@ -81,28 +84,68 @@ export default function SchedulesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fdf8f3" },
-  header: { fontSize: 28, fontWeight: "bold", marginBottom: 10 },
-  sub: { fontSize: 16, color: "#444", marginBottom: 20 },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#FFFFFF", // unified with Home
+  },
+  header: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#111111",
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  sub: {
+    fontSize: 16,
+    color: "#555555",
+    fontWeight: "400",
+    marginBottom: 20,
+  },
   card: {
-    backgroundColor: "white",
-    padding: 16,
+    backgroundColor: "#FAFAFA",
+    padding: 18,
     borderRadius: 16,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
-  cardTitle: { fontWeight: "bold", fontSize: 18, marginBottom: 6 },
-  cardText: { fontSize: 14, color: "#333" },
-  addButton: { marginTop: 10 },
-  addText: { color: "#999", fontWeight: "600" },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111111",
+    marginBottom: 4,
+  },
+  cardText: {
+    fontSize: 14,
+    color: "#333333",
+    fontWeight: "400",
+  },
+  addButton: {
+    marginTop: 12,
+    alignItems: "center",
+  },
+  addText: {
+    color: "#777777",
+    fontWeight: "600",
+    fontSize: 15,
+  },
   sendButton: {
     backgroundColor: "#FDC996",
-    borderRadius: 10,
-    marginTop: 20,
+    borderRadius: 12,
+    marginTop: 28,
     alignItems: "center",
-    padding: 14,
+    paddingVertical: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
-  sendText: { color: "white", fontWeight: "bold" },
+  sendText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
 });

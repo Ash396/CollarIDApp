@@ -5,8 +5,8 @@ export default function AccountScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Account</Text>
-
-      <View style={styles.card}>
+      <Text>Coming Soon</Text>
+      {/* <View style={styles.card}>
         <Text>Profile (Name / Email)</Text>
         <Button title="Log In / Log Out" onPress={() => {}} />
       </View>
@@ -22,7 +22,7 @@ export default function AccountScreen() {
 
       <View style={styles.card}>
         <Text>Legal</Text>
-      </View>
+      </View> */}
     </View>
   );
 }

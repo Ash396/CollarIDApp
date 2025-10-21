@@ -173,7 +173,7 @@ export default function HomeScreen() {
                       ...c,
                       connected: true,
                       device: connectedDevice,
-                      battery: sys.battery_state?.percentage ?? 0,
+                      battery: Math.round(sys.battery_state?.percentage ?? 0),
                       sdRemaining: spaceRemaining,
                       sdTotal: totalSpace,
                       lastUpdate: new Date().toLocaleTimeString(),
@@ -221,7 +221,7 @@ export default function HomeScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Nearby Collars</Text>
+        <Text style={styles.title}>NEARBY COLLARS</Text>
       </View>
 
       {scanning ? (
@@ -260,21 +260,28 @@ export default function HomeScreen() {
 
 /* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fffaf6" },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#FFFFFF", // clean neutral background
+  },
   header: {
     marginBottom: 15,
   },
   title: {
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: "700",
+    color: "#111111", // standardized dark text
+    letterSpacing: 0.5,
   },
   center: {
     alignItems: "center",
-    marginVertical: 20,
+    marginVertical: 24,
   },
   subtext: {
     marginTop: 10,
     fontSize: 16,
-    color: "#444",
+    color: "#444444",
+    fontWeight: "400",
   },
 });
