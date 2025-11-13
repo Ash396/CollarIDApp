@@ -14,21 +14,21 @@ const SchedulesContext = createContext<SchedulesContextType | undefined>(
 
 export function SchedulesProvider({ children }: { children: ReactNode }) {
   const [schedules, setSchedules] = useState<Schedule[]>([
-    {
-      id: "1",
-      name: "Day Mode",
-      window: { start_hour: 6, end_hour: 20 },
-      light: { enabled: true, sample_interval_min: 30 },
-      gps: { enabled: true, sample_interval_min: 20 },
-    },
-    {
-      id: "2",
-      name: "Night Mode",
-      window: { start_hour: 20, end_hour: 6 },
-      gps: { enabled: true, sample_interval_min: 10 },
-      microphone: { enabled: true, continuous_mode: true },
-    },
-  ]);
+  {
+    id: "1",
+    name: "Day Mode",
+    window: { startHour: 6, endHour: 20 },
+    light: { enabled: true, sampleIntervalMin: 30 },
+    gps: { enabled: true, sampleIntervalMin: 20 },
+  },
+  {
+    id: "2",
+    name: "Night Mode",
+    window: { startHour: 20, endHour: 6 },
+    gps: { enabled: true, sampleIntervalMin: 10 },
+    microphone: { enabled: true, continuousMode: true },
+  },
+]);
 
   const updateSchedule = (id: string, updated: Schedule) => {
     setSchedules((prev) =>

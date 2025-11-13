@@ -1,2194 +1,5336 @@
-export const encodeRadioRegion = {
-  REGION_US915: 0,
-  REGION_AU915: 1,
-  REGION_EU868: 2,
-};
-
-export const decodeRadioRegion = {
-  0: "REGION_US915",
-  1: "REGION_AU915",
-  2: "REGION_EU868",
-};
-
-export const encodeRadioAuth = {
-  AUTH_OTAA: 0,
-  AUTH_ABP: 1,
-};
-
-export const decodeRadioAuth = {
-  0: "AUTH_OTAA",
-  1: "AUTH_ABP",
-};
-
-export const encodeAccelSampleRate = {
-  ACCEL_25HZ: 0,
-  ACCEL_50HZ: 1,
-};
-
-export const decodeAccelSampleRate = {
-  0: "ACCEL_25HZ",
-  1: "ACCEL_50HZ",
-};
-
-export const encodeAccelSensitivity = {
-  ACCEL_2G: 0,
-  ACCEL_4G: 1,
-  ACCEL_8G: 2,
-};
-
-export const decodeAccelSensitivity = {
-  0: "ACCEL_2G",
-  1: "ACCEL_4G",
-  2: "ACCEL_8G",
-};
-
-export const encodeActivity = {
-  STILL: 0,
-  WALK: 1,
-  RUN: 2,
-};
-
-export const decodeActivity = {
-  0: "STILL",
-  1: "WALK",
-  2: "RUN",
-};
-
-export function encodePacketHeader(message) {
-  let bb = popByteBuffer();
-  _encodePacketHeader(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodePacketHeader(message, bb) {
-  // optional uint32 system_uid = 1;
-  let $system_uid = message.system_uid;
-  if ($system_uid !== undefined) {
-    writeVarint32(bb, 8);
-    writeVarint32(bb, $system_uid);
-  }
-
-  // optional uint32 ms_from_start = 2;
-  let $ms_from_start = message.ms_from_start;
-  if ($ms_from_start !== undefined) {
-    writeVarint32(bb, 16);
-    writeVarint32(bb, $ms_from_start);
-  }
-
-  // optional uint64 epoch = 3;
-  let $epoch = message.epoch;
-  if ($epoch !== undefined) {
-    writeVarint32(bb, 24);
-    writeVarint64(bb, $epoch);
-  }
-
-  // optional uint32 packet_index = 4;
-  let $packet_index = message.packet_index;
-  if ($packet_index !== undefined) {
-    writeVarint32(bb, 32);
-    writeVarint32(bb, $packet_index);
-  }
-}
-
-export function decodePacketHeader(binary) {
-  return _decodePacketHeader(wrapByteBuffer(binary));
-}
-
-function _decodePacketHeader(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional uint32 system_uid = 1;
-      case 1: {
-        message.system_uid = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional uint32 ms_from_start = 2;
-      case 2: {
-        message.ms_from_start = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional uint64 epoch = 3;
-      case 3: {
-        message.epoch = readVarint64(bb, /* unsigned */ true);
-        break;
-      }
-
-      // optional uint32 packet_index = 4;
-      case 4: {
-        message.packet_index = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeTimeWindow(message) {
-  let bb = popByteBuffer();
-  _encodeTimeWindow(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeTimeWindow(message, bb) {
-  // optional uint32 start_hour = 1;
-  let $start_hour = message.start_hour;
-  if ($start_hour !== undefined) {
-    writeVarint32(bb, 8);
-    writeVarint32(bb, $start_hour);
-  }
-
-  // optional uint32 end_hour = 2;
-  let $end_hour = message.end_hour;
-  if ($end_hour !== undefined) {
-    writeVarint32(bb, 16);
-    writeVarint32(bb, $end_hour);
-  }
-}
-
-export function decodeTimeWindow(binary) {
-  return _decodeTimeWindow(wrapByteBuffer(binary));
-}
-
-function _decodeTimeWindow(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional uint32 start_hour = 1;
-      case 1: {
-        message.start_hour = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional uint32 end_hour = 2;
-      case 2: {
-        message.end_hour = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeSamplingConfig(message) {
-  let bb = popByteBuffer();
-  _encodeSamplingConfig(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeSamplingConfig(message, bb) {
-  // optional bool enabled = 1;
-  let $enabled = message.enabled;
-  if ($enabled !== undefined) {
-    writeVarint32(bb, 8);
-    writeByte(bb, $enabled ? 1 : 0);
-  }
-
-  // optional uint32 sample_interval_min = 2;
-  let $sample_interval_min = message.sample_interval_min;
-  if ($sample_interval_min !== undefined) {
-    writeVarint32(bb, 16);
-    writeVarint32(bb, $sample_interval_min);
-  }
-}
-
-export function decodeSamplingConfig(binary) {
-  return _decodeSamplingConfig(wrapByteBuffer(binary));
-}
-
-function _decodeSamplingConfig(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bool enabled = 1;
-      case 1: {
-        message.enabled = !!readByte(bb);
-        break;
-      }
-
-      // optional uint32 sample_interval_min = 2;
-      case 2: {
-        message.sample_interval_min = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeGPSConfig(message) {
-  let bb = popByteBuffer();
-  _encodeGPSConfig(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeGPSConfig(message, bb) {
-  // optional bool enabled = 1;
-  let $enabled = message.enabled;
-  if ($enabled !== undefined) {
-    writeVarint32(bb, 8);
-    writeByte(bb, $enabled ? 1 : 0);
-  }
-
-  // optional uint32 sample_interval_min = 2;
-  let $sample_interval_min = message.sample_interval_min;
-  if ($sample_interval_min !== undefined) {
-    writeVarint32(bb, 16);
-    writeVarint32(bb, $sample_interval_min);
-  }
-
-  // optional uint32 accuracy = 3;
-  let $accuracy = message.accuracy;
-  if ($accuracy !== undefined) {
-    writeVarint32(bb, 24);
-    writeVarint32(bb, $accuracy);
-  }
-}
-
-export function decodeGPSConfig(binary) {
-  return _decodeGPSConfig(wrapByteBuffer(binary));
-}
-
-function _decodeGPSConfig(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bool enabled = 1;
-      case 1: {
-        message.enabled = !!readByte(bb);
-        break;
-      }
-
-      // optional uint32 sample_interval_min = 2;
-      case 2: {
-        message.sample_interval_min = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional uint32 accuracy = 3;
-      case 3: {
-        message.accuracy = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeRadioOTAA(message) {
-  let bb = popByteBuffer();
-  _encodeRadioOTAA(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeRadioOTAA(message, bb) {
-  // optional bytes dev_eui = 1;
-  let $dev_eui = message.dev_eui;
-  if ($dev_eui !== undefined) {
-    writeVarint32(bb, 10);
-    writeVarint32(bb, $dev_eui.length), writeBytes(bb, $dev_eui);
-  }
-
-  // optional bytes join_eui = 2;
-  let $join_eui = message.join_eui;
-  if ($join_eui !== undefined) {
-    writeVarint32(bb, 18);
-    writeVarint32(bb, $join_eui.length), writeBytes(bb, $join_eui);
-  }
-
-  // optional bytes app_key = 3;
-  let $app_key = message.app_key;
-  if ($app_key !== undefined) {
-    writeVarint32(bb, 26);
-    writeVarint32(bb, $app_key.length), writeBytes(bb, $app_key);
-  }
-}
-
-export function decodeRadioOTAA(binary) {
-  return _decodeRadioOTAA(wrapByteBuffer(binary));
-}
-
-function _decodeRadioOTAA(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bytes dev_eui = 1;
-      case 1: {
-        message.dev_eui = readBytes(bb, readVarint32(bb));
-        break;
-      }
-
-      // optional bytes join_eui = 2;
-      case 2: {
-        message.join_eui = readBytes(bb, readVarint32(bb));
-        break;
-      }
-
-      // optional bytes app_key = 3;
-      case 3: {
-        message.app_key = readBytes(bb, readVarint32(bb));
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeRadioABP(message) {
-  let bb = popByteBuffer();
-  _encodeRadioABP(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeRadioABP(message, bb) {
-  // optional bytes dev_addr = 1;
-  let $dev_addr = message.dev_addr;
-  if ($dev_addr !== undefined) {
-    writeVarint32(bb, 10);
-    writeVarint32(bb, $dev_addr.length), writeBytes(bb, $dev_addr);
-  }
-
-  // optional bytes nwk_s_key = 2;
-  let $nwk_s_key = message.nwk_s_key;
-  if ($nwk_s_key !== undefined) {
-    writeVarint32(bb, 18);
-    writeVarint32(bb, $nwk_s_key.length), writeBytes(bb, $nwk_s_key);
-  }
-
-  // optional bytes app_s_key = 3;
-  let $app_s_key = message.app_s_key;
-  if ($app_s_key !== undefined) {
-    writeVarint32(bb, 26);
-    writeVarint32(bb, $app_s_key.length), writeBytes(bb, $app_s_key);
-  }
-
-  // optional bytes f_nwk_s_int_key = 4;
-  let $f_nwk_s_int_key = message.f_nwk_s_int_key;
-  if ($f_nwk_s_int_key !== undefined) {
-    writeVarint32(bb, 34);
-    writeVarint32(bb, $f_nwk_s_int_key.length), writeBytes(bb, $f_nwk_s_int_key);
-  }
-
-  // optional bytes s_nwk_s_int_key = 5;
-  let $s_nwk_s_int_key = message.s_nwk_s_int_key;
-  if ($s_nwk_s_int_key !== undefined) {
-    writeVarint32(bb, 42);
-    writeVarint32(bb, $s_nwk_s_int_key.length), writeBytes(bb, $s_nwk_s_int_key);
-  }
-}
-
-export function decodeRadioABP(binary) {
-  return _decodeRadioABP(wrapByteBuffer(binary));
-}
-
-function _decodeRadioABP(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bytes dev_addr = 1;
-      case 1: {
-        message.dev_addr = readBytes(bb, readVarint32(bb));
-        break;
-      }
-
-      // optional bytes nwk_s_key = 2;
-      case 2: {
-        message.nwk_s_key = readBytes(bb, readVarint32(bb));
-        break;
-      }
-
-      // optional bytes app_s_key = 3;
-      case 3: {
-        message.app_s_key = readBytes(bb, readVarint32(bb));
-        break;
-      }
-
-      // optional bytes f_nwk_s_int_key = 4;
-      case 4: {
-        message.f_nwk_s_int_key = readBytes(bb, readVarint32(bb));
-        break;
-      }
-
-      // optional bytes s_nwk_s_int_key = 5;
-      case 5: {
-        message.s_nwk_s_int_key = readBytes(bb, readVarint32(bb));
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeRadioConfig(message) {
-  let bb = popByteBuffer();
-  _encodeRadioConfig(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeRadioConfig(message, bb) {
-  // optional bool enabled = 1;
-  let $enabled = message.enabled;
-  if ($enabled !== undefined) {
-    writeVarint32(bb, 8);
-    writeByte(bb, $enabled ? 1 : 0);
-  }
-
-  // optional RadioRegion region = 2;
-  let $region = message.region;
-  if ($region !== undefined) {
-    writeVarint32(bb, 16);
-    writeVarint32(bb, encodeRadioRegion[$region]);
-  }
-
-  // optional RadioAuth auth = 3;
-  let $auth = message.auth;
-  if ($auth !== undefined) {
-    writeVarint32(bb, 24);
-    writeVarint32(bb, encodeRadioAuth[$auth]);
-  }
-
-  // optional RadioOTAA otaa = 4;
-  let $otaa = message.otaa;
-  if ($otaa !== undefined) {
-    writeVarint32(bb, 34);
-    let nested = popByteBuffer();
-    _encodeRadioOTAA($otaa, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional RadioABP abp = 5;
-  let $abp = message.abp;
-  if ($abp !== undefined) {
-    writeVarint32(bb, 42);
-    let nested = popByteBuffer();
-    _encodeRadioABP($abp, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional uint32 transmit_interval_min = 6;
-  let $transmit_interval_min = message.transmit_interval_min;
-  if ($transmit_interval_min !== undefined) {
-    writeVarint32(bb, 48);
-    writeVarint32(bb, $transmit_interval_min);
-  }
-
-  // optional bool tx_only_on_new_gps_fix = 7;
-  let $tx_only_on_new_gps_fix = message.tx_only_on_new_gps_fix;
-  if ($tx_only_on_new_gps_fix !== undefined) {
-    writeVarint32(bb, 56);
-    writeByte(bb, $tx_only_on_new_gps_fix ? 1 : 0);
-  }
-
-  // optional int32 tx_power_dbm = 8;
-  let $tx_power_dbm = message.tx_power_dbm;
-  if ($tx_power_dbm !== undefined) {
-    writeVarint32(bb, 64);
-    writeVarint64(bb, intToLong($tx_power_dbm));
-  }
-}
-
-export function decodeRadioConfig(binary) {
-  return _decodeRadioConfig(wrapByteBuffer(binary));
-}
-
-function _decodeRadioConfig(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bool enabled = 1;
-      case 1: {
-        message.enabled = !!readByte(bb);
-        break;
-      }
-
-      // optional RadioRegion region = 2;
-      case 2: {
-        message.region = decodeRadioRegion[readVarint32(bb)];
-        break;
-      }
-
-      // optional RadioAuth auth = 3;
-      case 3: {
-        message.auth = decodeRadioAuth[readVarint32(bb)];
-        break;
-      }
-
-      // optional RadioOTAA otaa = 4;
-      case 4: {
-        let limit = pushTemporaryLength(bb);
-        message.otaa = _decodeRadioOTAA(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional RadioABP abp = 5;
-      case 5: {
-        let limit = pushTemporaryLength(bb);
-        message.abp = _decodeRadioABP(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional uint32 transmit_interval_min = 6;
-      case 6: {
-        message.transmit_interval_min = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional bool tx_only_on_new_gps_fix = 7;
-      case 7: {
-        message.tx_only_on_new_gps_fix = !!readByte(bb);
-        break;
-      }
-
-      // optional int32 tx_power_dbm = 8;
-      case 8: {
-        message.tx_power_dbm = readVarint32(bb);
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeMicrophoneConfig(message) {
-  let bb = popByteBuffer();
-  _encodeMicrophoneConfig(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeMicrophoneConfig(message, bb) {
-  // optional bool enabled = 1;
-  let $enabled = message.enabled;
-  if ($enabled !== undefined) {
-    writeVarint32(bb, 8);
-    writeByte(bb, $enabled ? 1 : 0);
-  }
-
-  // optional bool continuous_mode = 2;
-  let $continuous_mode = message.continuous_mode;
-  if ($continuous_mode !== undefined) {
-    writeVarint32(bb, 16);
-    writeByte(bb, $continuous_mode ? 1 : 0);
-  }
-
-  // optional uint32 sample_length_min = 3;
-  let $sample_length_min = message.sample_length_min;
-  if ($sample_length_min !== undefined) {
-    writeVarint32(bb, 24);
-    writeVarint32(bb, $sample_length_min);
-  }
-
-  // optional uint32 sample_window_min = 4;
-  let $sample_window_min = message.sample_window_min;
-  if ($sample_window_min !== undefined) {
-    writeVarint32(bb, 32);
-    writeVarint32(bb, $sample_window_min);
-  }
-}
-
-export function decodeMicrophoneConfig(binary) {
-  return _decodeMicrophoneConfig(wrapByteBuffer(binary));
-}
-
-function _decodeMicrophoneConfig(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bool enabled = 1;
-      case 1: {
-        message.enabled = !!readByte(bb);
-        break;
-      }
-
-      // optional bool continuous_mode = 2;
-      case 2: {
-        message.continuous_mode = !!readByte(bb);
-        break;
-      }
-
-      // optional uint32 sample_length_min = 3;
-      case 3: {
-        message.sample_length_min = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional uint32 sample_window_min = 4;
-      case 4: {
-        message.sample_window_min = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeAccelerometerConfig(message) {
-  let bb = popByteBuffer();
-  _encodeAccelerometerConfig(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeAccelerometerConfig(message, bb) {
-  // optional bool enabled = 1;
-  let $enabled = message.enabled;
-  if ($enabled !== undefined) {
-    writeVarint32(bb, 8);
-    writeByte(bb, $enabled ? 1 : 0);
-  }
-
-  // optional AccelSampleRate sample_rate = 2;
-  let $sample_rate = message.sample_rate;
-  if ($sample_rate !== undefined) {
-    writeVarint32(bb, 16);
-    writeVarint32(bb, encodeAccelSampleRate[$sample_rate]);
-  }
-
-  // optional AccelSensitivity sensitivity = 3;
-  let $sensitivity = message.sensitivity;
-  if ($sensitivity !== undefined) {
-    writeVarint32(bb, 24);
-    writeVarint32(bb, encodeAccelSensitivity[$sensitivity]);
-  }
-}
-
-export function decodeAccelerometerConfig(binary) {
-  return _decodeAccelerometerConfig(wrapByteBuffer(binary));
-}
-
-function _decodeAccelerometerConfig(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bool enabled = 1;
-      case 1: {
-        message.enabled = !!readByte(bb);
-        break;
-      }
-
-      // optional AccelSampleRate sample_rate = 2;
-      case 2: {
-        message.sample_rate = decodeAccelSampleRate[readVarint32(bb)];
-        break;
-      }
-
-      // optional AccelSensitivity sensitivity = 3;
-      case 3: {
-        message.sensitivity = decodeAccelSensitivity[readVarint32(bb)];
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeFirmwareInfo(message) {
-  let bb = popByteBuffer();
-  _encodeFirmwareInfo(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeFirmwareInfo(message, bb) {
-  // optional string version = 1;
-  let $version = message.version;
-  if ($version !== undefined) {
-    writeVarint32(bb, 10);
-    writeString(bb, $version);
-  }
-}
-
-export function decodeFirmwareInfo(binary) {
-  return _decodeFirmwareInfo(wrapByteBuffer(binary));
-}
-
-function _decodeFirmwareInfo(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional string version = 1;
-      case 1: {
-        message.version = readString(bb, readVarint32(bb));
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeScheduledConfig(message) {
-  let bb = popByteBuffer();
-  _encodeScheduledConfig(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeScheduledConfig(message, bb) {
-  // optional TimeWindow window = 1;
-  let $window = message.window;
-  if ($window !== undefined) {
-    writeVarint32(bb, 10);
-    let nested = popByteBuffer();
-    _encodeTimeWindow($window, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional SamplingConfig light = 2;
-  let $light = message.light;
-  if ($light !== undefined) {
-    writeVarint32(bb, 18);
-    let nested = popByteBuffer();
-    _encodeSamplingConfig($light, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional SamplingConfig environmental = 3;
-  let $environmental = message.environmental;
-  if ($environmental !== undefined) {
-    writeVarint32(bb, 26);
-    let nested = popByteBuffer();
-    _encodeSamplingConfig($environmental, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional SamplingConfig particulate = 4;
-  let $particulate = message.particulate;
-  if ($particulate !== undefined) {
-    writeVarint32(bb, 34);
-    let nested = popByteBuffer();
-    _encodeSamplingConfig($particulate, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional GPSConfig gps = 5;
-  let $gps = message.gps;
-  if ($gps !== undefined) {
-    writeVarint32(bb, 42);
-    let nested = popByteBuffer();
-    _encodeGPSConfig($gps, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional RadioConfig radio = 6;
-  let $radio = message.radio;
-  if ($radio !== undefined) {
-    writeVarint32(bb, 50);
-    let nested = popByteBuffer();
-    _encodeRadioConfig($radio, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional MicrophoneConfig microphone = 7;
-  let $microphone = message.microphone;
-  if ($microphone !== undefined) {
-    writeVarint32(bb, 58);
-    let nested = popByteBuffer();
-    _encodeMicrophoneConfig($microphone, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional AccelerometerConfig accelerometer = 8;
-  let $accelerometer = message.accelerometer;
-  if ($accelerometer !== undefined) {
-    writeVarint32(bb, 66);
-    let nested = popByteBuffer();
-    _encodeAccelerometerConfig($accelerometer, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional FirmwareInfo firmware = 9;
-  let $firmware = message.firmware;
-  if ($firmware !== undefined) {
-    writeVarint32(bb, 74);
-    let nested = popByteBuffer();
-    _encodeFirmwareInfo($firmware, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-}
-
-export function decodeScheduledConfig(binary) {
-  return _decodeScheduledConfig(wrapByteBuffer(binary));
-}
-
-function _decodeScheduledConfig(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional TimeWindow window = 1;
-      case 1: {
-        let limit = pushTemporaryLength(bb);
-        message.window = _decodeTimeWindow(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional SamplingConfig light = 2;
-      case 2: {
-        let limit = pushTemporaryLength(bb);
-        message.light = _decodeSamplingConfig(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional SamplingConfig environmental = 3;
-      case 3: {
-        let limit = pushTemporaryLength(bb);
-        message.environmental = _decodeSamplingConfig(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional SamplingConfig particulate = 4;
-      case 4: {
-        let limit = pushTemporaryLength(bb);
-        message.particulate = _decodeSamplingConfig(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional GPSConfig gps = 5;
-      case 5: {
-        let limit = pushTemporaryLength(bb);
-        message.gps = _decodeGPSConfig(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional RadioConfig radio = 6;
-      case 6: {
-        let limit = pushTemporaryLength(bb);
-        message.radio = _decodeRadioConfig(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional MicrophoneConfig microphone = 7;
-      case 7: {
-        let limit = pushTemporaryLength(bb);
-        message.microphone = _decodeMicrophoneConfig(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional AccelerometerConfig accelerometer = 8;
-      case 8: {
-        let limit = pushTemporaryLength(bb);
-        message.accelerometer = _decodeAccelerometerConfig(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional FirmwareInfo firmware = 9;
-      case 9: {
-        let limit = pushTemporaryLength(bb);
-        message.firmware = _decodeFirmwareInfo(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeScheduleConfigPacket(message) {
-  let bb = popByteBuffer();
-  _encodeScheduleConfigPacket(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeScheduleConfigPacket(message, bb) {
-  // repeated ScheduledConfig schedules = 1;
-  let array$schedules = message.schedules;
-  if (array$schedules !== undefined) {
-    for (let value of array$schedules) {
-      writeVarint32(bb, 10);
-      let nested = popByteBuffer();
-      _encodeScheduledConfig(value, nested);
-      writeVarint32(bb, nested.limit);
-      writeByteBuffer(bb, nested);
-      pushByteBuffer(nested);
-    }
-  }
-}
-
-export function decodeScheduleConfigPacket(binary) {
-  return _decodeScheduleConfigPacket(wrapByteBuffer(binary));
-}
-
-function _decodeScheduleConfigPacket(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // repeated ScheduledConfig schedules = 1;
-      case 1: {
-        let limit = pushTemporaryLength(bb);
-        let values = message.schedules || (message.schedules = []);
-        values.push(_decodeScheduledConfig(bb));
-        bb.limit = limit;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeSimpleSensorReading(message) {
-  let bb = popByteBuffer();
-  _encodeSimpleSensorReading(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeSimpleSensorReading(message, bb) {
-  // optional uint32 index = 1;
-  let $index = message.index;
-  if ($index !== undefined) {
-    writeVarint32(bb, 8);
-    writeVarint32(bb, $index);
-  }
-
-  // optional uint32 epoch = 2;
-  let $epoch = message.epoch;
-  if ($epoch !== undefined) {
-    writeVarint32(bb, 16);
-    writeVarint32(bb, $epoch);
-  }
-
-  // optional float temperature = 3;
-  let $temperature = message.temperature;
-  if ($temperature !== undefined) {
-    writeVarint32(bb, 29);
-    writeFloat(bb, $temperature);
-  }
-
-  // optional float humidity = 4;
-  let $humidity = message.humidity;
-  if ($humidity !== undefined) {
-    writeVarint32(bb, 37);
-    writeFloat(bb, $humidity);
-  }
-
-  // optional float pressure = 5;
-  let $pressure = message.pressure;
-  if ($pressure !== undefined) {
-    writeVarint32(bb, 45);
-    writeFloat(bb, $pressure);
-  }
-
-  // optional float gas = 6;
-  let $gas = message.gas;
-  if ($gas !== undefined) {
-    writeVarint32(bb, 53);
-    writeFloat(bb, $gas);
-  }
-
-  // optional float pm2_5 = 7;
-  let $pm2_5 = message.pm2_5;
-  if ($pm2_5 !== undefined) {
-    writeVarint32(bb, 61);
-    writeFloat(bb, $pm2_5);
-  }
-
-  // optional uint32 light = 8;
-  let $light = message.light;
-  if ($light !== undefined) {
-    writeVarint32(bb, 64);
-    writeVarint32(bb, $light);
-  }
-
-  // optional Activity activity = 9;
-  let $activity = message.activity;
-  if ($activity !== undefined) {
-    writeVarint32(bb, 72);
-    writeVarint32(bb, encodeActivity[$activity]);
-  }
-
-  // optional uint32 steps = 10;
-  let $steps = message.steps;
-  if ($steps !== undefined) {
-    writeVarint32(bb, 80);
-    writeVarint32(bb, $steps);
-  }
-
-  // optional bool particulate_static_obstructed = 11;
-  let $particulate_static_obstructed = message.particulate_static_obstructed;
-  if ($particulate_static_obstructed !== undefined) {
-    writeVarint32(bb, 88);
-    writeByte(bb, $particulate_static_obstructed ? 1 : 0);
-  }
-
-  // optional bool particulate_dynamic_obstructed = 12;
-  let $particulate_dynamic_obstructed = message.particulate_dynamic_obstructed;
-  if ($particulate_dynamic_obstructed !== undefined) {
-    writeVarint32(bb, 96);
-    writeByte(bb, $particulate_dynamic_obstructed ? 1 : 0);
-  }
-
-  // optional bool particulate_outside_detection_limits = 13;
-  let $particulate_outside_detection_limits = message.particulate_outside_detection_limits;
-  if ($particulate_outside_detection_limits !== undefined) {
-    writeVarint32(bb, 104);
-    writeByte(bb, $particulate_outside_detection_limits ? 1 : 0);
-  }
-}
-
-export function decodeSimpleSensorReading(binary) {
-  return _decodeSimpleSensorReading(wrapByteBuffer(binary));
-}
-
-function _decodeSimpleSensorReading(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional uint32 index = 1;
-      case 1: {
-        message.index = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional uint32 epoch = 2;
-      case 2: {
-        message.epoch = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional float temperature = 3;
-      case 3: {
-        message.temperature = readFloat(bb);
-        break;
-      }
-
-      // optional float humidity = 4;
-      case 4: {
-        message.humidity = readFloat(bb);
-        break;
-      }
-
-      // optional float pressure = 5;
-      case 5: {
-        message.pressure = readFloat(bb);
-        break;
-      }
-
-      // optional float gas = 6;
-      case 6: {
-        message.gas = readFloat(bb);
-        break;
-      }
-
-      // optional float pm2_5 = 7;
-      case 7: {
-        message.pm2_5 = readFloat(bb);
-        break;
-      }
-
-      // optional uint32 light = 8;
-      case 8: {
-        message.light = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional Activity activity = 9;
-      case 9: {
-        message.activity = decodeActivity[readVarint32(bb)];
-        break;
-      }
-
-      // optional uint32 steps = 10;
-      case 10: {
-        message.steps = readVarint32(bb) >>> 0;
-        break;
-      }
-
-      // optional bool particulate_static_obstructed = 11;
-      case 11: {
-        message.particulate_static_obstructed = !!readByte(bb);
-        break;
-      }
-
-      // optional bool particulate_dynamic_obstructed = 12;
-      case 12: {
-        message.particulate_dynamic_obstructed = !!readByte(bb);
-        break;
-      }
-
-      // optional bool particulate_outside_detection_limits = 13;
-      case 13: {
-        message.particulate_outside_detection_limits = !!readByte(bb);
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeBatteryState(message) {
-  let bb = popByteBuffer();
-  _encodeBatteryState(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeBatteryState(message, bb) {
-  // optional bool charging = 1;
-  let $charging = message.charging;
-  if ($charging !== undefined) {
-    writeVarint32(bb, 8);
-    writeByte(bb, $charging ? 1 : 0);
-  }
-
-  // optional float voltage = 2;
-  let $voltage = message.voltage;
-  if ($voltage !== undefined) {
-    writeVarint32(bb, 21);
-    writeFloat(bb, $voltage);
-  }
-
-  // optional float percentage = 3;
-  let $percentage = message.percentage;
-  if ($percentage !== undefined) {
-    writeVarint32(bb, 29);
-    writeFloat(bb, $percentage);
-  }
-}
-
-export function decodeBatteryState(binary) {
-  return _decodeBatteryState(wrapByteBuffer(binary));
-}
-
-function _decodeBatteryState(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bool charging = 1;
-      case 1: {
-        message.charging = !!readByte(bb);
-        break;
-      }
-
-      // optional float voltage = 2;
-      case 2: {
-        message.voltage = readFloat(bb);
-        break;
-      }
-
-      // optional float percentage = 3;
-      case 3: {
-        message.percentage = readFloat(bb);
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeSDCardState(message) {
-  let bb = popByteBuffer();
-  _encodeSDCardState(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeSDCardState(message, bb) {
-  // optional bool detected = 1;
-  let $detected = message.detected;
-  if ($detected !== undefined) {
-    writeVarint32(bb, 8);
-    writeByte(bb, $detected ? 1 : 0);
-  }
-
-  // optional uint64 space_remaining = 2;
-  let $space_remaining = message.space_remaining;
-  if ($space_remaining !== undefined) {
-    writeVarint32(bb, 16);
-    writeVarint64(bb, $space_remaining);
-  }
-
-  // optional uint64 total_space = 3;
-  let $total_space = message.total_space;
-  if ($total_space !== undefined) {
-    writeVarint32(bb, 24);
-    writeVarint64(bb, $total_space);
-  }
-}
-
-export function decodeSDCardState(binary) {
-  return _decodeSDCardState(wrapByteBuffer(binary));
-}
-
-function _decodeSDCardState(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bool detected = 1;
-      case 1: {
-        message.detected = !!readByte(bb);
-        break;
-      }
-
-      // optional uint64 space_remaining = 2;
-      case 2: {
-        message.space_remaining = readVarint64(bb, /* unsigned */ true);
-        break;
-      }
-
-      // optional uint64 total_space = 3;
-      case 3: {
-        message.total_space = readVarint64(bb, /* unsigned */ true);
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeGPSData(message) {
-  let bb = popByteBuffer();
-  _encodeGPSData(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeGPSData(message, bb) {
-  // optional float latitude = 1;
-  let $latitude = message.latitude;
-  if ($latitude !== undefined) {
-    writeVarint32(bb, 13);
-    writeFloat(bb, $latitude);
-  }
-
-  // optional float longitude = 2;
-  let $longitude = message.longitude;
-  if ($longitude !== undefined) {
-    writeVarint32(bb, 21);
-    writeFloat(bb, $longitude);
-  }
-
-  // optional float altitude = 3;
-  let $altitude = message.altitude;
-  if ($altitude !== undefined) {
-    writeVarint32(bb, 29);
-    writeFloat(bb, $altitude);
-  }
-
-  // optional float speed = 4;
-  let $speed = message.speed;
-  if ($speed !== undefined) {
-    writeVarint32(bb, 37);
-    writeFloat(bb, $speed);
-  }
-
-  // optional float heading = 5;
-  let $heading = message.heading;
-  if ($heading !== undefined) {
-    writeVarint32(bb, 45);
-    writeFloat(bb, $heading);
-  }
-}
-
-export function decodeGPSData(binary) {
-  return _decodeGPSData(wrapByteBuffer(binary));
-}
-
-function _decodeGPSData(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional float latitude = 1;
-      case 1: {
-        message.latitude = readFloat(bb);
-        break;
-      }
-
-      // optional float longitude = 2;
-      case 2: {
-        message.longitude = readFloat(bb);
-        break;
-      }
-
-      // optional float altitude = 3;
-      case 3: {
-        message.altitude = readFloat(bb);
-        break;
-      }
-
-      // optional float speed = 4;
-      case 4: {
-        message.speed = readFloat(bb);
-        break;
-      }
-
-      // optional float heading = 5;
-      case 5: {
-        message.heading = readFloat(bb);
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodeSystemStatePacket(message) {
-  let bb = popByteBuffer();
-  _encodeSystemStatePacket(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodeSystemStatePacket(message, bb) {
-  // optional bool engage_state = 1;
-  let $engage_state = message.engage_state;
-  if ($engage_state !== undefined) {
-    writeVarint32(bb, 8);
-    writeByte(bb, $engage_state ? 1 : 0);
-  }
-
-  // optional BatteryState battery_state = 2;
-  let $battery_state = message.battery_state;
-  if ($battery_state !== undefined) {
-    writeVarint32(bb, 18);
-    let nested = popByteBuffer();
-    _encodeBatteryState($battery_state, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional SDCardState sdcard_state = 3;
-  let $sdcard_state = message.sdcard_state;
-  if ($sdcard_state !== undefined) {
-    writeVarint32(bb, 26);
-    let nested = popByteBuffer();
-    _encodeSDCardState($sdcard_state, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional GPSData gps_data = 4;
-  let $gps_data = message.gps_data;
-  if ($gps_data !== undefined) {
-    writeVarint32(bb, 34);
-    let nested = popByteBuffer();
-    _encodeGPSData($gps_data, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional SimpleSensorReading simple_sensor_reading = 5;
-  let $simple_sensor_reading = message.simple_sensor_reading;
-  if ($simple_sensor_reading !== undefined) {
-    writeVarint32(bb, 42);
-    let nested = popByteBuffer();
-    _encodeSimpleSensorReading($simple_sensor_reading, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-}
-
-export function decodeSystemStatePacket(binary) {
-  return _decodeSystemStatePacket(wrapByteBuffer(binary));
-}
-
-function _decodeSystemStatePacket(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional bool engage_state = 1;
-      case 1: {
-        message.engage_state = !!readByte(bb);
-        break;
-      }
-
-      // optional BatteryState battery_state = 2;
-      case 2: {
-        let limit = pushTemporaryLength(bb);
-        message.battery_state = _decodeBatteryState(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional SDCardState sdcard_state = 3;
-      case 3: {
-        let limit = pushTemporaryLength(bb);
-        message.sdcard_state = _decodeSDCardState(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional GPSData gps_data = 4;
-      case 4: {
-        let limit = pushTemporaryLength(bb);
-        message.gps_data = _decodeGPSData(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional SimpleSensorReading simple_sensor_reading = 5;
-      case 5: {
-        let limit = pushTemporaryLength(bb);
-        message.simple_sensor_reading = _decodeSimpleSensorReading(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-export function encodePacket(message) {
-  let bb = popByteBuffer();
-  _encodePacket(message, bb);
-  return toUint8Array(bb);
-}
-
-function _encodePacket(message, bb) {
-  // optional PacketHeader header = 1;
-  let $header = message.header;
-  if ($header !== undefined) {
-    writeVarint32(bb, 10);
-    let nested = popByteBuffer();
-    _encodePacketHeader($header, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional ScheduleConfigPacket schedule_config_packet = 2;
-  let $schedule_config_packet = message.schedule_config_packet;
-  if ($schedule_config_packet !== undefined) {
-    writeVarint32(bb, 18);
-    let nested = popByteBuffer();
-    _encodeScheduleConfigPacket($schedule_config_packet, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-
-  // optional SystemStatePacket system_state_packet = 3;
-  let $system_state_packet = message.system_state_packet;
-  if ($system_state_packet !== undefined) {
-    writeVarint32(bb, 26);
-    let nested = popByteBuffer();
-    _encodeSystemStatePacket($system_state_packet, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
-  }
-}
-
-export function decodePacket(binary) {
-  return _decodePacket(wrapByteBuffer(binary));
-}
-
-function _decodePacket(bb) {
-  let message = {};
-
-  end_of_message: while (!isAtEnd(bb)) {
-    let tag = readVarint32(bb);
-
-    switch (tag >>> 3) {
-      case 0:
-        break end_of_message;
-
-      // optional PacketHeader header = 1;
-      case 1: {
-        let limit = pushTemporaryLength(bb);
-        message.header = _decodePacketHeader(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional ScheduleConfigPacket schedule_config_packet = 2;
-      case 2: {
-        let limit = pushTemporaryLength(bb);
-        message.schedule_config_packet = _decodeScheduleConfigPacket(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      // optional SystemStatePacket system_state_packet = 3;
-      case 3: {
-        let limit = pushTemporaryLength(bb);
-        message.system_state_packet = _decodeSystemStatePacket(bb);
-        bb.limit = limit;
-        break;
-      }
-
-      default:
-        skipUnknownField(bb, tag & 7);
-    }
-  }
-
-  return message;
-}
-
-function pushTemporaryLength(bb) {
-  let length = readVarint32(bb);
-  let limit = bb.limit;
-  bb.limit = bb.offset + length;
-  return limit;
-}
-
-function skipUnknownField(bb, type) {
-  switch (type) {
-    case 0: while (readByte(bb) & 0x80) { } break;
-    case 2: skip(bb, readVarint32(bb)); break;
-    case 5: skip(bb, 4); break;
-    case 1: skip(bb, 8); break;
-    default: throw new Error("Unimplemented type: " + type);
-  }
-}
-
-function stringToLong(value) {
-  return {
-    low: value.charCodeAt(0) | (value.charCodeAt(1) << 16),
-    high: value.charCodeAt(2) | (value.charCodeAt(3) << 16),
-    unsigned: false,
-  };
-}
-
-function longToString(value) {
-  let low = value.low;
-  let high = value.high;
-  return String.fromCharCode(
-    low & 0xFFFF,
-    low >>> 16,
-    high & 0xFFFF,
-    high >>> 16);
-}
-
-// The code below was modified from https://github.com/protobufjs/bytebuffer.js
-// which is under the Apache License 2.0.
-
-let f32 = new Float32Array(1);
-let f32_u8 = new Uint8Array(f32.buffer);
-
-let f64 = new Float64Array(1);
-let f64_u8 = new Uint8Array(f64.buffer);
-
-function intToLong(value) {
-  value |= 0;
-  return {
-    low: value,
-    high: value >> 31,
-    unsigned: value >= 0,
-  };
-}
-
-let bbStack = [];
-
-function popByteBuffer() {
-  const bb = bbStack.pop();
-  if (!bb) return { bytes: new Uint8Array(64), offset: 0, limit: 0 };
-  bb.offset = bb.limit = 0;
-  return bb;
-}
-
-function pushByteBuffer(bb) {
-  bbStack.push(bb);
-}
-
-function wrapByteBuffer(bytes) {
-  return { bytes, offset: 0, limit: bytes.length };
-}
-
-function toUint8Array(bb) {
-  let bytes = bb.bytes;
-  let limit = bb.limit;
-  return bytes.length === limit ? bytes : bytes.subarray(0, limit);
-}
-
-function skip(bb, offset) {
-  if (bb.offset + offset > bb.limit) {
-    throw new Error('Skip past limit');
-  }
-  bb.offset += offset;
-}
-
-function isAtEnd(bb) {
-  return bb.offset >= bb.limit;
-}
-
-function grow(bb, count) {
-  let bytes = bb.bytes;
-  let offset = bb.offset;
-  let limit = bb.limit;
-  let finalOffset = offset + count;
-  if (finalOffset > bytes.length) {
-    let newBytes = new Uint8Array(finalOffset * 2);
-    newBytes.set(bytes);
-    bb.bytes = newBytes;
-  }
-  bb.offset = finalOffset;
-  if (finalOffset > limit) {
-    bb.limit = finalOffset;
-  }
-  return offset;
-}
-
-function advance(bb, count) {
-  let offset = bb.offset;
-  if (offset + count > bb.limit) {
-    throw new Error('Read past limit');
-  }
-  bb.offset += count;
-  return offset;
-}
-
-function readBytes(bb, count) {
-  let offset = advance(bb, count);
-  return bb.bytes.subarray(offset, offset + count);
-}
-
-function writeBytes(bb, buffer) {
-  let offset = grow(bb, buffer.length);
-  bb.bytes.set(buffer, offset);
-}
-
-function readString(bb, count) {
-  // Sadly a hand-coded UTF8 decoder is much faster than subarray+TextDecoder in V8
-  let offset = advance(bb, count);
-  let fromCharCode = String.fromCharCode;
-  let bytes = bb.bytes;
-  let invalid = '\uFFFD';
-  let text = '';
-
-  for (let i = 0; i < count; i++) {
-    let c1 = bytes[i + offset], c2, c3, c4, c;
-
-    // 1 byte
-    if ((c1 & 0x80) === 0) {
-      text += fromCharCode(c1);
+/*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
+import * as $protobuf from "protobufjs/minimal";
+
+// Common aliases
+const $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
+
+// Exported root namespace
+const $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
+
+export const PacketHeader = $root.PacketHeader = (() => {
+
+    /**
+     * Properties of a PacketHeader.
+     * @exports IPacketHeader
+     * @interface IPacketHeader
+     * @property {number|null} [systemUid] PacketHeader systemUid
+     * @property {number|null} [msFromStart] PacketHeader msFromStart
+     * @property {number|null} [epoch] PacketHeader epoch
+     * @property {number|null} [packetIndex] PacketHeader packetIndex
+     */
+
+    /**
+     * Constructs a new PacketHeader.
+     * @exports PacketHeader
+     * @classdesc Represents a PacketHeader.
+     * @implements IPacketHeader
+     * @constructor
+     * @param {IPacketHeader=} [properties] Properties to set
+     */
+    function PacketHeader(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
     }
 
-    // 2 bytes
-    else if ((c1 & 0xE0) === 0xC0) {
-      if (i + 1 >= count) text += invalid;
-      else {
-        c2 = bytes[i + offset + 1];
-        if ((c2 & 0xC0) !== 0x80) text += invalid;
-        else {
-          c = ((c1 & 0x1F) << 6) | (c2 & 0x3F);
-          if (c < 0x80) text += invalid;
-          else {
-            text += fromCharCode(c);
-            i++;
-          }
-        }
-      }
-    }
+    /**
+     * PacketHeader systemUid.
+     * @member {number} systemUid
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.systemUid = 0;
 
-    // 3 bytes
-    else if ((c1 & 0xF0) == 0xE0) {
-      if (i + 2 >= count) text += invalid;
-      else {
-        c2 = bytes[i + offset + 1];
-        c3 = bytes[i + offset + 2];
-        if (((c2 | (c3 << 8)) & 0xC0C0) !== 0x8080) text += invalid;
-        else {
-          c = ((c1 & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
-          if (c < 0x0800 || (c >= 0xD800 && c <= 0xDFFF)) text += invalid;
-          else {
-            text += fromCharCode(c);
-            i += 2;
-          }
-        }
-      }
-    }
+    /**
+     * PacketHeader msFromStart.
+     * @member {number} msFromStart
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.msFromStart = 0;
 
-    // 4 bytes
-    else if ((c1 & 0xF8) == 0xF0) {
-      if (i + 3 >= count) text += invalid;
-      else {
-        c2 = bytes[i + offset + 1];
-        c3 = bytes[i + offset + 2];
-        c4 = bytes[i + offset + 3];
-        if (((c2 | (c3 << 8) | (c4 << 16)) & 0xC0C0C0) !== 0x808080) text += invalid;
-        else {
-          c = ((c1 & 0x07) << 0x12) | ((c2 & 0x3F) << 0x0C) | ((c3 & 0x3F) << 0x06) | (c4 & 0x3F);
-          if (c < 0x10000 || c > 0x10FFFF) text += invalid;
-          else {
-            c -= 0x10000;
-            text += fromCharCode((c >> 10) + 0xD800, (c & 0x3FF) + 0xDC00);
-            i += 3;
-          }
-        }
-      }
-    }
+    /**
+     * PacketHeader epoch.
+     * @member {number} epoch
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.epoch = 0;
 
-    else text += invalid;
-  }
+    /**
+     * PacketHeader packetIndex.
+     * @member {number} packetIndex
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.packetIndex = 0;
 
-  return text;
-}
+    /**
+     * Creates a new PacketHeader instance using the specified properties.
+     * @function create
+     * @memberof PacketHeader
+     * @static
+     * @param {IPacketHeader=} [properties] Properties to set
+     * @returns {PacketHeader} PacketHeader instance
+     */
+    PacketHeader.create = function create(properties) {
+        return new PacketHeader(properties);
+    };
 
-function writeString(bb, text) {
-  // Sadly a hand-coded UTF8 encoder is much faster than TextEncoder+set in V8
-  let n = text.length;
-  let byteCount = 0;
+    /**
+     * Encodes the specified PacketHeader message. Does not implicitly {@link PacketHeader.verify|verify} messages.
+     * @function encode
+     * @memberof PacketHeader
+     * @static
+     * @param {IPacketHeader} message PacketHeader message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    PacketHeader.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.systemUid != null && Object.hasOwnProperty.call(message, "systemUid"))
+            writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.systemUid);
+        if (message.msFromStart != null && Object.hasOwnProperty.call(message, "msFromStart"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.msFromStart);
+        if (message.epoch != null && Object.hasOwnProperty.call(message, "epoch"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.epoch);
+        if (message.packetIndex != null && Object.hasOwnProperty.call(message, "packetIndex"))
+            writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.packetIndex);
+        return writer;
+    };
 
-  // Write the byte count first
-  for (let i = 0; i < n; i++) {
-    let c = text.charCodeAt(i);
-    if (c >= 0xD800 && c <= 0xDBFF && i + 1 < n) {
-      c = (c << 10) + text.charCodeAt(++i) - 0x35FDC00;
-    }
-    byteCount += c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4;
-  }
-  writeVarint32(bb, byteCount);
+    /**
+     * Encodes the specified PacketHeader message, length delimited. Does not implicitly {@link PacketHeader.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof PacketHeader
+     * @static
+     * @param {IPacketHeader} message PacketHeader message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    PacketHeader.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
 
-  let offset = grow(bb, byteCount);
-  let bytes = bb.bytes;
-
-  // Then write the bytes
-  for (let i = 0; i < n; i++) {
-    let c = text.charCodeAt(i);
-    if (c >= 0xD800 && c <= 0xDBFF && i + 1 < n) {
-      c = (c << 10) + text.charCodeAt(++i) - 0x35FDC00;
-    }
-    if (c < 0x80) {
-      bytes[offset++] = c;
-    } else {
-      if (c < 0x800) {
-        bytes[offset++] = ((c >> 6) & 0x1F) | 0xC0;
-      } else {
-        if (c < 0x10000) {
-          bytes[offset++] = ((c >> 12) & 0x0F) | 0xE0;
-        } else {
-          bytes[offset++] = ((c >> 18) & 0x07) | 0xF0;
-          bytes[offset++] = ((c >> 12) & 0x3F) | 0x80;
-        }
-        bytes[offset++] = ((c >> 6) & 0x3F) | 0x80;
-      }
-      bytes[offset++] = (c & 0x3F) | 0x80;
-    }
-  }
-}
-
-function writeByteBuffer(bb, buffer) {
-  let offset = grow(bb, buffer.limit);
-  let from = bb.bytes;
-  let to = buffer.bytes;
-
-  // This for loop is much faster than subarray+set on V8
-  for (let i = 0, n = buffer.limit; i < n; i++) {
-    from[i + offset] = to[i];
-  }
-}
-
-function readByte(bb) {
-  return bb.bytes[advance(bb, 1)];
-}
-
-function writeByte(bb, value) {
-  let offset = grow(bb, 1);
-  bb.bytes[offset] = value;
-}
-
-function readFloat(bb) {
-  let offset = advance(bb, 4);
-  let bytes = bb.bytes;
-
-  // Manual copying is much faster than subarray+set in V8
-  f32_u8[0] = bytes[offset++];
-  f32_u8[1] = bytes[offset++];
-  f32_u8[2] = bytes[offset++];
-  f32_u8[3] = bytes[offset++];
-  return f32[0];
-}
-
-function writeFloat(bb, value) {
-  let offset = grow(bb, 4);
-  let bytes = bb.bytes;
-  f32[0] = value;
-
-  // Manual copying is much faster than subarray+set in V8
-  bytes[offset++] = f32_u8[0];
-  bytes[offset++] = f32_u8[1];
-  bytes[offset++] = f32_u8[2];
-  bytes[offset++] = f32_u8[3];
-}
-
-function readDouble(bb) {
-  let offset = advance(bb, 8);
-  let bytes = bb.bytes;
-
-  // Manual copying is much faster than subarray+set in V8
-  f64_u8[0] = bytes[offset++];
-  f64_u8[1] = bytes[offset++];
-  f64_u8[2] = bytes[offset++];
-  f64_u8[3] = bytes[offset++];
-  f64_u8[4] = bytes[offset++];
-  f64_u8[5] = bytes[offset++];
-  f64_u8[6] = bytes[offset++];
-  f64_u8[7] = bytes[offset++];
-  return f64[0];
-}
-
-function writeDouble(bb, value) {
-  let offset = grow(bb, 8);
-  let bytes = bb.bytes;
-  f64[0] = value;
-
-  // Manual copying is much faster than subarray+set in V8
-  bytes[offset++] = f64_u8[0];
-  bytes[offset++] = f64_u8[1];
-  bytes[offset++] = f64_u8[2];
-  bytes[offset++] = f64_u8[3];
-  bytes[offset++] = f64_u8[4];
-  bytes[offset++] = f64_u8[5];
-  bytes[offset++] = f64_u8[6];
-  bytes[offset++] = f64_u8[7];
-}
-
-function readInt32(bb) {
-  let offset = advance(bb, 4);
-  let bytes = bb.bytes;
-  return (
-    bytes[offset] |
-    (bytes[offset + 1] << 8) |
-    (bytes[offset + 2] << 16) |
-    (bytes[offset + 3] << 24)
-  );
-}
-
-function writeInt32(bb, value) {
-  let offset = grow(bb, 4);
-  let bytes = bb.bytes;
-  bytes[offset] = value;
-  bytes[offset + 1] = value >> 8;
-  bytes[offset + 2] = value >> 16;
-  bytes[offset + 3] = value >> 24;
-}
-
-function readInt64(bb, unsigned) {
-  return {
-    low: readInt32(bb),
-    high: readInt32(bb),
-    unsigned,
-  };
-}
-
-function writeInt64(bb, value) {
-  writeInt32(bb, value.low);
-  writeInt32(bb, value.high);
-}
-
-function readVarint32(bb) {
-  let c = 0;
-  let value = 0;
-  let b;
-  do {
-    b = readByte(bb);
-    if (c < 32) value |= (b & 0x7F) << c;
-    c += 7;
-  } while (b & 0x80);
-  return value;
-}
-
-function writeVarint32(bb, value) {
-  value >>>= 0;
-  while (value >= 0x80) {
-    writeByte(bb, (value & 0x7f) | 0x80);
-    value >>>= 7;
-  }
-  writeByte(bb, value);
-}
-
-function readVarint64(bb, unsigned) {
-  let part0 = 0;
-  let part1 = 0;
-  let part2 = 0;
-  let b;
-
-  b = readByte(bb); part0 = (b & 0x7F); if (b & 0x80) {
-    b = readByte(bb); part0 |= (b & 0x7F) << 7; if (b & 0x80) {
-      b = readByte(bb); part0 |= (b & 0x7F) << 14; if (b & 0x80) {
-        b = readByte(bb); part0 |= (b & 0x7F) << 21; if (b & 0x80) {
-
-          b = readByte(bb); part1 = (b & 0x7F); if (b & 0x80) {
-            b = readByte(bb); part1 |= (b & 0x7F) << 7; if (b & 0x80) {
-              b = readByte(bb); part1 |= (b & 0x7F) << 14; if (b & 0x80) {
-                b = readByte(bb); part1 |= (b & 0x7F) << 21; if (b & 0x80) {
-
-                  b = readByte(bb); part2 = (b & 0x7F); if (b & 0x80) {
-                    b = readByte(bb); part2 |= (b & 0x7F) << 7;
-                  }
+    /**
+     * Decodes a PacketHeader message from the specified reader or buffer.
+     * @function decode
+     * @memberof PacketHeader
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {PacketHeader} PacketHeader
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    PacketHeader.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.PacketHeader();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.systemUid = reader.uint32();
+                    break;
                 }
-              }
+            case 2: {
+                    message.msFromStart = reader.uint32();
+                    break;
+                }
+            case 3: {
+                    message.epoch = reader.uint32();
+                    break;
+                }
+            case 4: {
+                    message.packetIndex = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
             }
-          }
         }
-      }
+        return message;
+    };
+
+    /**
+     * Decodes a PacketHeader message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof PacketHeader
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {PacketHeader} PacketHeader
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    PacketHeader.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a PacketHeader message.
+     * @function verify
+     * @memberof PacketHeader
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    PacketHeader.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.systemUid != null && message.hasOwnProperty("systemUid"))
+            if (!$util.isInteger(message.systemUid))
+                return "systemUid: integer expected";
+        if (message.msFromStart != null && message.hasOwnProperty("msFromStart"))
+            if (!$util.isInteger(message.msFromStart))
+                return "msFromStart: integer expected";
+        if (message.epoch != null && message.hasOwnProperty("epoch"))
+            if (!$util.isInteger(message.epoch))
+                return "epoch: integer expected";
+        if (message.packetIndex != null && message.hasOwnProperty("packetIndex"))
+            if (!$util.isInteger(message.packetIndex))
+                return "packetIndex: integer expected";
+        return null;
+    };
+
+    /**
+     * Creates a PacketHeader message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof PacketHeader
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {PacketHeader} PacketHeader
+     */
+    PacketHeader.fromObject = function fromObject(object) {
+        if (object instanceof $root.PacketHeader)
+            return object;
+        let message = new $root.PacketHeader();
+        if (object.systemUid != null)
+            message.systemUid = object.systemUid >>> 0;
+        if (object.msFromStart != null)
+            message.msFromStart = object.msFromStart >>> 0;
+        if (object.epoch != null)
+            message.epoch = object.epoch >>> 0;
+        if (object.packetIndex != null)
+            message.packetIndex = object.packetIndex >>> 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a PacketHeader message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof PacketHeader
+     * @static
+     * @param {PacketHeader} message PacketHeader
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    PacketHeader.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.systemUid = 0;
+            object.msFromStart = 0;
+            object.epoch = 0;
+            object.packetIndex = 0;
+        }
+        if (message.systemUid != null && message.hasOwnProperty("systemUid"))
+            object.systemUid = message.systemUid;
+        if (message.msFromStart != null && message.hasOwnProperty("msFromStart"))
+            object.msFromStart = message.msFromStart;
+        if (message.epoch != null && message.hasOwnProperty("epoch"))
+            object.epoch = message.epoch;
+        if (message.packetIndex != null && message.hasOwnProperty("packetIndex"))
+            object.packetIndex = message.packetIndex;
+        return object;
+    };
+
+    /**
+     * Converts this PacketHeader to JSON.
+     * @function toJSON
+     * @memberof PacketHeader
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    PacketHeader.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for PacketHeader
+     * @function getTypeUrl
+     * @memberof PacketHeader
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    PacketHeader.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/PacketHeader";
+    };
+
+    return PacketHeader;
+})();
+
+export const TimeWindow = $root.TimeWindow = (() => {
+
+    /**
+     * Properties of a TimeWindow.
+     * @exports ITimeWindow
+     * @interface ITimeWindow
+     * @property {number|null} [startHour] TimeWindow startHour
+     * @property {number|null} [endHour] TimeWindow endHour
+     */
+
+    /**
+     * Constructs a new TimeWindow.
+     * @exports TimeWindow
+     * @classdesc Represents a TimeWindow.
+     * @implements ITimeWindow
+     * @constructor
+     * @param {ITimeWindow=} [properties] Properties to set
+     */
+    function TimeWindow(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
     }
-  }
 
-  return {
-    low: part0 | (part1 << 28),
-    high: (part1 >>> 4) | (part2 << 24),
-    unsigned,
-  };
-}
+    /**
+     * TimeWindow startHour.
+     * @member {number} startHour
+     * @memberof TimeWindow
+     * @instance
+     */
+    TimeWindow.prototype.startHour = 0;
 
-function writeVarint64(bb, value) {
-  let part0 = value.low >>> 0;
-  let part1 = ((value.low >>> 28) | (value.high << 4)) >>> 0;
-  let part2 = value.high >>> 24;
+    /**
+     * TimeWindow endHour.
+     * @member {number} endHour
+     * @memberof TimeWindow
+     * @instance
+     */
+    TimeWindow.prototype.endHour = 0;
 
-  // ref: src/google/protobuf/io/coded_stream.cc
-  let size =
-    part2 === 0 ?
-      part1 === 0 ?
-        part0 < 1 << 14 ?
-          part0 < 1 << 7 ? 1 : 2 :
-          part0 < 1 << 21 ? 3 : 4 :
-        part1 < 1 << 14 ?
-          part1 < 1 << 7 ? 5 : 6 :
-          part1 < 1 << 21 ? 7 : 8 :
-      part2 < 1 << 7 ? 9 : 10;
+    /**
+     * Creates a new TimeWindow instance using the specified properties.
+     * @function create
+     * @memberof TimeWindow
+     * @static
+     * @param {ITimeWindow=} [properties] Properties to set
+     * @returns {TimeWindow} TimeWindow instance
+     */
+    TimeWindow.create = function create(properties) {
+        return new TimeWindow(properties);
+    };
 
-  let offset = grow(bb, size);
-  let bytes = bb.bytes;
+    /**
+     * Encodes the specified TimeWindow message. Does not implicitly {@link TimeWindow.verify|verify} messages.
+     * @function encode
+     * @memberof TimeWindow
+     * @static
+     * @param {ITimeWindow} message TimeWindow message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    TimeWindow.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.startHour != null && Object.hasOwnProperty.call(message, "startHour"))
+            writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.startHour);
+        if (message.endHour != null && Object.hasOwnProperty.call(message, "endHour"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.endHour);
+        return writer;
+    };
 
-  switch (size) {
-    case 10: bytes[offset + 9] = (part2 >>> 7) & 0x01;
-    case 9: bytes[offset + 8] = size !== 9 ? part2 | 0x80 : part2 & 0x7F;
-    case 8: bytes[offset + 7] = size !== 8 ? (part1 >>> 21) | 0x80 : (part1 >>> 21) & 0x7F;
-    case 7: bytes[offset + 6] = size !== 7 ? (part1 >>> 14) | 0x80 : (part1 >>> 14) & 0x7F;
-    case 6: bytes[offset + 5] = size !== 6 ? (part1 >>> 7) | 0x80 : (part1 >>> 7) & 0x7F;
-    case 5: bytes[offset + 4] = size !== 5 ? part1 | 0x80 : part1 & 0x7F;
-    case 4: bytes[offset + 3] = size !== 4 ? (part0 >>> 21) | 0x80 : (part0 >>> 21) & 0x7F;
-    case 3: bytes[offset + 2] = size !== 3 ? (part0 >>> 14) | 0x80 : (part0 >>> 14) & 0x7F;
-    case 2: bytes[offset + 1] = size !== 2 ? (part0 >>> 7) | 0x80 : (part0 >>> 7) & 0x7F;
-    case 1: bytes[offset] = size !== 1 ? part0 | 0x80 : part0 & 0x7F;
-  }
-}
+    /**
+     * Encodes the specified TimeWindow message, length delimited. Does not implicitly {@link TimeWindow.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof TimeWindow
+     * @static
+     * @param {ITimeWindow} message TimeWindow message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    TimeWindow.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
 
-function readVarint32ZigZag(bb) {
-  let value = readVarint32(bb);
+    /**
+     * Decodes a TimeWindow message from the specified reader or buffer.
+     * @function decode
+     * @memberof TimeWindow
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {TimeWindow} TimeWindow
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    TimeWindow.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.TimeWindow();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.startHour = reader.uint32();
+                    break;
+                }
+            case 2: {
+                    message.endHour = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
 
-  // ref: src/google/protobuf/wire_format_lite.h
-  return (value >>> 1) ^ -(value & 1);
-}
+    /**
+     * Decodes a TimeWindow message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof TimeWindow
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {TimeWindow} TimeWindow
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    TimeWindow.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
 
-function writeVarint32ZigZag(bb, value) {
-  // ref: src/google/protobuf/wire_format_lite.h
-  writeVarint32(bb, (value << 1) ^ (value >> 31));
-}
+    /**
+     * Verifies a TimeWindow message.
+     * @function verify
+     * @memberof TimeWindow
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    TimeWindow.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.startHour != null && message.hasOwnProperty("startHour"))
+            if (!$util.isInteger(message.startHour))
+                return "startHour: integer expected";
+        if (message.endHour != null && message.hasOwnProperty("endHour"))
+            if (!$util.isInteger(message.endHour))
+                return "endHour: integer expected";
+        return null;
+    };
 
-function readVarint64ZigZag(bb) {
-  let value = readVarint64(bb, /* unsigned */ false);
-  let low = value.low;
-  let high = value.high;
-  let flip = -(low & 1);
+    /**
+     * Creates a TimeWindow message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof TimeWindow
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {TimeWindow} TimeWindow
+     */
+    TimeWindow.fromObject = function fromObject(object) {
+        if (object instanceof $root.TimeWindow)
+            return object;
+        let message = new $root.TimeWindow();
+        if (object.startHour != null)
+            message.startHour = object.startHour >>> 0;
+        if (object.endHour != null)
+            message.endHour = object.endHour >>> 0;
+        return message;
+    };
 
-  // ref: src/google/protobuf/wire_format_lite.h
-  return {
-    low: ((low >>> 1) | (high << 31)) ^ flip,
-    high: (high >>> 1) ^ flip,
-    unsigned: false,
-  };
-}
+    /**
+     * Creates a plain object from a TimeWindow message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof TimeWindow
+     * @static
+     * @param {TimeWindow} message TimeWindow
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    TimeWindow.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.startHour = 0;
+            object.endHour = 0;
+        }
+        if (message.startHour != null && message.hasOwnProperty("startHour"))
+            object.startHour = message.startHour;
+        if (message.endHour != null && message.hasOwnProperty("endHour"))
+            object.endHour = message.endHour;
+        return object;
+    };
 
-function writeVarint64ZigZag(bb, value) {
-  let low = value.low;
-  let high = value.high;
-  let flip = high >> 31;
+    /**
+     * Converts this TimeWindow to JSON.
+     * @function toJSON
+     * @memberof TimeWindow
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    TimeWindow.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
 
-  // ref: src/google/protobuf/wire_format_lite.h
-  writeVarint64(bb, {
-    low: (low << 1) ^ flip,
-    high: ((high << 1) | (low >>> 31)) ^ flip,
-    unsigned: false,
-  });
-}
+    /**
+     * Gets the default type url for TimeWindow
+     * @function getTypeUrl
+     * @memberof TimeWindow
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    TimeWindow.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/TimeWindow";
+    };
+
+    return TimeWindow;
+})();
+
+export const SamplingConfig = $root.SamplingConfig = (() => {
+
+    /**
+     * Properties of a SamplingConfig.
+     * @exports ISamplingConfig
+     * @interface ISamplingConfig
+     * @property {boolean|null} [enabled] SamplingConfig enabled
+     * @property {number|null} [sampleIntervalMin] SamplingConfig sampleIntervalMin
+     */
+
+    /**
+     * Constructs a new SamplingConfig.
+     * @exports SamplingConfig
+     * @classdesc Represents a SamplingConfig.
+     * @implements ISamplingConfig
+     * @constructor
+     * @param {ISamplingConfig=} [properties] Properties to set
+     */
+    function SamplingConfig(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * SamplingConfig enabled.
+     * @member {boolean} enabled
+     * @memberof SamplingConfig
+     * @instance
+     */
+    SamplingConfig.prototype.enabled = false;
+
+    /**
+     * SamplingConfig sampleIntervalMin.
+     * @member {number} sampleIntervalMin
+     * @memberof SamplingConfig
+     * @instance
+     */
+    SamplingConfig.prototype.sampleIntervalMin = 0;
+
+    /**
+     * Creates a new SamplingConfig instance using the specified properties.
+     * @function create
+     * @memberof SamplingConfig
+     * @static
+     * @param {ISamplingConfig=} [properties] Properties to set
+     * @returns {SamplingConfig} SamplingConfig instance
+     */
+    SamplingConfig.create = function create(properties) {
+        return new SamplingConfig(properties);
+    };
+
+    /**
+     * Encodes the specified SamplingConfig message. Does not implicitly {@link SamplingConfig.verify|verify} messages.
+     * @function encode
+     * @memberof SamplingConfig
+     * @static
+     * @param {ISamplingConfig} message SamplingConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    SamplingConfig.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.enabled != null && Object.hasOwnProperty.call(message, "enabled"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enabled);
+        if (message.sampleIntervalMin != null && Object.hasOwnProperty.call(message, "sampleIntervalMin"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.sampleIntervalMin);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified SamplingConfig message, length delimited. Does not implicitly {@link SamplingConfig.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof SamplingConfig
+     * @static
+     * @param {ISamplingConfig} message SamplingConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    SamplingConfig.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a SamplingConfig message from the specified reader or buffer.
+     * @function decode
+     * @memberof SamplingConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {SamplingConfig} SamplingConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    SamplingConfig.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.SamplingConfig();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.enabled = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.sampleIntervalMin = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a SamplingConfig message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof SamplingConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {SamplingConfig} SamplingConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    SamplingConfig.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a SamplingConfig message.
+     * @function verify
+     * @memberof SamplingConfig
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    SamplingConfig.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            if (typeof message.enabled !== "boolean")
+                return "enabled: boolean expected";
+        if (message.sampleIntervalMin != null && message.hasOwnProperty("sampleIntervalMin"))
+            if (!$util.isInteger(message.sampleIntervalMin))
+                return "sampleIntervalMin: integer expected";
+        return null;
+    };
+
+    /**
+     * Creates a SamplingConfig message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof SamplingConfig
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {SamplingConfig} SamplingConfig
+     */
+    SamplingConfig.fromObject = function fromObject(object) {
+        if (object instanceof $root.SamplingConfig)
+            return object;
+        let message = new $root.SamplingConfig();
+        if (object.enabled != null)
+            message.enabled = Boolean(object.enabled);
+        if (object.sampleIntervalMin != null)
+            message.sampleIntervalMin = object.sampleIntervalMin >>> 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a SamplingConfig message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof SamplingConfig
+     * @static
+     * @param {SamplingConfig} message SamplingConfig
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    SamplingConfig.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.enabled = false;
+            object.sampleIntervalMin = 0;
+        }
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            object.enabled = message.enabled;
+        if (message.sampleIntervalMin != null && message.hasOwnProperty("sampleIntervalMin"))
+            object.sampleIntervalMin = message.sampleIntervalMin;
+        return object;
+    };
+
+    /**
+     * Converts this SamplingConfig to JSON.
+     * @function toJSON
+     * @memberof SamplingConfig
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    SamplingConfig.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for SamplingConfig
+     * @function getTypeUrl
+     * @memberof SamplingConfig
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    SamplingConfig.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/SamplingConfig";
+    };
+
+    return SamplingConfig;
+})();
+
+export const GPSConfig = $root.GPSConfig = (() => {
+
+    /**
+     * Properties of a GPSConfig.
+     * @exports IGPSConfig
+     * @interface IGPSConfig
+     * @property {boolean|null} [enabled] GPSConfig enabled
+     * @property {number|null} [sampleIntervalMin] GPSConfig sampleIntervalMin
+     * @property {number|null} [accuracy] GPSConfig accuracy
+     */
+
+    /**
+     * Constructs a new GPSConfig.
+     * @exports GPSConfig
+     * @classdesc Represents a GPSConfig.
+     * @implements IGPSConfig
+     * @constructor
+     * @param {IGPSConfig=} [properties] Properties to set
+     */
+    function GPSConfig(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * GPSConfig enabled.
+     * @member {boolean} enabled
+     * @memberof GPSConfig
+     * @instance
+     */
+    GPSConfig.prototype.enabled = false;
+
+    /**
+     * GPSConfig sampleIntervalMin.
+     * @member {number} sampleIntervalMin
+     * @memberof GPSConfig
+     * @instance
+     */
+    GPSConfig.prototype.sampleIntervalMin = 0;
+
+    /**
+     * GPSConfig accuracy.
+     * @member {number} accuracy
+     * @memberof GPSConfig
+     * @instance
+     */
+    GPSConfig.prototype.accuracy = 0;
+
+    /**
+     * Creates a new GPSConfig instance using the specified properties.
+     * @function create
+     * @memberof GPSConfig
+     * @static
+     * @param {IGPSConfig=} [properties] Properties to set
+     * @returns {GPSConfig} GPSConfig instance
+     */
+    GPSConfig.create = function create(properties) {
+        return new GPSConfig(properties);
+    };
+
+    /**
+     * Encodes the specified GPSConfig message. Does not implicitly {@link GPSConfig.verify|verify} messages.
+     * @function encode
+     * @memberof GPSConfig
+     * @static
+     * @param {IGPSConfig} message GPSConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    GPSConfig.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.enabled != null && Object.hasOwnProperty.call(message, "enabled"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enabled);
+        if (message.sampleIntervalMin != null && Object.hasOwnProperty.call(message, "sampleIntervalMin"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.sampleIntervalMin);
+        if (message.accuracy != null && Object.hasOwnProperty.call(message, "accuracy"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.accuracy);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified GPSConfig message, length delimited. Does not implicitly {@link GPSConfig.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof GPSConfig
+     * @static
+     * @param {IGPSConfig} message GPSConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    GPSConfig.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a GPSConfig message from the specified reader or buffer.
+     * @function decode
+     * @memberof GPSConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {GPSConfig} GPSConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    GPSConfig.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.GPSConfig();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.enabled = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.sampleIntervalMin = reader.uint32();
+                    break;
+                }
+            case 3: {
+                    message.accuracy = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a GPSConfig message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof GPSConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {GPSConfig} GPSConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    GPSConfig.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a GPSConfig message.
+     * @function verify
+     * @memberof GPSConfig
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    GPSConfig.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            if (typeof message.enabled !== "boolean")
+                return "enabled: boolean expected";
+        if (message.sampleIntervalMin != null && message.hasOwnProperty("sampleIntervalMin"))
+            if (!$util.isInteger(message.sampleIntervalMin))
+                return "sampleIntervalMin: integer expected";
+        if (message.accuracy != null && message.hasOwnProperty("accuracy"))
+            if (!$util.isInteger(message.accuracy))
+                return "accuracy: integer expected";
+        return null;
+    };
+
+    /**
+     * Creates a GPSConfig message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof GPSConfig
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {GPSConfig} GPSConfig
+     */
+    GPSConfig.fromObject = function fromObject(object) {
+        if (object instanceof $root.GPSConfig)
+            return object;
+        let message = new $root.GPSConfig();
+        if (object.enabled != null)
+            message.enabled = Boolean(object.enabled);
+        if (object.sampleIntervalMin != null)
+            message.sampleIntervalMin = object.sampleIntervalMin >>> 0;
+        if (object.accuracy != null)
+            message.accuracy = object.accuracy >>> 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a GPSConfig message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof GPSConfig
+     * @static
+     * @param {GPSConfig} message GPSConfig
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    GPSConfig.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.enabled = false;
+            object.sampleIntervalMin = 0;
+            object.accuracy = 0;
+        }
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            object.enabled = message.enabled;
+        if (message.sampleIntervalMin != null && message.hasOwnProperty("sampleIntervalMin"))
+            object.sampleIntervalMin = message.sampleIntervalMin;
+        if (message.accuracy != null && message.hasOwnProperty("accuracy"))
+            object.accuracy = message.accuracy;
+        return object;
+    };
+
+    /**
+     * Converts this GPSConfig to JSON.
+     * @function toJSON
+     * @memberof GPSConfig
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    GPSConfig.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for GPSConfig
+     * @function getTypeUrl
+     * @memberof GPSConfig
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    GPSConfig.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/GPSConfig";
+    };
+
+    return GPSConfig;
+})();
+
+/**
+ * RadioRegion enum.
+ * @exports RadioRegion
+ * @enum {number}
+ * @property {number} REGION_US915=0 REGION_US915 value
+ * @property {number} REGION_AU915=1 REGION_AU915 value
+ * @property {number} REGION_EU868=2 REGION_EU868 value
+ */
+export const RadioRegion = $root.RadioRegion = (() => {
+    const valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "REGION_US915"] = 0;
+    values[valuesById[1] = "REGION_AU915"] = 1;
+    values[valuesById[2] = "REGION_EU868"] = 2;
+    return values;
+})();
+
+/**
+ * RadioAuth enum.
+ * @exports RadioAuth
+ * @enum {number}
+ * @property {number} AUTH_OTAA=0 AUTH_OTAA value
+ * @property {number} AUTH_ABP=1 AUTH_ABP value
+ */
+export const RadioAuth = $root.RadioAuth = (() => {
+    const valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "AUTH_OTAA"] = 0;
+    values[valuesById[1] = "AUTH_ABP"] = 1;
+    return values;
+})();
+
+export const RadioOTAA = $root.RadioOTAA = (() => {
+
+    /**
+     * Properties of a RadioOTAA.
+     * @exports IRadioOTAA
+     * @interface IRadioOTAA
+     * @property {Uint8Array|null} [devEui] RadioOTAA devEui
+     * @property {Uint8Array|null} [joinEui] RadioOTAA joinEui
+     * @property {Uint8Array|null} [appKey] RadioOTAA appKey
+     */
+
+    /**
+     * Constructs a new RadioOTAA.
+     * @exports RadioOTAA
+     * @classdesc Represents a RadioOTAA.
+     * @implements IRadioOTAA
+     * @constructor
+     * @param {IRadioOTAA=} [properties] Properties to set
+     */
+    function RadioOTAA(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * RadioOTAA devEui.
+     * @member {Uint8Array} devEui
+     * @memberof RadioOTAA
+     * @instance
+     */
+    RadioOTAA.prototype.devEui = $util.newBuffer([]);
+
+    /**
+     * RadioOTAA joinEui.
+     * @member {Uint8Array} joinEui
+     * @memberof RadioOTAA
+     * @instance
+     */
+    RadioOTAA.prototype.joinEui = $util.newBuffer([]);
+
+    /**
+     * RadioOTAA appKey.
+     * @member {Uint8Array} appKey
+     * @memberof RadioOTAA
+     * @instance
+     */
+    RadioOTAA.prototype.appKey = $util.newBuffer([]);
+
+    /**
+     * Creates a new RadioOTAA instance using the specified properties.
+     * @function create
+     * @memberof RadioOTAA
+     * @static
+     * @param {IRadioOTAA=} [properties] Properties to set
+     * @returns {RadioOTAA} RadioOTAA instance
+     */
+    RadioOTAA.create = function create(properties) {
+        return new RadioOTAA(properties);
+    };
+
+    /**
+     * Encodes the specified RadioOTAA message. Does not implicitly {@link RadioOTAA.verify|verify} messages.
+     * @function encode
+     * @memberof RadioOTAA
+     * @static
+     * @param {IRadioOTAA} message RadioOTAA message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    RadioOTAA.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.devEui != null && Object.hasOwnProperty.call(message, "devEui"))
+            writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.devEui);
+        if (message.joinEui != null && Object.hasOwnProperty.call(message, "joinEui"))
+            writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.joinEui);
+        if (message.appKey != null && Object.hasOwnProperty.call(message, "appKey"))
+            writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.appKey);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified RadioOTAA message, length delimited. Does not implicitly {@link RadioOTAA.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof RadioOTAA
+     * @static
+     * @param {IRadioOTAA} message RadioOTAA message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    RadioOTAA.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a RadioOTAA message from the specified reader or buffer.
+     * @function decode
+     * @memberof RadioOTAA
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {RadioOTAA} RadioOTAA
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    RadioOTAA.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioOTAA();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.devEui = reader.bytes();
+                    break;
+                }
+            case 2: {
+                    message.joinEui = reader.bytes();
+                    break;
+                }
+            case 3: {
+                    message.appKey = reader.bytes();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a RadioOTAA message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof RadioOTAA
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {RadioOTAA} RadioOTAA
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    RadioOTAA.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a RadioOTAA message.
+     * @function verify
+     * @memberof RadioOTAA
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    RadioOTAA.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.devEui != null && message.hasOwnProperty("devEui"))
+            if (!(message.devEui && typeof message.devEui.length === "number" || $util.isString(message.devEui)))
+                return "devEui: buffer expected";
+        if (message.joinEui != null && message.hasOwnProperty("joinEui"))
+            if (!(message.joinEui && typeof message.joinEui.length === "number" || $util.isString(message.joinEui)))
+                return "joinEui: buffer expected";
+        if (message.appKey != null && message.hasOwnProperty("appKey"))
+            if (!(message.appKey && typeof message.appKey.length === "number" || $util.isString(message.appKey)))
+                return "appKey: buffer expected";
+        return null;
+    };
+
+    /**
+     * Creates a RadioOTAA message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof RadioOTAA
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {RadioOTAA} RadioOTAA
+     */
+    RadioOTAA.fromObject = function fromObject(object) {
+        if (object instanceof $root.RadioOTAA)
+            return object;
+        let message = new $root.RadioOTAA();
+        if (object.devEui != null)
+            if (typeof object.devEui === "string")
+                $util.base64.decode(object.devEui, message.devEui = $util.newBuffer($util.base64.length(object.devEui)), 0);
+            else if (object.devEui.length >= 0)
+                message.devEui = object.devEui;
+        if (object.joinEui != null)
+            if (typeof object.joinEui === "string")
+                $util.base64.decode(object.joinEui, message.joinEui = $util.newBuffer($util.base64.length(object.joinEui)), 0);
+            else if (object.joinEui.length >= 0)
+                message.joinEui = object.joinEui;
+        if (object.appKey != null)
+            if (typeof object.appKey === "string")
+                $util.base64.decode(object.appKey, message.appKey = $util.newBuffer($util.base64.length(object.appKey)), 0);
+            else if (object.appKey.length >= 0)
+                message.appKey = object.appKey;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a RadioOTAA message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof RadioOTAA
+     * @static
+     * @param {RadioOTAA} message RadioOTAA
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    RadioOTAA.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            if (options.bytes === String)
+                object.devEui = "";
+            else {
+                object.devEui = [];
+                if (options.bytes !== Array)
+                    object.devEui = $util.newBuffer(object.devEui);
+            }
+            if (options.bytes === String)
+                object.joinEui = "";
+            else {
+                object.joinEui = [];
+                if (options.bytes !== Array)
+                    object.joinEui = $util.newBuffer(object.joinEui);
+            }
+            if (options.bytes === String)
+                object.appKey = "";
+            else {
+                object.appKey = [];
+                if (options.bytes !== Array)
+                    object.appKey = $util.newBuffer(object.appKey);
+            }
+        }
+        if (message.devEui != null && message.hasOwnProperty("devEui"))
+            object.devEui = options.bytes === String ? $util.base64.encode(message.devEui, 0, message.devEui.length) : options.bytes === Array ? Array.prototype.slice.call(message.devEui) : message.devEui;
+        if (message.joinEui != null && message.hasOwnProperty("joinEui"))
+            object.joinEui = options.bytes === String ? $util.base64.encode(message.joinEui, 0, message.joinEui.length) : options.bytes === Array ? Array.prototype.slice.call(message.joinEui) : message.joinEui;
+        if (message.appKey != null && message.hasOwnProperty("appKey"))
+            object.appKey = options.bytes === String ? $util.base64.encode(message.appKey, 0, message.appKey.length) : options.bytes === Array ? Array.prototype.slice.call(message.appKey) : message.appKey;
+        return object;
+    };
+
+    /**
+     * Converts this RadioOTAA to JSON.
+     * @function toJSON
+     * @memberof RadioOTAA
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    RadioOTAA.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for RadioOTAA
+     * @function getTypeUrl
+     * @memberof RadioOTAA
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    RadioOTAA.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/RadioOTAA";
+    };
+
+    return RadioOTAA;
+})();
+
+export const RadioABP = $root.RadioABP = (() => {
+
+    /**
+     * Properties of a RadioABP.
+     * @exports IRadioABP
+     * @interface IRadioABP
+     * @property {Uint8Array|null} [devAddr] RadioABP devAddr
+     * @property {Uint8Array|null} [nwkSKey] RadioABP nwkSKey
+     * @property {Uint8Array|null} [appSKey] RadioABP appSKey
+     * @property {Uint8Array|null} [fNwkSIntKey] RadioABP fNwkSIntKey
+     * @property {Uint8Array|null} [sNwkSIntKey] RadioABP sNwkSIntKey
+     */
+
+    /**
+     * Constructs a new RadioABP.
+     * @exports RadioABP
+     * @classdesc Represents a RadioABP.
+     * @implements IRadioABP
+     * @constructor
+     * @param {IRadioABP=} [properties] Properties to set
+     */
+    function RadioABP(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * RadioABP devAddr.
+     * @member {Uint8Array} devAddr
+     * @memberof RadioABP
+     * @instance
+     */
+    RadioABP.prototype.devAddr = $util.newBuffer([]);
+
+    /**
+     * RadioABP nwkSKey.
+     * @member {Uint8Array} nwkSKey
+     * @memberof RadioABP
+     * @instance
+     */
+    RadioABP.prototype.nwkSKey = $util.newBuffer([]);
+
+    /**
+     * RadioABP appSKey.
+     * @member {Uint8Array} appSKey
+     * @memberof RadioABP
+     * @instance
+     */
+    RadioABP.prototype.appSKey = $util.newBuffer([]);
+
+    /**
+     * RadioABP fNwkSIntKey.
+     * @member {Uint8Array} fNwkSIntKey
+     * @memberof RadioABP
+     * @instance
+     */
+    RadioABP.prototype.fNwkSIntKey = $util.newBuffer([]);
+
+    /**
+     * RadioABP sNwkSIntKey.
+     * @member {Uint8Array} sNwkSIntKey
+     * @memberof RadioABP
+     * @instance
+     */
+    RadioABP.prototype.sNwkSIntKey = $util.newBuffer([]);
+
+    /**
+     * Creates a new RadioABP instance using the specified properties.
+     * @function create
+     * @memberof RadioABP
+     * @static
+     * @param {IRadioABP=} [properties] Properties to set
+     * @returns {RadioABP} RadioABP instance
+     */
+    RadioABP.create = function create(properties) {
+        return new RadioABP(properties);
+    };
+
+    /**
+     * Encodes the specified RadioABP message. Does not implicitly {@link RadioABP.verify|verify} messages.
+     * @function encode
+     * @memberof RadioABP
+     * @static
+     * @param {IRadioABP} message RadioABP message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    RadioABP.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.devAddr != null && Object.hasOwnProperty.call(message, "devAddr"))
+            writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.devAddr);
+        if (message.nwkSKey != null && Object.hasOwnProperty.call(message, "nwkSKey"))
+            writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.nwkSKey);
+        if (message.appSKey != null && Object.hasOwnProperty.call(message, "appSKey"))
+            writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.appSKey);
+        if (message.fNwkSIntKey != null && Object.hasOwnProperty.call(message, "fNwkSIntKey"))
+            writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.fNwkSIntKey);
+        if (message.sNwkSIntKey != null && Object.hasOwnProperty.call(message, "sNwkSIntKey"))
+            writer.uint32(/* id 5, wireType 2 =*/42).bytes(message.sNwkSIntKey);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified RadioABP message, length delimited. Does not implicitly {@link RadioABP.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof RadioABP
+     * @static
+     * @param {IRadioABP} message RadioABP message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    RadioABP.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a RadioABP message from the specified reader or buffer.
+     * @function decode
+     * @memberof RadioABP
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {RadioABP} RadioABP
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    RadioABP.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioABP();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.devAddr = reader.bytes();
+                    break;
+                }
+            case 2: {
+                    message.nwkSKey = reader.bytes();
+                    break;
+                }
+            case 3: {
+                    message.appSKey = reader.bytes();
+                    break;
+                }
+            case 4: {
+                    message.fNwkSIntKey = reader.bytes();
+                    break;
+                }
+            case 5: {
+                    message.sNwkSIntKey = reader.bytes();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a RadioABP message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof RadioABP
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {RadioABP} RadioABP
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    RadioABP.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a RadioABP message.
+     * @function verify
+     * @memberof RadioABP
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    RadioABP.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.devAddr != null && message.hasOwnProperty("devAddr"))
+            if (!(message.devAddr && typeof message.devAddr.length === "number" || $util.isString(message.devAddr)))
+                return "devAddr: buffer expected";
+        if (message.nwkSKey != null && message.hasOwnProperty("nwkSKey"))
+            if (!(message.nwkSKey && typeof message.nwkSKey.length === "number" || $util.isString(message.nwkSKey)))
+                return "nwkSKey: buffer expected";
+        if (message.appSKey != null && message.hasOwnProperty("appSKey"))
+            if (!(message.appSKey && typeof message.appSKey.length === "number" || $util.isString(message.appSKey)))
+                return "appSKey: buffer expected";
+        if (message.fNwkSIntKey != null && message.hasOwnProperty("fNwkSIntKey"))
+            if (!(message.fNwkSIntKey && typeof message.fNwkSIntKey.length === "number" || $util.isString(message.fNwkSIntKey)))
+                return "fNwkSIntKey: buffer expected";
+        if (message.sNwkSIntKey != null && message.hasOwnProperty("sNwkSIntKey"))
+            if (!(message.sNwkSIntKey && typeof message.sNwkSIntKey.length === "number" || $util.isString(message.sNwkSIntKey)))
+                return "sNwkSIntKey: buffer expected";
+        return null;
+    };
+
+    /**
+     * Creates a RadioABP message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof RadioABP
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {RadioABP} RadioABP
+     */
+    RadioABP.fromObject = function fromObject(object) {
+        if (object instanceof $root.RadioABP)
+            return object;
+        let message = new $root.RadioABP();
+        if (object.devAddr != null)
+            if (typeof object.devAddr === "string")
+                $util.base64.decode(object.devAddr, message.devAddr = $util.newBuffer($util.base64.length(object.devAddr)), 0);
+            else if (object.devAddr.length >= 0)
+                message.devAddr = object.devAddr;
+        if (object.nwkSKey != null)
+            if (typeof object.nwkSKey === "string")
+                $util.base64.decode(object.nwkSKey, message.nwkSKey = $util.newBuffer($util.base64.length(object.nwkSKey)), 0);
+            else if (object.nwkSKey.length >= 0)
+                message.nwkSKey = object.nwkSKey;
+        if (object.appSKey != null)
+            if (typeof object.appSKey === "string")
+                $util.base64.decode(object.appSKey, message.appSKey = $util.newBuffer($util.base64.length(object.appSKey)), 0);
+            else if (object.appSKey.length >= 0)
+                message.appSKey = object.appSKey;
+        if (object.fNwkSIntKey != null)
+            if (typeof object.fNwkSIntKey === "string")
+                $util.base64.decode(object.fNwkSIntKey, message.fNwkSIntKey = $util.newBuffer($util.base64.length(object.fNwkSIntKey)), 0);
+            else if (object.fNwkSIntKey.length >= 0)
+                message.fNwkSIntKey = object.fNwkSIntKey;
+        if (object.sNwkSIntKey != null)
+            if (typeof object.sNwkSIntKey === "string")
+                $util.base64.decode(object.sNwkSIntKey, message.sNwkSIntKey = $util.newBuffer($util.base64.length(object.sNwkSIntKey)), 0);
+            else if (object.sNwkSIntKey.length >= 0)
+                message.sNwkSIntKey = object.sNwkSIntKey;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a RadioABP message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof RadioABP
+     * @static
+     * @param {RadioABP} message RadioABP
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    RadioABP.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            if (options.bytes === String)
+                object.devAddr = "";
+            else {
+                object.devAddr = [];
+                if (options.bytes !== Array)
+                    object.devAddr = $util.newBuffer(object.devAddr);
+            }
+            if (options.bytes === String)
+                object.nwkSKey = "";
+            else {
+                object.nwkSKey = [];
+                if (options.bytes !== Array)
+                    object.nwkSKey = $util.newBuffer(object.nwkSKey);
+            }
+            if (options.bytes === String)
+                object.appSKey = "";
+            else {
+                object.appSKey = [];
+                if (options.bytes !== Array)
+                    object.appSKey = $util.newBuffer(object.appSKey);
+            }
+            if (options.bytes === String)
+                object.fNwkSIntKey = "";
+            else {
+                object.fNwkSIntKey = [];
+                if (options.bytes !== Array)
+                    object.fNwkSIntKey = $util.newBuffer(object.fNwkSIntKey);
+            }
+            if (options.bytes === String)
+                object.sNwkSIntKey = "";
+            else {
+                object.sNwkSIntKey = [];
+                if (options.bytes !== Array)
+                    object.sNwkSIntKey = $util.newBuffer(object.sNwkSIntKey);
+            }
+        }
+        if (message.devAddr != null && message.hasOwnProperty("devAddr"))
+            object.devAddr = options.bytes === String ? $util.base64.encode(message.devAddr, 0, message.devAddr.length) : options.bytes === Array ? Array.prototype.slice.call(message.devAddr) : message.devAddr;
+        if (message.nwkSKey != null && message.hasOwnProperty("nwkSKey"))
+            object.nwkSKey = options.bytes === String ? $util.base64.encode(message.nwkSKey, 0, message.nwkSKey.length) : options.bytes === Array ? Array.prototype.slice.call(message.nwkSKey) : message.nwkSKey;
+        if (message.appSKey != null && message.hasOwnProperty("appSKey"))
+            object.appSKey = options.bytes === String ? $util.base64.encode(message.appSKey, 0, message.appSKey.length) : options.bytes === Array ? Array.prototype.slice.call(message.appSKey) : message.appSKey;
+        if (message.fNwkSIntKey != null && message.hasOwnProperty("fNwkSIntKey"))
+            object.fNwkSIntKey = options.bytes === String ? $util.base64.encode(message.fNwkSIntKey, 0, message.fNwkSIntKey.length) : options.bytes === Array ? Array.prototype.slice.call(message.fNwkSIntKey) : message.fNwkSIntKey;
+        if (message.sNwkSIntKey != null && message.hasOwnProperty("sNwkSIntKey"))
+            object.sNwkSIntKey = options.bytes === String ? $util.base64.encode(message.sNwkSIntKey, 0, message.sNwkSIntKey.length) : options.bytes === Array ? Array.prototype.slice.call(message.sNwkSIntKey) : message.sNwkSIntKey;
+        return object;
+    };
+
+    /**
+     * Converts this RadioABP to JSON.
+     * @function toJSON
+     * @memberof RadioABP
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    RadioABP.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for RadioABP
+     * @function getTypeUrl
+     * @memberof RadioABP
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    RadioABP.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/RadioABP";
+    };
+
+    return RadioABP;
+})();
+
+export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
+
+    /**
+     * Properties of a RadioConfigPacket.
+     * @exports IRadioConfigPacket
+     * @interface IRadioConfigPacket
+     * @property {boolean|null} [enabled] RadioConfigPacket enabled
+     * @property {RadioRegion|null} [region] RadioConfigPacket region
+     * @property {RadioAuth|null} [auth] RadioConfigPacket auth
+     * @property {IRadioOTAA|null} [otaa] RadioConfigPacket otaa
+     * @property {IRadioABP|null} [abp] RadioConfigPacket abp
+     * @property {number|null} [transmitIntervalMin] RadioConfigPacket transmitIntervalMin
+     * @property {boolean|null} [txOnlyOnNewGpsFix] RadioConfigPacket txOnlyOnNewGpsFix
+     * @property {number|null} [txPowerDbm] RadioConfigPacket txPowerDbm
+     */
+
+    /**
+     * Constructs a new RadioConfigPacket.
+     * @exports RadioConfigPacket
+     * @classdesc Represents a RadioConfigPacket.
+     * @implements IRadioConfigPacket
+     * @constructor
+     * @param {IRadioConfigPacket=} [properties] Properties to set
+     */
+    function RadioConfigPacket(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * RadioConfigPacket enabled.
+     * @member {boolean} enabled
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    RadioConfigPacket.prototype.enabled = false;
+
+    /**
+     * RadioConfigPacket region.
+     * @member {RadioRegion} region
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    RadioConfigPacket.prototype.region = 0;
+
+    /**
+     * RadioConfigPacket auth.
+     * @member {RadioAuth} auth
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    RadioConfigPacket.prototype.auth = 0;
+
+    /**
+     * RadioConfigPacket otaa.
+     * @member {IRadioOTAA|null|undefined} otaa
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    RadioConfigPacket.prototype.otaa = null;
+
+    /**
+     * RadioConfigPacket abp.
+     * @member {IRadioABP|null|undefined} abp
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    RadioConfigPacket.prototype.abp = null;
+
+    /**
+     * RadioConfigPacket transmitIntervalMin.
+     * @member {number} transmitIntervalMin
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    RadioConfigPacket.prototype.transmitIntervalMin = 0;
+
+    /**
+     * RadioConfigPacket txOnlyOnNewGpsFix.
+     * @member {boolean} txOnlyOnNewGpsFix
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    RadioConfigPacket.prototype.txOnlyOnNewGpsFix = false;
+
+    /**
+     * RadioConfigPacket txPowerDbm.
+     * @member {number} txPowerDbm
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    RadioConfigPacket.prototype.txPowerDbm = 0;
+
+    // OneOf field names bound to virtual getters and setters
+    let $oneOfFields;
+
+    /**
+     * RadioConfigPacket credentials.
+     * @member {"otaa"|"abp"|undefined} credentials
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    Object.defineProperty(RadioConfigPacket.prototype, "credentials", {
+        get: $util.oneOfGetter($oneOfFields = ["otaa", "abp"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * Creates a new RadioConfigPacket instance using the specified properties.
+     * @function create
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {IRadioConfigPacket=} [properties] Properties to set
+     * @returns {RadioConfigPacket} RadioConfigPacket instance
+     */
+    RadioConfigPacket.create = function create(properties) {
+        return new RadioConfigPacket(properties);
+    };
+
+    /**
+     * Encodes the specified RadioConfigPacket message. Does not implicitly {@link RadioConfigPacket.verify|verify} messages.
+     * @function encode
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {IRadioConfigPacket} message RadioConfigPacket message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    RadioConfigPacket.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.enabled != null && Object.hasOwnProperty.call(message, "enabled"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enabled);
+        if (message.region != null && Object.hasOwnProperty.call(message, "region"))
+            writer.uint32(/* id 2, wireType 0 =*/16).int32(message.region);
+        if (message.auth != null && Object.hasOwnProperty.call(message, "auth"))
+            writer.uint32(/* id 3, wireType 0 =*/24).int32(message.auth);
+        if (message.otaa != null && Object.hasOwnProperty.call(message, "otaa"))
+            $root.RadioOTAA.encode(message.otaa, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+        if (message.abp != null && Object.hasOwnProperty.call(message, "abp"))
+            $root.RadioABP.encode(message.abp, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+        if (message.transmitIntervalMin != null && Object.hasOwnProperty.call(message, "transmitIntervalMin"))
+            writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.transmitIntervalMin);
+        if (message.txOnlyOnNewGpsFix != null && Object.hasOwnProperty.call(message, "txOnlyOnNewGpsFix"))
+            writer.uint32(/* id 7, wireType 0 =*/56).bool(message.txOnlyOnNewGpsFix);
+        if (message.txPowerDbm != null && Object.hasOwnProperty.call(message, "txPowerDbm"))
+            writer.uint32(/* id 8, wireType 0 =*/64).int32(message.txPowerDbm);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified RadioConfigPacket message, length delimited. Does not implicitly {@link RadioConfigPacket.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {IRadioConfigPacket} message RadioConfigPacket message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    RadioConfigPacket.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a RadioConfigPacket message from the specified reader or buffer.
+     * @function decode
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {RadioConfigPacket} RadioConfigPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    RadioConfigPacket.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioConfigPacket();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.enabled = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.region = reader.int32();
+                    break;
+                }
+            case 3: {
+                    message.auth = reader.int32();
+                    break;
+                }
+            case 4: {
+                    message.otaa = $root.RadioOTAA.decode(reader, reader.uint32());
+                    break;
+                }
+            case 5: {
+                    message.abp = $root.RadioABP.decode(reader, reader.uint32());
+                    break;
+                }
+            case 6: {
+                    message.transmitIntervalMin = reader.uint32();
+                    break;
+                }
+            case 7: {
+                    message.txOnlyOnNewGpsFix = reader.bool();
+                    break;
+                }
+            case 8: {
+                    message.txPowerDbm = reader.int32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a RadioConfigPacket message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {RadioConfigPacket} RadioConfigPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    RadioConfigPacket.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a RadioConfigPacket message.
+     * @function verify
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    RadioConfigPacket.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        let properties = {};
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            if (typeof message.enabled !== "boolean")
+                return "enabled: boolean expected";
+        if (message.region != null && message.hasOwnProperty("region"))
+            switch (message.region) {
+            default:
+                return "region: enum value expected";
+            case 0:
+            case 1:
+            case 2:
+                break;
+            }
+        if (message.auth != null && message.hasOwnProperty("auth"))
+            switch (message.auth) {
+            default:
+                return "auth: enum value expected";
+            case 0:
+            case 1:
+                break;
+            }
+        if (message.otaa != null && message.hasOwnProperty("otaa")) {
+            properties.credentials = 1;
+            {
+                let error = $root.RadioOTAA.verify(message.otaa);
+                if (error)
+                    return "otaa." + error;
+            }
+        }
+        if (message.abp != null && message.hasOwnProperty("abp")) {
+            if (properties.credentials === 1)
+                return "credentials: multiple values";
+            properties.credentials = 1;
+            {
+                let error = $root.RadioABP.verify(message.abp);
+                if (error)
+                    return "abp." + error;
+            }
+        }
+        if (message.transmitIntervalMin != null && message.hasOwnProperty("transmitIntervalMin"))
+            if (!$util.isInteger(message.transmitIntervalMin))
+                return "transmitIntervalMin: integer expected";
+        if (message.txOnlyOnNewGpsFix != null && message.hasOwnProperty("txOnlyOnNewGpsFix"))
+            if (typeof message.txOnlyOnNewGpsFix !== "boolean")
+                return "txOnlyOnNewGpsFix: boolean expected";
+        if (message.txPowerDbm != null && message.hasOwnProperty("txPowerDbm"))
+            if (!$util.isInteger(message.txPowerDbm))
+                return "txPowerDbm: integer expected";
+        return null;
+    };
+
+    /**
+     * Creates a RadioConfigPacket message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {RadioConfigPacket} RadioConfigPacket
+     */
+    RadioConfigPacket.fromObject = function fromObject(object) {
+        if (object instanceof $root.RadioConfigPacket)
+            return object;
+        let message = new $root.RadioConfigPacket();
+        if (object.enabled != null)
+            message.enabled = Boolean(object.enabled);
+        switch (object.region) {
+        default:
+            if (typeof object.region === "number") {
+                message.region = object.region;
+                break;
+            }
+            break;
+        case "REGION_US915":
+        case 0:
+            message.region = 0;
+            break;
+        case "REGION_AU915":
+        case 1:
+            message.region = 1;
+            break;
+        case "REGION_EU868":
+        case 2:
+            message.region = 2;
+            break;
+        }
+        switch (object.auth) {
+        default:
+            if (typeof object.auth === "number") {
+                message.auth = object.auth;
+                break;
+            }
+            break;
+        case "AUTH_OTAA":
+        case 0:
+            message.auth = 0;
+            break;
+        case "AUTH_ABP":
+        case 1:
+            message.auth = 1;
+            break;
+        }
+        if (object.otaa != null) {
+            if (typeof object.otaa !== "object")
+                throw TypeError(".RadioConfigPacket.otaa: object expected");
+            message.otaa = $root.RadioOTAA.fromObject(object.otaa);
+        }
+        if (object.abp != null) {
+            if (typeof object.abp !== "object")
+                throw TypeError(".RadioConfigPacket.abp: object expected");
+            message.abp = $root.RadioABP.fromObject(object.abp);
+        }
+        if (object.transmitIntervalMin != null)
+            message.transmitIntervalMin = object.transmitIntervalMin >>> 0;
+        if (object.txOnlyOnNewGpsFix != null)
+            message.txOnlyOnNewGpsFix = Boolean(object.txOnlyOnNewGpsFix);
+        if (object.txPowerDbm != null)
+            message.txPowerDbm = object.txPowerDbm | 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a RadioConfigPacket message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {RadioConfigPacket} message RadioConfigPacket
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    RadioConfigPacket.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.enabled = false;
+            object.region = options.enums === String ? "REGION_US915" : 0;
+            object.auth = options.enums === String ? "AUTH_OTAA" : 0;
+            object.transmitIntervalMin = 0;
+            object.txOnlyOnNewGpsFix = false;
+            object.txPowerDbm = 0;
+        }
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            object.enabled = message.enabled;
+        if (message.region != null && message.hasOwnProperty("region"))
+            object.region = options.enums === String ? $root.RadioRegion[message.region] === undefined ? message.region : $root.RadioRegion[message.region] : message.region;
+        if (message.auth != null && message.hasOwnProperty("auth"))
+            object.auth = options.enums === String ? $root.RadioAuth[message.auth] === undefined ? message.auth : $root.RadioAuth[message.auth] : message.auth;
+        if (message.otaa != null && message.hasOwnProperty("otaa")) {
+            object.otaa = $root.RadioOTAA.toObject(message.otaa, options);
+            if (options.oneofs)
+                object.credentials = "otaa";
+        }
+        if (message.abp != null && message.hasOwnProperty("abp")) {
+            object.abp = $root.RadioABP.toObject(message.abp, options);
+            if (options.oneofs)
+                object.credentials = "abp";
+        }
+        if (message.transmitIntervalMin != null && message.hasOwnProperty("transmitIntervalMin"))
+            object.transmitIntervalMin = message.transmitIntervalMin;
+        if (message.txOnlyOnNewGpsFix != null && message.hasOwnProperty("txOnlyOnNewGpsFix"))
+            object.txOnlyOnNewGpsFix = message.txOnlyOnNewGpsFix;
+        if (message.txPowerDbm != null && message.hasOwnProperty("txPowerDbm"))
+            object.txPowerDbm = message.txPowerDbm;
+        return object;
+    };
+
+    /**
+     * Converts this RadioConfigPacket to JSON.
+     * @function toJSON
+     * @memberof RadioConfigPacket
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    RadioConfigPacket.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for RadioConfigPacket
+     * @function getTypeUrl
+     * @memberof RadioConfigPacket
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    RadioConfigPacket.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/RadioConfigPacket";
+    };
+
+    return RadioConfigPacket;
+})();
+
+export const MicrophoneConfig = $root.MicrophoneConfig = (() => {
+
+    /**
+     * Properties of a MicrophoneConfig.
+     * @exports IMicrophoneConfig
+     * @interface IMicrophoneConfig
+     * @property {boolean|null} [enabled] MicrophoneConfig enabled
+     * @property {boolean|null} [continuousMode] MicrophoneConfig continuousMode
+     * @property {number|null} [sampleLengthMin] MicrophoneConfig sampleLengthMin
+     * @property {number|null} [sampleWindowMin] MicrophoneConfig sampleWindowMin
+     */
+
+    /**
+     * Constructs a new MicrophoneConfig.
+     * @exports MicrophoneConfig
+     * @classdesc Represents a MicrophoneConfig.
+     * @implements IMicrophoneConfig
+     * @constructor
+     * @param {IMicrophoneConfig=} [properties] Properties to set
+     */
+    function MicrophoneConfig(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * MicrophoneConfig enabled.
+     * @member {boolean} enabled
+     * @memberof MicrophoneConfig
+     * @instance
+     */
+    MicrophoneConfig.prototype.enabled = false;
+
+    /**
+     * MicrophoneConfig continuousMode.
+     * @member {boolean} continuousMode
+     * @memberof MicrophoneConfig
+     * @instance
+     */
+    MicrophoneConfig.prototype.continuousMode = false;
+
+    /**
+     * MicrophoneConfig sampleLengthMin.
+     * @member {number} sampleLengthMin
+     * @memberof MicrophoneConfig
+     * @instance
+     */
+    MicrophoneConfig.prototype.sampleLengthMin = 0;
+
+    /**
+     * MicrophoneConfig sampleWindowMin.
+     * @member {number} sampleWindowMin
+     * @memberof MicrophoneConfig
+     * @instance
+     */
+    MicrophoneConfig.prototype.sampleWindowMin = 0;
+
+    /**
+     * Creates a new MicrophoneConfig instance using the specified properties.
+     * @function create
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {IMicrophoneConfig=} [properties] Properties to set
+     * @returns {MicrophoneConfig} MicrophoneConfig instance
+     */
+    MicrophoneConfig.create = function create(properties) {
+        return new MicrophoneConfig(properties);
+    };
+
+    /**
+     * Encodes the specified MicrophoneConfig message. Does not implicitly {@link MicrophoneConfig.verify|verify} messages.
+     * @function encode
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {IMicrophoneConfig} message MicrophoneConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    MicrophoneConfig.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.enabled != null && Object.hasOwnProperty.call(message, "enabled"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enabled);
+        if (message.continuousMode != null && Object.hasOwnProperty.call(message, "continuousMode"))
+            writer.uint32(/* id 2, wireType 0 =*/16).bool(message.continuousMode);
+        if (message.sampleLengthMin != null && Object.hasOwnProperty.call(message, "sampleLengthMin"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.sampleLengthMin);
+        if (message.sampleWindowMin != null && Object.hasOwnProperty.call(message, "sampleWindowMin"))
+            writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.sampleWindowMin);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified MicrophoneConfig message, length delimited. Does not implicitly {@link MicrophoneConfig.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {IMicrophoneConfig} message MicrophoneConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    MicrophoneConfig.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a MicrophoneConfig message from the specified reader or buffer.
+     * @function decode
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {MicrophoneConfig} MicrophoneConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    MicrophoneConfig.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.MicrophoneConfig();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.enabled = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.continuousMode = reader.bool();
+                    break;
+                }
+            case 3: {
+                    message.sampleLengthMin = reader.uint32();
+                    break;
+                }
+            case 4: {
+                    message.sampleWindowMin = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a MicrophoneConfig message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {MicrophoneConfig} MicrophoneConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    MicrophoneConfig.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a MicrophoneConfig message.
+     * @function verify
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    MicrophoneConfig.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            if (typeof message.enabled !== "boolean")
+                return "enabled: boolean expected";
+        if (message.continuousMode != null && message.hasOwnProperty("continuousMode"))
+            if (typeof message.continuousMode !== "boolean")
+                return "continuousMode: boolean expected";
+        if (message.sampleLengthMin != null && message.hasOwnProperty("sampleLengthMin"))
+            if (!$util.isInteger(message.sampleLengthMin))
+                return "sampleLengthMin: integer expected";
+        if (message.sampleWindowMin != null && message.hasOwnProperty("sampleWindowMin"))
+            if (!$util.isInteger(message.sampleWindowMin))
+                return "sampleWindowMin: integer expected";
+        return null;
+    };
+
+    /**
+     * Creates a MicrophoneConfig message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {MicrophoneConfig} MicrophoneConfig
+     */
+    MicrophoneConfig.fromObject = function fromObject(object) {
+        if (object instanceof $root.MicrophoneConfig)
+            return object;
+        let message = new $root.MicrophoneConfig();
+        if (object.enabled != null)
+            message.enabled = Boolean(object.enabled);
+        if (object.continuousMode != null)
+            message.continuousMode = Boolean(object.continuousMode);
+        if (object.sampleLengthMin != null)
+            message.sampleLengthMin = object.sampleLengthMin >>> 0;
+        if (object.sampleWindowMin != null)
+            message.sampleWindowMin = object.sampleWindowMin >>> 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a MicrophoneConfig message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {MicrophoneConfig} message MicrophoneConfig
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    MicrophoneConfig.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.enabled = false;
+            object.continuousMode = false;
+            object.sampleLengthMin = 0;
+            object.sampleWindowMin = 0;
+        }
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            object.enabled = message.enabled;
+        if (message.continuousMode != null && message.hasOwnProperty("continuousMode"))
+            object.continuousMode = message.continuousMode;
+        if (message.sampleLengthMin != null && message.hasOwnProperty("sampleLengthMin"))
+            object.sampleLengthMin = message.sampleLengthMin;
+        if (message.sampleWindowMin != null && message.hasOwnProperty("sampleWindowMin"))
+            object.sampleWindowMin = message.sampleWindowMin;
+        return object;
+    };
+
+    /**
+     * Converts this MicrophoneConfig to JSON.
+     * @function toJSON
+     * @memberof MicrophoneConfig
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    MicrophoneConfig.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for MicrophoneConfig
+     * @function getTypeUrl
+     * @memberof MicrophoneConfig
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    MicrophoneConfig.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/MicrophoneConfig";
+    };
+
+    return MicrophoneConfig;
+})();
+
+/**
+ * AccelSampleRate enum.
+ * @exports AccelSampleRate
+ * @enum {number}
+ * @property {number} ACCEL_25HZ=0 ACCEL_25HZ value
+ * @property {number} ACCEL_50HZ=1 ACCEL_50HZ value
+ */
+export const AccelSampleRate = $root.AccelSampleRate = (() => {
+    const valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "ACCEL_25HZ"] = 0;
+    values[valuesById[1] = "ACCEL_50HZ"] = 1;
+    return values;
+})();
+
+/**
+ * AccelSensitivity enum.
+ * @exports AccelSensitivity
+ * @enum {number}
+ * @property {number} ACCEL_2G=0 ACCEL_2G value
+ * @property {number} ACCEL_4G=1 ACCEL_4G value
+ * @property {number} ACCEL_8G=2 ACCEL_8G value
+ */
+export const AccelSensitivity = $root.AccelSensitivity = (() => {
+    const valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "ACCEL_2G"] = 0;
+    values[valuesById[1] = "ACCEL_4G"] = 1;
+    values[valuesById[2] = "ACCEL_8G"] = 2;
+    return values;
+})();
+
+export const AccelerometerConfig = $root.AccelerometerConfig = (() => {
+
+    /**
+     * Properties of an AccelerometerConfig.
+     * @exports IAccelerometerConfig
+     * @interface IAccelerometerConfig
+     * @property {boolean|null} [enabled] AccelerometerConfig enabled
+     * @property {AccelSampleRate|null} [sampleRate] AccelerometerConfig sampleRate
+     * @property {AccelSensitivity|null} [sensitivity] AccelerometerConfig sensitivity
+     */
+
+    /**
+     * Constructs a new AccelerometerConfig.
+     * @exports AccelerometerConfig
+     * @classdesc Represents an AccelerometerConfig.
+     * @implements IAccelerometerConfig
+     * @constructor
+     * @param {IAccelerometerConfig=} [properties] Properties to set
+     */
+    function AccelerometerConfig(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * AccelerometerConfig enabled.
+     * @member {boolean} enabled
+     * @memberof AccelerometerConfig
+     * @instance
+     */
+    AccelerometerConfig.prototype.enabled = false;
+
+    /**
+     * AccelerometerConfig sampleRate.
+     * @member {AccelSampleRate} sampleRate
+     * @memberof AccelerometerConfig
+     * @instance
+     */
+    AccelerometerConfig.prototype.sampleRate = 0;
+
+    /**
+     * AccelerometerConfig sensitivity.
+     * @member {AccelSensitivity} sensitivity
+     * @memberof AccelerometerConfig
+     * @instance
+     */
+    AccelerometerConfig.prototype.sensitivity = 0;
+
+    /**
+     * Creates a new AccelerometerConfig instance using the specified properties.
+     * @function create
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {IAccelerometerConfig=} [properties] Properties to set
+     * @returns {AccelerometerConfig} AccelerometerConfig instance
+     */
+    AccelerometerConfig.create = function create(properties) {
+        return new AccelerometerConfig(properties);
+    };
+
+    /**
+     * Encodes the specified AccelerometerConfig message. Does not implicitly {@link AccelerometerConfig.verify|verify} messages.
+     * @function encode
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {IAccelerometerConfig} message AccelerometerConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    AccelerometerConfig.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.enabled != null && Object.hasOwnProperty.call(message, "enabled"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enabled);
+        if (message.sampleRate != null && Object.hasOwnProperty.call(message, "sampleRate"))
+            writer.uint32(/* id 2, wireType 0 =*/16).int32(message.sampleRate);
+        if (message.sensitivity != null && Object.hasOwnProperty.call(message, "sensitivity"))
+            writer.uint32(/* id 3, wireType 0 =*/24).int32(message.sensitivity);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified AccelerometerConfig message, length delimited. Does not implicitly {@link AccelerometerConfig.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {IAccelerometerConfig} message AccelerometerConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    AccelerometerConfig.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes an AccelerometerConfig message from the specified reader or buffer.
+     * @function decode
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {AccelerometerConfig} AccelerometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    AccelerometerConfig.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.AccelerometerConfig();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.enabled = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.sampleRate = reader.int32();
+                    break;
+                }
+            case 3: {
+                    message.sensitivity = reader.int32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes an AccelerometerConfig message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {AccelerometerConfig} AccelerometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    AccelerometerConfig.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies an AccelerometerConfig message.
+     * @function verify
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    AccelerometerConfig.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            if (typeof message.enabled !== "boolean")
+                return "enabled: boolean expected";
+        if (message.sampleRate != null && message.hasOwnProperty("sampleRate"))
+            switch (message.sampleRate) {
+            default:
+                return "sampleRate: enum value expected";
+            case 0:
+            case 1:
+                break;
+            }
+        if (message.sensitivity != null && message.hasOwnProperty("sensitivity"))
+            switch (message.sensitivity) {
+            default:
+                return "sensitivity: enum value expected";
+            case 0:
+            case 1:
+            case 2:
+                break;
+            }
+        return null;
+    };
+
+    /**
+     * Creates an AccelerometerConfig message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {AccelerometerConfig} AccelerometerConfig
+     */
+    AccelerometerConfig.fromObject = function fromObject(object) {
+        if (object instanceof $root.AccelerometerConfig)
+            return object;
+        let message = new $root.AccelerometerConfig();
+        if (object.enabled != null)
+            message.enabled = Boolean(object.enabled);
+        switch (object.sampleRate) {
+        default:
+            if (typeof object.sampleRate === "number") {
+                message.sampleRate = object.sampleRate;
+                break;
+            }
+            break;
+        case "ACCEL_25HZ":
+        case 0:
+            message.sampleRate = 0;
+            break;
+        case "ACCEL_50HZ":
+        case 1:
+            message.sampleRate = 1;
+            break;
+        }
+        switch (object.sensitivity) {
+        default:
+            if (typeof object.sensitivity === "number") {
+                message.sensitivity = object.sensitivity;
+                break;
+            }
+            break;
+        case "ACCEL_2G":
+        case 0:
+            message.sensitivity = 0;
+            break;
+        case "ACCEL_4G":
+        case 1:
+            message.sensitivity = 1;
+            break;
+        case "ACCEL_8G":
+        case 2:
+            message.sensitivity = 2;
+            break;
+        }
+        return message;
+    };
+
+    /**
+     * Creates a plain object from an AccelerometerConfig message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {AccelerometerConfig} message AccelerometerConfig
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    AccelerometerConfig.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.enabled = false;
+            object.sampleRate = options.enums === String ? "ACCEL_25HZ" : 0;
+            object.sensitivity = options.enums === String ? "ACCEL_2G" : 0;
+        }
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            object.enabled = message.enabled;
+        if (message.sampleRate != null && message.hasOwnProperty("sampleRate"))
+            object.sampleRate = options.enums === String ? $root.AccelSampleRate[message.sampleRate] === undefined ? message.sampleRate : $root.AccelSampleRate[message.sampleRate] : message.sampleRate;
+        if (message.sensitivity != null && message.hasOwnProperty("sensitivity"))
+            object.sensitivity = options.enums === String ? $root.AccelSensitivity[message.sensitivity] === undefined ? message.sensitivity : $root.AccelSensitivity[message.sensitivity] : message.sensitivity;
+        return object;
+    };
+
+    /**
+     * Converts this AccelerometerConfig to JSON.
+     * @function toJSON
+     * @memberof AccelerometerConfig
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    AccelerometerConfig.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for AccelerometerConfig
+     * @function getTypeUrl
+     * @memberof AccelerometerConfig
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    AccelerometerConfig.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/AccelerometerConfig";
+    };
+
+    return AccelerometerConfig;
+})();
+
+export const ScheduledConfig = $root.ScheduledConfig = (() => {
+
+    /**
+     * Properties of a ScheduledConfig.
+     * @exports IScheduledConfig
+     * @interface IScheduledConfig
+     * @property {ITimeWindow|null} [window] ScheduledConfig window
+     * @property {ISamplingConfig|null} [light] ScheduledConfig light
+     * @property {ISamplingConfig|null} [environmental] ScheduledConfig environmental
+     * @property {ISamplingConfig|null} [particulate] ScheduledConfig particulate
+     * @property {IGPSConfig|null} [gps] ScheduledConfig gps
+     * @property {IMicrophoneConfig|null} [microphone] ScheduledConfig microphone
+     * @property {IAccelerometerConfig|null} [accelerometer] ScheduledConfig accelerometer
+     */
+
+    /**
+     * Constructs a new ScheduledConfig.
+     * @exports ScheduledConfig
+     * @classdesc Represents a ScheduledConfig.
+     * @implements IScheduledConfig
+     * @constructor
+     * @param {IScheduledConfig=} [properties] Properties to set
+     */
+    function ScheduledConfig(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * ScheduledConfig window.
+     * @member {ITimeWindow|null|undefined} window
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.window = null;
+
+    /**
+     * ScheduledConfig light.
+     * @member {ISamplingConfig|null|undefined} light
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.light = null;
+
+    /**
+     * ScheduledConfig environmental.
+     * @member {ISamplingConfig|null|undefined} environmental
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.environmental = null;
+
+    /**
+     * ScheduledConfig particulate.
+     * @member {ISamplingConfig|null|undefined} particulate
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.particulate = null;
+
+    /**
+     * ScheduledConfig gps.
+     * @member {IGPSConfig|null|undefined} gps
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.gps = null;
+
+    /**
+     * ScheduledConfig microphone.
+     * @member {IMicrophoneConfig|null|undefined} microphone
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.microphone = null;
+
+    /**
+     * ScheduledConfig accelerometer.
+     * @member {IAccelerometerConfig|null|undefined} accelerometer
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.accelerometer = null;
+
+    /**
+     * Creates a new ScheduledConfig instance using the specified properties.
+     * @function create
+     * @memberof ScheduledConfig
+     * @static
+     * @param {IScheduledConfig=} [properties] Properties to set
+     * @returns {ScheduledConfig} ScheduledConfig instance
+     */
+    ScheduledConfig.create = function create(properties) {
+        return new ScheduledConfig(properties);
+    };
+
+    /**
+     * Encodes the specified ScheduledConfig message. Does not implicitly {@link ScheduledConfig.verify|verify} messages.
+     * @function encode
+     * @memberof ScheduledConfig
+     * @static
+     * @param {IScheduledConfig} message ScheduledConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    ScheduledConfig.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.window != null && Object.hasOwnProperty.call(message, "window"))
+            $root.TimeWindow.encode(message.window, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+        if (message.light != null && Object.hasOwnProperty.call(message, "light"))
+            $root.SamplingConfig.encode(message.light, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+        if (message.environmental != null && Object.hasOwnProperty.call(message, "environmental"))
+            $root.SamplingConfig.encode(message.environmental, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+        if (message.particulate != null && Object.hasOwnProperty.call(message, "particulate"))
+            $root.SamplingConfig.encode(message.particulate, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+        if (message.gps != null && Object.hasOwnProperty.call(message, "gps"))
+            $root.GPSConfig.encode(message.gps, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+        if (message.microphone != null && Object.hasOwnProperty.call(message, "microphone"))
+            $root.MicrophoneConfig.encode(message.microphone, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+        if (message.accelerometer != null && Object.hasOwnProperty.call(message, "accelerometer"))
+            $root.AccelerometerConfig.encode(message.accelerometer, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+        return writer;
+    };
+
+    /**
+     * Encodes the specified ScheduledConfig message, length delimited. Does not implicitly {@link ScheduledConfig.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof ScheduledConfig
+     * @static
+     * @param {IScheduledConfig} message ScheduledConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    ScheduledConfig.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a ScheduledConfig message from the specified reader or buffer.
+     * @function decode
+     * @memberof ScheduledConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {ScheduledConfig} ScheduledConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    ScheduledConfig.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ScheduledConfig();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.window = $root.TimeWindow.decode(reader, reader.uint32());
+                    break;
+                }
+            case 2: {
+                    message.light = $root.SamplingConfig.decode(reader, reader.uint32());
+                    break;
+                }
+            case 3: {
+                    message.environmental = $root.SamplingConfig.decode(reader, reader.uint32());
+                    break;
+                }
+            case 4: {
+                    message.particulate = $root.SamplingConfig.decode(reader, reader.uint32());
+                    break;
+                }
+            case 5: {
+                    message.gps = $root.GPSConfig.decode(reader, reader.uint32());
+                    break;
+                }
+            case 6: {
+                    message.microphone = $root.MicrophoneConfig.decode(reader, reader.uint32());
+                    break;
+                }
+            case 7: {
+                    message.accelerometer = $root.AccelerometerConfig.decode(reader, reader.uint32());
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a ScheduledConfig message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof ScheduledConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {ScheduledConfig} ScheduledConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    ScheduledConfig.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a ScheduledConfig message.
+     * @function verify
+     * @memberof ScheduledConfig
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    ScheduledConfig.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.window != null && message.hasOwnProperty("window")) {
+            let error = $root.TimeWindow.verify(message.window);
+            if (error)
+                return "window." + error;
+        }
+        if (message.light != null && message.hasOwnProperty("light")) {
+            let error = $root.SamplingConfig.verify(message.light);
+            if (error)
+                return "light." + error;
+        }
+        if (message.environmental != null && message.hasOwnProperty("environmental")) {
+            let error = $root.SamplingConfig.verify(message.environmental);
+            if (error)
+                return "environmental." + error;
+        }
+        if (message.particulate != null && message.hasOwnProperty("particulate")) {
+            let error = $root.SamplingConfig.verify(message.particulate);
+            if (error)
+                return "particulate." + error;
+        }
+        if (message.gps != null && message.hasOwnProperty("gps")) {
+            let error = $root.GPSConfig.verify(message.gps);
+            if (error)
+                return "gps." + error;
+        }
+        if (message.microphone != null && message.hasOwnProperty("microphone")) {
+            let error = $root.MicrophoneConfig.verify(message.microphone);
+            if (error)
+                return "microphone." + error;
+        }
+        if (message.accelerometer != null && message.hasOwnProperty("accelerometer")) {
+            let error = $root.AccelerometerConfig.verify(message.accelerometer);
+            if (error)
+                return "accelerometer." + error;
+        }
+        return null;
+    };
+
+    /**
+     * Creates a ScheduledConfig message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof ScheduledConfig
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {ScheduledConfig} ScheduledConfig
+     */
+    ScheduledConfig.fromObject = function fromObject(object) {
+        if (object instanceof $root.ScheduledConfig)
+            return object;
+        let message = new $root.ScheduledConfig();
+        if (object.window != null) {
+            if (typeof object.window !== "object")
+                throw TypeError(".ScheduledConfig.window: object expected");
+            message.window = $root.TimeWindow.fromObject(object.window);
+        }
+        if (object.light != null) {
+            if (typeof object.light !== "object")
+                throw TypeError(".ScheduledConfig.light: object expected");
+            message.light = $root.SamplingConfig.fromObject(object.light);
+        }
+        if (object.environmental != null) {
+            if (typeof object.environmental !== "object")
+                throw TypeError(".ScheduledConfig.environmental: object expected");
+            message.environmental = $root.SamplingConfig.fromObject(object.environmental);
+        }
+        if (object.particulate != null) {
+            if (typeof object.particulate !== "object")
+                throw TypeError(".ScheduledConfig.particulate: object expected");
+            message.particulate = $root.SamplingConfig.fromObject(object.particulate);
+        }
+        if (object.gps != null) {
+            if (typeof object.gps !== "object")
+                throw TypeError(".ScheduledConfig.gps: object expected");
+            message.gps = $root.GPSConfig.fromObject(object.gps);
+        }
+        if (object.microphone != null) {
+            if (typeof object.microphone !== "object")
+                throw TypeError(".ScheduledConfig.microphone: object expected");
+            message.microphone = $root.MicrophoneConfig.fromObject(object.microphone);
+        }
+        if (object.accelerometer != null) {
+            if (typeof object.accelerometer !== "object")
+                throw TypeError(".ScheduledConfig.accelerometer: object expected");
+            message.accelerometer = $root.AccelerometerConfig.fromObject(object.accelerometer);
+        }
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a ScheduledConfig message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof ScheduledConfig
+     * @static
+     * @param {ScheduledConfig} message ScheduledConfig
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    ScheduledConfig.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.window = null;
+            object.light = null;
+            object.environmental = null;
+            object.particulate = null;
+            object.gps = null;
+            object.microphone = null;
+            object.accelerometer = null;
+        }
+        if (message.window != null && message.hasOwnProperty("window"))
+            object.window = $root.TimeWindow.toObject(message.window, options);
+        if (message.light != null && message.hasOwnProperty("light"))
+            object.light = $root.SamplingConfig.toObject(message.light, options);
+        if (message.environmental != null && message.hasOwnProperty("environmental"))
+            object.environmental = $root.SamplingConfig.toObject(message.environmental, options);
+        if (message.particulate != null && message.hasOwnProperty("particulate"))
+            object.particulate = $root.SamplingConfig.toObject(message.particulate, options);
+        if (message.gps != null && message.hasOwnProperty("gps"))
+            object.gps = $root.GPSConfig.toObject(message.gps, options);
+        if (message.microphone != null && message.hasOwnProperty("microphone"))
+            object.microphone = $root.MicrophoneConfig.toObject(message.microphone, options);
+        if (message.accelerometer != null && message.hasOwnProperty("accelerometer"))
+            object.accelerometer = $root.AccelerometerConfig.toObject(message.accelerometer, options);
+        return object;
+    };
+
+    /**
+     * Converts this ScheduledConfig to JSON.
+     * @function toJSON
+     * @memberof ScheduledConfig
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    ScheduledConfig.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for ScheduledConfig
+     * @function getTypeUrl
+     * @memberof ScheduledConfig
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    ScheduledConfig.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/ScheduledConfig";
+    };
+
+    return ScheduledConfig;
+})();
+
+export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
+
+    /**
+     * Properties of a ScheduleConfigPacket.
+     * @exports IScheduleConfigPacket
+     * @interface IScheduleConfigPacket
+     * @property {Array.<IScheduledConfig>|null} [schedules] ScheduleConfigPacket schedules
+     */
+
+    /**
+     * Constructs a new ScheduleConfigPacket.
+     * @exports ScheduleConfigPacket
+     * @classdesc Represents a ScheduleConfigPacket.
+     * @implements IScheduleConfigPacket
+     * @constructor
+     * @param {IScheduleConfigPacket=} [properties] Properties to set
+     */
+    function ScheduleConfigPacket(properties) {
+        this.schedules = [];
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * ScheduleConfigPacket schedules.
+     * @member {Array.<IScheduledConfig>} schedules
+     * @memberof ScheduleConfigPacket
+     * @instance
+     */
+    ScheduleConfigPacket.prototype.schedules = $util.emptyArray;
+
+    /**
+     * Creates a new ScheduleConfigPacket instance using the specified properties.
+     * @function create
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {IScheduleConfigPacket=} [properties] Properties to set
+     * @returns {ScheduleConfigPacket} ScheduleConfigPacket instance
+     */
+    ScheduleConfigPacket.create = function create(properties) {
+        return new ScheduleConfigPacket(properties);
+    };
+
+    /**
+     * Encodes the specified ScheduleConfigPacket message. Does not implicitly {@link ScheduleConfigPacket.verify|verify} messages.
+     * @function encode
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {IScheduleConfigPacket} message ScheduleConfigPacket message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    ScheduleConfigPacket.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.schedules != null && message.schedules.length)
+            for (let i = 0; i < message.schedules.length; ++i)
+                $root.ScheduledConfig.encode(message.schedules[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+        return writer;
+    };
+
+    /**
+     * Encodes the specified ScheduleConfigPacket message, length delimited. Does not implicitly {@link ScheduleConfigPacket.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {IScheduleConfigPacket} message ScheduleConfigPacket message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    ScheduleConfigPacket.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a ScheduleConfigPacket message from the specified reader or buffer.
+     * @function decode
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {ScheduleConfigPacket} ScheduleConfigPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    ScheduleConfigPacket.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ScheduleConfigPacket();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    if (!(message.schedules && message.schedules.length))
+                        message.schedules = [];
+                    message.schedules.push($root.ScheduledConfig.decode(reader, reader.uint32()));
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a ScheduleConfigPacket message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {ScheduleConfigPacket} ScheduleConfigPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    ScheduleConfigPacket.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a ScheduleConfigPacket message.
+     * @function verify
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    ScheduleConfigPacket.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.schedules != null && message.hasOwnProperty("schedules")) {
+            if (!Array.isArray(message.schedules))
+                return "schedules: array expected";
+            for (let i = 0; i < message.schedules.length; ++i) {
+                let error = $root.ScheduledConfig.verify(message.schedules[i]);
+                if (error)
+                    return "schedules." + error;
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Creates a ScheduleConfigPacket message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {ScheduleConfigPacket} ScheduleConfigPacket
+     */
+    ScheduleConfigPacket.fromObject = function fromObject(object) {
+        if (object instanceof $root.ScheduleConfigPacket)
+            return object;
+        let message = new $root.ScheduleConfigPacket();
+        if (object.schedules) {
+            if (!Array.isArray(object.schedules))
+                throw TypeError(".ScheduleConfigPacket.schedules: array expected");
+            message.schedules = [];
+            for (let i = 0; i < object.schedules.length; ++i) {
+                if (typeof object.schedules[i] !== "object")
+                    throw TypeError(".ScheduleConfigPacket.schedules: object expected");
+                message.schedules[i] = $root.ScheduledConfig.fromObject(object.schedules[i]);
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a ScheduleConfigPacket message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {ScheduleConfigPacket} message ScheduleConfigPacket
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    ScheduleConfigPacket.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.arrays || options.defaults)
+            object.schedules = [];
+        if (message.schedules && message.schedules.length) {
+            object.schedules = [];
+            for (let j = 0; j < message.schedules.length; ++j)
+                object.schedules[j] = $root.ScheduledConfig.toObject(message.schedules[j], options);
+        }
+        return object;
+    };
+
+    /**
+     * Converts this ScheduleConfigPacket to JSON.
+     * @function toJSON
+     * @memberof ScheduleConfigPacket
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    ScheduleConfigPacket.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for ScheduleConfigPacket
+     * @function getTypeUrl
+     * @memberof ScheduleConfigPacket
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    ScheduleConfigPacket.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/ScheduleConfigPacket";
+    };
+
+    return ScheduleConfigPacket;
+})();
+
+/**
+ * Activity enum.
+ * @exports Activity
+ * @enum {number}
+ * @property {number} STILL=0 STILL value
+ * @property {number} WALK=1 WALK value
+ * @property {number} RUN=2 RUN value
+ */
+export const Activity = $root.Activity = (() => {
+    const valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "STILL"] = 0;
+    values[valuesById[1] = "WALK"] = 1;
+    values[valuesById[2] = "RUN"] = 2;
+    return values;
+})();
+
+export const SimpleSensorReading = $root.SimpleSensorReading = (() => {
+
+    /**
+     * Properties of a SimpleSensorReading.
+     * @exports ISimpleSensorReading
+     * @interface ISimpleSensorReading
+     * @property {number|null} [index] SimpleSensorReading index
+     * @property {number|null} [temperature] SimpleSensorReading temperature
+     * @property {number|null} [humidity] SimpleSensorReading humidity
+     * @property {number|null} [pressure] SimpleSensorReading pressure
+     * @property {number|null} [gas] SimpleSensorReading gas
+     * @property {number|null} [pm2_5] SimpleSensorReading pm2_5
+     * @property {number|null} [light] SimpleSensorReading light
+     * @property {Activity|null} [activity] SimpleSensorReading activity
+     * @property {number|null} [steps] SimpleSensorReading steps
+     * @property {boolean|null} [particulateStaticObstructed] SimpleSensorReading particulateStaticObstructed
+     * @property {boolean|null} [particulateDynamicObstructed] SimpleSensorReading particulateDynamicObstructed
+     * @property {boolean|null} [particulateOutsideDetectionLimits] SimpleSensorReading particulateOutsideDetectionLimits
+     */
+
+    /**
+     * Constructs a new SimpleSensorReading.
+     * @exports SimpleSensorReading
+     * @classdesc Represents a SimpleSensorReading.
+     * @implements ISimpleSensorReading
+     * @constructor
+     * @param {ISimpleSensorReading=} [properties] Properties to set
+     */
+    function SimpleSensorReading(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * SimpleSensorReading index.
+     * @member {number} index
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.index = 0;
+
+    /**
+     * SimpleSensorReading temperature.
+     * @member {number} temperature
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.temperature = 0;
+
+    /**
+     * SimpleSensorReading humidity.
+     * @member {number} humidity
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.humidity = 0;
+
+    /**
+     * SimpleSensorReading pressure.
+     * @member {number} pressure
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.pressure = 0;
+
+    /**
+     * SimpleSensorReading gas.
+     * @member {number} gas
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.gas = 0;
+
+    /**
+     * SimpleSensorReading pm2_5.
+     * @member {number} pm2_5
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.pm2_5 = 0;
+
+    /**
+     * SimpleSensorReading light.
+     * @member {number} light
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.light = 0;
+
+    /**
+     * SimpleSensorReading activity.
+     * @member {Activity} activity
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.activity = 0;
+
+    /**
+     * SimpleSensorReading steps.
+     * @member {number} steps
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.steps = 0;
+
+    /**
+     * SimpleSensorReading particulateStaticObstructed.
+     * @member {boolean} particulateStaticObstructed
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.particulateStaticObstructed = false;
+
+    /**
+     * SimpleSensorReading particulateDynamicObstructed.
+     * @member {boolean} particulateDynamicObstructed
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.particulateDynamicObstructed = false;
+
+    /**
+     * SimpleSensorReading particulateOutsideDetectionLimits.
+     * @member {boolean} particulateOutsideDetectionLimits
+     * @memberof SimpleSensorReading
+     * @instance
+     */
+    SimpleSensorReading.prototype.particulateOutsideDetectionLimits = false;
+
+    /**
+     * Creates a new SimpleSensorReading instance using the specified properties.
+     * @function create
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {ISimpleSensorReading=} [properties] Properties to set
+     * @returns {SimpleSensorReading} SimpleSensorReading instance
+     */
+    SimpleSensorReading.create = function create(properties) {
+        return new SimpleSensorReading(properties);
+    };
+
+    /**
+     * Encodes the specified SimpleSensorReading message. Does not implicitly {@link SimpleSensorReading.verify|verify} messages.
+     * @function encode
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {ISimpleSensorReading} message SimpleSensorReading message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    SimpleSensorReading.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.index != null && Object.hasOwnProperty.call(message, "index"))
+            writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.index);
+        if (message.temperature != null && Object.hasOwnProperty.call(message, "temperature"))
+            writer.uint32(/* id 2, wireType 5 =*/21).float(message.temperature);
+        if (message.humidity != null && Object.hasOwnProperty.call(message, "humidity"))
+            writer.uint32(/* id 3, wireType 5 =*/29).float(message.humidity);
+        if (message.pressure != null && Object.hasOwnProperty.call(message, "pressure"))
+            writer.uint32(/* id 4, wireType 5 =*/37).float(message.pressure);
+        if (message.gas != null && Object.hasOwnProperty.call(message, "gas"))
+            writer.uint32(/* id 5, wireType 5 =*/45).float(message.gas);
+        if (message.pm2_5 != null && Object.hasOwnProperty.call(message, "pm2_5"))
+            writer.uint32(/* id 6, wireType 5 =*/53).float(message.pm2_5);
+        if (message.light != null && Object.hasOwnProperty.call(message, "light"))
+            writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.light);
+        if (message.activity != null && Object.hasOwnProperty.call(message, "activity"))
+            writer.uint32(/* id 8, wireType 0 =*/64).int32(message.activity);
+        if (message.steps != null && Object.hasOwnProperty.call(message, "steps"))
+            writer.uint32(/* id 9, wireType 0 =*/72).uint32(message.steps);
+        if (message.particulateStaticObstructed != null && Object.hasOwnProperty.call(message, "particulateStaticObstructed"))
+            writer.uint32(/* id 10, wireType 0 =*/80).bool(message.particulateStaticObstructed);
+        if (message.particulateDynamicObstructed != null && Object.hasOwnProperty.call(message, "particulateDynamicObstructed"))
+            writer.uint32(/* id 11, wireType 0 =*/88).bool(message.particulateDynamicObstructed);
+        if (message.particulateOutsideDetectionLimits != null && Object.hasOwnProperty.call(message, "particulateOutsideDetectionLimits"))
+            writer.uint32(/* id 12, wireType 0 =*/96).bool(message.particulateOutsideDetectionLimits);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified SimpleSensorReading message, length delimited. Does not implicitly {@link SimpleSensorReading.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {ISimpleSensorReading} message SimpleSensorReading message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    SimpleSensorReading.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a SimpleSensorReading message from the specified reader or buffer.
+     * @function decode
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {SimpleSensorReading} SimpleSensorReading
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    SimpleSensorReading.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.SimpleSensorReading();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.index = reader.uint32();
+                    break;
+                }
+            case 2: {
+                    message.temperature = reader.float();
+                    break;
+                }
+            case 3: {
+                    message.humidity = reader.float();
+                    break;
+                }
+            case 4: {
+                    message.pressure = reader.float();
+                    break;
+                }
+            case 5: {
+                    message.gas = reader.float();
+                    break;
+                }
+            case 6: {
+                    message.pm2_5 = reader.float();
+                    break;
+                }
+            case 7: {
+                    message.light = reader.uint32();
+                    break;
+                }
+            case 8: {
+                    message.activity = reader.int32();
+                    break;
+                }
+            case 9: {
+                    message.steps = reader.uint32();
+                    break;
+                }
+            case 10: {
+                    message.particulateStaticObstructed = reader.bool();
+                    break;
+                }
+            case 11: {
+                    message.particulateDynamicObstructed = reader.bool();
+                    break;
+                }
+            case 12: {
+                    message.particulateOutsideDetectionLimits = reader.bool();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a SimpleSensorReading message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {SimpleSensorReading} SimpleSensorReading
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    SimpleSensorReading.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a SimpleSensorReading message.
+     * @function verify
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    SimpleSensorReading.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.index != null && message.hasOwnProperty("index"))
+            if (!$util.isInteger(message.index))
+                return "index: integer expected";
+        if (message.temperature != null && message.hasOwnProperty("temperature"))
+            if (typeof message.temperature !== "number")
+                return "temperature: number expected";
+        if (message.humidity != null && message.hasOwnProperty("humidity"))
+            if (typeof message.humidity !== "number")
+                return "humidity: number expected";
+        if (message.pressure != null && message.hasOwnProperty("pressure"))
+            if (typeof message.pressure !== "number")
+                return "pressure: number expected";
+        if (message.gas != null && message.hasOwnProperty("gas"))
+            if (typeof message.gas !== "number")
+                return "gas: number expected";
+        if (message.pm2_5 != null && message.hasOwnProperty("pm2_5"))
+            if (typeof message.pm2_5 !== "number")
+                return "pm2_5: number expected";
+        if (message.light != null && message.hasOwnProperty("light"))
+            if (!$util.isInteger(message.light))
+                return "light: integer expected";
+        if (message.activity != null && message.hasOwnProperty("activity"))
+            switch (message.activity) {
+            default:
+                return "activity: enum value expected";
+            case 0:
+            case 1:
+            case 2:
+                break;
+            }
+        if (message.steps != null && message.hasOwnProperty("steps"))
+            if (!$util.isInteger(message.steps))
+                return "steps: integer expected";
+        if (message.particulateStaticObstructed != null && message.hasOwnProperty("particulateStaticObstructed"))
+            if (typeof message.particulateStaticObstructed !== "boolean")
+                return "particulateStaticObstructed: boolean expected";
+        if (message.particulateDynamicObstructed != null && message.hasOwnProperty("particulateDynamicObstructed"))
+            if (typeof message.particulateDynamicObstructed !== "boolean")
+                return "particulateDynamicObstructed: boolean expected";
+        if (message.particulateOutsideDetectionLimits != null && message.hasOwnProperty("particulateOutsideDetectionLimits"))
+            if (typeof message.particulateOutsideDetectionLimits !== "boolean")
+                return "particulateOutsideDetectionLimits: boolean expected";
+        return null;
+    };
+
+    /**
+     * Creates a SimpleSensorReading message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {SimpleSensorReading} SimpleSensorReading
+     */
+    SimpleSensorReading.fromObject = function fromObject(object) {
+        if (object instanceof $root.SimpleSensorReading)
+            return object;
+        let message = new $root.SimpleSensorReading();
+        if (object.index != null)
+            message.index = object.index >>> 0;
+        if (object.temperature != null)
+            message.temperature = Number(object.temperature);
+        if (object.humidity != null)
+            message.humidity = Number(object.humidity);
+        if (object.pressure != null)
+            message.pressure = Number(object.pressure);
+        if (object.gas != null)
+            message.gas = Number(object.gas);
+        if (object.pm2_5 != null)
+            message.pm2_5 = Number(object.pm2_5);
+        if (object.light != null)
+            message.light = object.light >>> 0;
+        switch (object.activity) {
+        default:
+            if (typeof object.activity === "number") {
+                message.activity = object.activity;
+                break;
+            }
+            break;
+        case "STILL":
+        case 0:
+            message.activity = 0;
+            break;
+        case "WALK":
+        case 1:
+            message.activity = 1;
+            break;
+        case "RUN":
+        case 2:
+            message.activity = 2;
+            break;
+        }
+        if (object.steps != null)
+            message.steps = object.steps >>> 0;
+        if (object.particulateStaticObstructed != null)
+            message.particulateStaticObstructed = Boolean(object.particulateStaticObstructed);
+        if (object.particulateDynamicObstructed != null)
+            message.particulateDynamicObstructed = Boolean(object.particulateDynamicObstructed);
+        if (object.particulateOutsideDetectionLimits != null)
+            message.particulateOutsideDetectionLimits = Boolean(object.particulateOutsideDetectionLimits);
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a SimpleSensorReading message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {SimpleSensorReading} message SimpleSensorReading
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    SimpleSensorReading.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.index = 0;
+            object.temperature = 0;
+            object.humidity = 0;
+            object.pressure = 0;
+            object.gas = 0;
+            object.pm2_5 = 0;
+            object.light = 0;
+            object.activity = options.enums === String ? "STILL" : 0;
+            object.steps = 0;
+            object.particulateStaticObstructed = false;
+            object.particulateDynamicObstructed = false;
+            object.particulateOutsideDetectionLimits = false;
+        }
+        if (message.index != null && message.hasOwnProperty("index"))
+            object.index = message.index;
+        if (message.temperature != null && message.hasOwnProperty("temperature"))
+            object.temperature = options.json && !isFinite(message.temperature) ? String(message.temperature) : message.temperature;
+        if (message.humidity != null && message.hasOwnProperty("humidity"))
+            object.humidity = options.json && !isFinite(message.humidity) ? String(message.humidity) : message.humidity;
+        if (message.pressure != null && message.hasOwnProperty("pressure"))
+            object.pressure = options.json && !isFinite(message.pressure) ? String(message.pressure) : message.pressure;
+        if (message.gas != null && message.hasOwnProperty("gas"))
+            object.gas = options.json && !isFinite(message.gas) ? String(message.gas) : message.gas;
+        if (message.pm2_5 != null && message.hasOwnProperty("pm2_5"))
+            object.pm2_5 = options.json && !isFinite(message.pm2_5) ? String(message.pm2_5) : message.pm2_5;
+        if (message.light != null && message.hasOwnProperty("light"))
+            object.light = message.light;
+        if (message.activity != null && message.hasOwnProperty("activity"))
+            object.activity = options.enums === String ? $root.Activity[message.activity] === undefined ? message.activity : $root.Activity[message.activity] : message.activity;
+        if (message.steps != null && message.hasOwnProperty("steps"))
+            object.steps = message.steps;
+        if (message.particulateStaticObstructed != null && message.hasOwnProperty("particulateStaticObstructed"))
+            object.particulateStaticObstructed = message.particulateStaticObstructed;
+        if (message.particulateDynamicObstructed != null && message.hasOwnProperty("particulateDynamicObstructed"))
+            object.particulateDynamicObstructed = message.particulateDynamicObstructed;
+        if (message.particulateOutsideDetectionLimits != null && message.hasOwnProperty("particulateOutsideDetectionLimits"))
+            object.particulateOutsideDetectionLimits = message.particulateOutsideDetectionLimits;
+        return object;
+    };
+
+    /**
+     * Converts this SimpleSensorReading to JSON.
+     * @function toJSON
+     * @memberof SimpleSensorReading
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    SimpleSensorReading.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for SimpleSensorReading
+     * @function getTypeUrl
+     * @memberof SimpleSensorReading
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    SimpleSensorReading.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/SimpleSensorReading";
+    };
+
+    return SimpleSensorReading;
+})();
+
+export const BatteryState = $root.BatteryState = (() => {
+
+    /**
+     * Properties of a BatteryState.
+     * @exports IBatteryState
+     * @interface IBatteryState
+     * @property {boolean|null} [charging] BatteryState charging
+     * @property {number|null} [mV] BatteryState mV
+     * @property {number|null} [percentage] BatteryState percentage
+     */
+
+    /**
+     * Constructs a new BatteryState.
+     * @exports BatteryState
+     * @classdesc Represents a BatteryState.
+     * @implements IBatteryState
+     * @constructor
+     * @param {IBatteryState=} [properties] Properties to set
+     */
+    function BatteryState(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * BatteryState charging.
+     * @member {boolean} charging
+     * @memberof BatteryState
+     * @instance
+     */
+    BatteryState.prototype.charging = false;
+
+    /**
+     * BatteryState mV.
+     * @member {number} mV
+     * @memberof BatteryState
+     * @instance
+     */
+    BatteryState.prototype.mV = 0;
+
+    /**
+     * BatteryState percentage.
+     * @member {number|null|undefined} percentage
+     * @memberof BatteryState
+     * @instance
+     */
+    BatteryState.prototype.percentage = null;
+
+    // OneOf field names bound to virtual getters and setters
+    let $oneOfFields;
+
+    /**
+     * BatteryState _percentage.
+     * @member {"percentage"|undefined} _percentage
+     * @memberof BatteryState
+     * @instance
+     */
+    Object.defineProperty(BatteryState.prototype, "_percentage", {
+        get: $util.oneOfGetter($oneOfFields = ["percentage"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * Creates a new BatteryState instance using the specified properties.
+     * @function create
+     * @memberof BatteryState
+     * @static
+     * @param {IBatteryState=} [properties] Properties to set
+     * @returns {BatteryState} BatteryState instance
+     */
+    BatteryState.create = function create(properties) {
+        return new BatteryState(properties);
+    };
+
+    /**
+     * Encodes the specified BatteryState message. Does not implicitly {@link BatteryState.verify|verify} messages.
+     * @function encode
+     * @memberof BatteryState
+     * @static
+     * @param {IBatteryState} message BatteryState message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    BatteryState.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.charging != null && Object.hasOwnProperty.call(message, "charging"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.charging);
+        if (message.mV != null && Object.hasOwnProperty.call(message, "mV"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.mV);
+        if (message.percentage != null && Object.hasOwnProperty.call(message, "percentage"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.percentage);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified BatteryState message, length delimited. Does not implicitly {@link BatteryState.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof BatteryState
+     * @static
+     * @param {IBatteryState} message BatteryState message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    BatteryState.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a BatteryState message from the specified reader or buffer.
+     * @function decode
+     * @memberof BatteryState
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {BatteryState} BatteryState
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    BatteryState.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.BatteryState();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.charging = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.mV = reader.uint32();
+                    break;
+                }
+            case 3: {
+                    message.percentage = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a BatteryState message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof BatteryState
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {BatteryState} BatteryState
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    BatteryState.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a BatteryState message.
+     * @function verify
+     * @memberof BatteryState
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    BatteryState.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        let properties = {};
+        if (message.charging != null && message.hasOwnProperty("charging"))
+            if (typeof message.charging !== "boolean")
+                return "charging: boolean expected";
+        if (message.mV != null && message.hasOwnProperty("mV"))
+            if (!$util.isInteger(message.mV))
+                return "mV: integer expected";
+        if (message.percentage != null && message.hasOwnProperty("percentage")) {
+            properties._percentage = 1;
+            if (!$util.isInteger(message.percentage))
+                return "percentage: integer expected";
+        }
+        return null;
+    };
+
+    /**
+     * Creates a BatteryState message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof BatteryState
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {BatteryState} BatteryState
+     */
+    BatteryState.fromObject = function fromObject(object) {
+        if (object instanceof $root.BatteryState)
+            return object;
+        let message = new $root.BatteryState();
+        if (object.charging != null)
+            message.charging = Boolean(object.charging);
+        if (object.mV != null)
+            message.mV = object.mV >>> 0;
+        if (object.percentage != null)
+            message.percentage = object.percentage >>> 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a BatteryState message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof BatteryState
+     * @static
+     * @param {BatteryState} message BatteryState
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    BatteryState.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.charging = false;
+            object.mV = 0;
+        }
+        if (message.charging != null && message.hasOwnProperty("charging"))
+            object.charging = message.charging;
+        if (message.mV != null && message.hasOwnProperty("mV"))
+            object.mV = message.mV;
+        if (message.percentage != null && message.hasOwnProperty("percentage")) {
+            object.percentage = message.percentage;
+            if (options.oneofs)
+                object._percentage = "percentage";
+        }
+        return object;
+    };
+
+    /**
+     * Converts this BatteryState to JSON.
+     * @function toJSON
+     * @memberof BatteryState
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    BatteryState.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for BatteryState
+     * @function getTypeUrl
+     * @memberof BatteryState
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    BatteryState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/BatteryState";
+    };
+
+    return BatteryState;
+})();
+
+export const SDCardState = $root.SDCardState = (() => {
+
+    /**
+     * Properties of a SDCardState.
+     * @exports ISDCardState
+     * @interface ISDCardState
+     * @property {boolean|null} [detected] SDCardState detected
+     * @property {number|Long|null} [spaceRemaining] SDCardState spaceRemaining
+     * @property {number|Long|null} [totalSpace] SDCardState totalSpace
+     */
+
+    /**
+     * Constructs a new SDCardState.
+     * @exports SDCardState
+     * @classdesc Represents a SDCardState.
+     * @implements ISDCardState
+     * @constructor
+     * @param {ISDCardState=} [properties] Properties to set
+     */
+    function SDCardState(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * SDCardState detected.
+     * @member {boolean} detected
+     * @memberof SDCardState
+     * @instance
+     */
+    SDCardState.prototype.detected = false;
+
+    /**
+     * SDCardState spaceRemaining.
+     * @member {number|Long} spaceRemaining
+     * @memberof SDCardState
+     * @instance
+     */
+    SDCardState.prototype.spaceRemaining = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+    /**
+     * SDCardState totalSpace.
+     * @member {number|Long} totalSpace
+     * @memberof SDCardState
+     * @instance
+     */
+    SDCardState.prototype.totalSpace = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+    /**
+     * Creates a new SDCardState instance using the specified properties.
+     * @function create
+     * @memberof SDCardState
+     * @static
+     * @param {ISDCardState=} [properties] Properties to set
+     * @returns {SDCardState} SDCardState instance
+     */
+    SDCardState.create = function create(properties) {
+        return new SDCardState(properties);
+    };
+
+    /**
+     * Encodes the specified SDCardState message. Does not implicitly {@link SDCardState.verify|verify} messages.
+     * @function encode
+     * @memberof SDCardState
+     * @static
+     * @param {ISDCardState} message SDCardState message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    SDCardState.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.detected != null && Object.hasOwnProperty.call(message, "detected"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.detected);
+        if (message.spaceRemaining != null && Object.hasOwnProperty.call(message, "spaceRemaining"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.spaceRemaining);
+        if (message.totalSpace != null && Object.hasOwnProperty.call(message, "totalSpace"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.totalSpace);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified SDCardState message, length delimited. Does not implicitly {@link SDCardState.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof SDCardState
+     * @static
+     * @param {ISDCardState} message SDCardState message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    SDCardState.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a SDCardState message from the specified reader or buffer.
+     * @function decode
+     * @memberof SDCardState
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {SDCardState} SDCardState
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    SDCardState.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.SDCardState();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.detected = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.spaceRemaining = reader.uint64();
+                    break;
+                }
+            case 3: {
+                    message.totalSpace = reader.uint64();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a SDCardState message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof SDCardState
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {SDCardState} SDCardState
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    SDCardState.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a SDCardState message.
+     * @function verify
+     * @memberof SDCardState
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    SDCardState.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.detected != null && message.hasOwnProperty("detected"))
+            if (typeof message.detected !== "boolean")
+                return "detected: boolean expected";
+        if (message.spaceRemaining != null && message.hasOwnProperty("spaceRemaining"))
+            if (!$util.isInteger(message.spaceRemaining) && !(message.spaceRemaining && $util.isInteger(message.spaceRemaining.low) && $util.isInteger(message.spaceRemaining.high)))
+                return "spaceRemaining: integer|Long expected";
+        if (message.totalSpace != null && message.hasOwnProperty("totalSpace"))
+            if (!$util.isInteger(message.totalSpace) && !(message.totalSpace && $util.isInteger(message.totalSpace.low) && $util.isInteger(message.totalSpace.high)))
+                return "totalSpace: integer|Long expected";
+        return null;
+    };
+
+    /**
+     * Creates a SDCardState message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof SDCardState
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {SDCardState} SDCardState
+     */
+    SDCardState.fromObject = function fromObject(object) {
+        if (object instanceof $root.SDCardState)
+            return object;
+        let message = new $root.SDCardState();
+        if (object.detected != null)
+            message.detected = Boolean(object.detected);
+        if (object.spaceRemaining != null)
+            if ($util.Long)
+                (message.spaceRemaining = $util.Long.fromValue(object.spaceRemaining)).unsigned = true;
+            else if (typeof object.spaceRemaining === "string")
+                message.spaceRemaining = parseInt(object.spaceRemaining, 10);
+            else if (typeof object.spaceRemaining === "number")
+                message.spaceRemaining = object.spaceRemaining;
+            else if (typeof object.spaceRemaining === "object")
+                message.spaceRemaining = new $util.LongBits(object.spaceRemaining.low >>> 0, object.spaceRemaining.high >>> 0).toNumber(true);
+        if (object.totalSpace != null)
+            if ($util.Long)
+                (message.totalSpace = $util.Long.fromValue(object.totalSpace)).unsigned = true;
+            else if (typeof object.totalSpace === "string")
+                message.totalSpace = parseInt(object.totalSpace, 10);
+            else if (typeof object.totalSpace === "number")
+                message.totalSpace = object.totalSpace;
+            else if (typeof object.totalSpace === "object")
+                message.totalSpace = new $util.LongBits(object.totalSpace.low >>> 0, object.totalSpace.high >>> 0).toNumber(true);
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a SDCardState message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof SDCardState
+     * @static
+     * @param {SDCardState} message SDCardState
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    SDCardState.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.detected = false;
+            if ($util.Long) {
+                let long = new $util.Long(0, 0, true);
+                object.spaceRemaining = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+            } else
+                object.spaceRemaining = options.longs === String ? "0" : 0;
+            if ($util.Long) {
+                let long = new $util.Long(0, 0, true);
+                object.totalSpace = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+            } else
+                object.totalSpace = options.longs === String ? "0" : 0;
+        }
+        if (message.detected != null && message.hasOwnProperty("detected"))
+            object.detected = message.detected;
+        if (message.spaceRemaining != null && message.hasOwnProperty("spaceRemaining"))
+            if (typeof message.spaceRemaining === "number")
+                object.spaceRemaining = options.longs === String ? String(message.spaceRemaining) : message.spaceRemaining;
+            else
+                object.spaceRemaining = options.longs === String ? $util.Long.prototype.toString.call(message.spaceRemaining) : options.longs === Number ? new $util.LongBits(message.spaceRemaining.low >>> 0, message.spaceRemaining.high >>> 0).toNumber(true) : message.spaceRemaining;
+        if (message.totalSpace != null && message.hasOwnProperty("totalSpace"))
+            if (typeof message.totalSpace === "number")
+                object.totalSpace = options.longs === String ? String(message.totalSpace) : message.totalSpace;
+            else
+                object.totalSpace = options.longs === String ? $util.Long.prototype.toString.call(message.totalSpace) : options.longs === Number ? new $util.LongBits(message.totalSpace.low >>> 0, message.totalSpace.high >>> 0).toNumber(true) : message.totalSpace;
+        return object;
+    };
+
+    /**
+     * Converts this SDCardState to JSON.
+     * @function toJSON
+     * @memberof SDCardState
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    SDCardState.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for SDCardState
+     * @function getTypeUrl
+     * @memberof SDCardState
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    SDCardState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/SDCardState";
+    };
+
+    return SDCardState;
+})();
+
+export const GPSData = $root.GPSData = (() => {
+
+    /**
+     * Properties of a GPSData.
+     * @exports IGPSData
+     * @interface IGPSData
+     * @property {number|null} [latitude] GPSData latitude
+     * @property {number|null} [longitude] GPSData longitude
+     * @property {number|null} [altitude] GPSData altitude
+     * @property {number|null} [speed] GPSData speed
+     * @property {number|null} [heading] GPSData heading
+     */
+
+    /**
+     * Constructs a new GPSData.
+     * @exports GPSData
+     * @classdesc Represents a GPSData.
+     * @implements IGPSData
+     * @constructor
+     * @param {IGPSData=} [properties] Properties to set
+     */
+    function GPSData(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * GPSData latitude.
+     * @member {number} latitude
+     * @memberof GPSData
+     * @instance
+     */
+    GPSData.prototype.latitude = 0;
+
+    /**
+     * GPSData longitude.
+     * @member {number} longitude
+     * @memberof GPSData
+     * @instance
+     */
+    GPSData.prototype.longitude = 0;
+
+    /**
+     * GPSData altitude.
+     * @member {number} altitude
+     * @memberof GPSData
+     * @instance
+     */
+    GPSData.prototype.altitude = 0;
+
+    /**
+     * GPSData speed.
+     * @member {number} speed
+     * @memberof GPSData
+     * @instance
+     */
+    GPSData.prototype.speed = 0;
+
+    /**
+     * GPSData heading.
+     * @member {number} heading
+     * @memberof GPSData
+     * @instance
+     */
+    GPSData.prototype.heading = 0;
+
+    /**
+     * Creates a new GPSData instance using the specified properties.
+     * @function create
+     * @memberof GPSData
+     * @static
+     * @param {IGPSData=} [properties] Properties to set
+     * @returns {GPSData} GPSData instance
+     */
+    GPSData.create = function create(properties) {
+        return new GPSData(properties);
+    };
+
+    /**
+     * Encodes the specified GPSData message. Does not implicitly {@link GPSData.verify|verify} messages.
+     * @function encode
+     * @memberof GPSData
+     * @static
+     * @param {IGPSData} message GPSData message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    GPSData.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.latitude != null && Object.hasOwnProperty.call(message, "latitude"))
+            writer.uint32(/* id 1, wireType 5 =*/13).float(message.latitude);
+        if (message.longitude != null && Object.hasOwnProperty.call(message, "longitude"))
+            writer.uint32(/* id 2, wireType 5 =*/21).float(message.longitude);
+        if (message.altitude != null && Object.hasOwnProperty.call(message, "altitude"))
+            writer.uint32(/* id 3, wireType 5 =*/29).float(message.altitude);
+        if (message.speed != null && Object.hasOwnProperty.call(message, "speed"))
+            writer.uint32(/* id 4, wireType 5 =*/37).float(message.speed);
+        if (message.heading != null && Object.hasOwnProperty.call(message, "heading"))
+            writer.uint32(/* id 5, wireType 5 =*/45).float(message.heading);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified GPSData message, length delimited. Does not implicitly {@link GPSData.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof GPSData
+     * @static
+     * @param {IGPSData} message GPSData message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    GPSData.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a GPSData message from the specified reader or buffer.
+     * @function decode
+     * @memberof GPSData
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {GPSData} GPSData
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    GPSData.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.GPSData();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.latitude = reader.float();
+                    break;
+                }
+            case 2: {
+                    message.longitude = reader.float();
+                    break;
+                }
+            case 3: {
+                    message.altitude = reader.float();
+                    break;
+                }
+            case 4: {
+                    message.speed = reader.float();
+                    break;
+                }
+            case 5: {
+                    message.heading = reader.float();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a GPSData message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof GPSData
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {GPSData} GPSData
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    GPSData.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a GPSData message.
+     * @function verify
+     * @memberof GPSData
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    GPSData.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.latitude != null && message.hasOwnProperty("latitude"))
+            if (typeof message.latitude !== "number")
+                return "latitude: number expected";
+        if (message.longitude != null && message.hasOwnProperty("longitude"))
+            if (typeof message.longitude !== "number")
+                return "longitude: number expected";
+        if (message.altitude != null && message.hasOwnProperty("altitude"))
+            if (typeof message.altitude !== "number")
+                return "altitude: number expected";
+        if (message.speed != null && message.hasOwnProperty("speed"))
+            if (typeof message.speed !== "number")
+                return "speed: number expected";
+        if (message.heading != null && message.hasOwnProperty("heading"))
+            if (typeof message.heading !== "number")
+                return "heading: number expected";
+        return null;
+    };
+
+    /**
+     * Creates a GPSData message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof GPSData
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {GPSData} GPSData
+     */
+    GPSData.fromObject = function fromObject(object) {
+        if (object instanceof $root.GPSData)
+            return object;
+        let message = new $root.GPSData();
+        if (object.latitude != null)
+            message.latitude = Number(object.latitude);
+        if (object.longitude != null)
+            message.longitude = Number(object.longitude);
+        if (object.altitude != null)
+            message.altitude = Number(object.altitude);
+        if (object.speed != null)
+            message.speed = Number(object.speed);
+        if (object.heading != null)
+            message.heading = Number(object.heading);
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a GPSData message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof GPSData
+     * @static
+     * @param {GPSData} message GPSData
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    GPSData.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.latitude = 0;
+            object.longitude = 0;
+            object.altitude = 0;
+            object.speed = 0;
+            object.heading = 0;
+        }
+        if (message.latitude != null && message.hasOwnProperty("latitude"))
+            object.latitude = options.json && !isFinite(message.latitude) ? String(message.latitude) : message.latitude;
+        if (message.longitude != null && message.hasOwnProperty("longitude"))
+            object.longitude = options.json && !isFinite(message.longitude) ? String(message.longitude) : message.longitude;
+        if (message.altitude != null && message.hasOwnProperty("altitude"))
+            object.altitude = options.json && !isFinite(message.altitude) ? String(message.altitude) : message.altitude;
+        if (message.speed != null && message.hasOwnProperty("speed"))
+            object.speed = options.json && !isFinite(message.speed) ? String(message.speed) : message.speed;
+        if (message.heading != null && message.hasOwnProperty("heading"))
+            object.heading = options.json && !isFinite(message.heading) ? String(message.heading) : message.heading;
+        return object;
+    };
+
+    /**
+     * Converts this GPSData to JSON.
+     * @function toJSON
+     * @memberof GPSData
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    GPSData.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for GPSData
+     * @function getTypeUrl
+     * @memberof GPSData
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    GPSData.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/GPSData";
+    };
+
+    return GPSData;
+})();
+
+export const SystemStatePacket = $root.SystemStatePacket = (() => {
+
+    /**
+     * Properties of a SystemStatePacket.
+     * @exports ISystemStatePacket
+     * @interface ISystemStatePacket
+     * @property {boolean|null} [engageState] SystemStatePacket engageState
+     * @property {IBatteryState|null} [battery] SystemStatePacket battery
+     * @property {ISDCardState|null} [sdcard] SystemStatePacket sdcard
+     * @property {IGPSData|null} [gpsData] SystemStatePacket gpsData
+     * @property {ISimpleSensorReading|null} [sensors] SystemStatePacket sensors
+     * @property {string|null} [firmwareVersion] SystemStatePacket firmwareVersion
+     */
+
+    /**
+     * Constructs a new SystemStatePacket.
+     * @exports SystemStatePacket
+     * @classdesc Represents a SystemStatePacket.
+     * @implements ISystemStatePacket
+     * @constructor
+     * @param {ISystemStatePacket=} [properties] Properties to set
+     */
+    function SystemStatePacket(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * SystemStatePacket engageState.
+     * @member {boolean} engageState
+     * @memberof SystemStatePacket
+     * @instance
+     */
+    SystemStatePacket.prototype.engageState = false;
+
+    /**
+     * SystemStatePacket battery.
+     * @member {IBatteryState|null|undefined} battery
+     * @memberof SystemStatePacket
+     * @instance
+     */
+    SystemStatePacket.prototype.battery = null;
+
+    /**
+     * SystemStatePacket sdcard.
+     * @member {ISDCardState|null|undefined} sdcard
+     * @memberof SystemStatePacket
+     * @instance
+     */
+    SystemStatePacket.prototype.sdcard = null;
+
+    /**
+     * SystemStatePacket gpsData.
+     * @member {IGPSData|null|undefined} gpsData
+     * @memberof SystemStatePacket
+     * @instance
+     */
+    SystemStatePacket.prototype.gpsData = null;
+
+    /**
+     * SystemStatePacket sensors.
+     * @member {ISimpleSensorReading|null|undefined} sensors
+     * @memberof SystemStatePacket
+     * @instance
+     */
+    SystemStatePacket.prototype.sensors = null;
+
+    /**
+     * SystemStatePacket firmwareVersion.
+     * @member {string} firmwareVersion
+     * @memberof SystemStatePacket
+     * @instance
+     */
+    SystemStatePacket.prototype.firmwareVersion = "";
+
+    // OneOf field names bound to virtual getters and setters
+    let $oneOfFields;
+
+    /**
+     * SystemStatePacket _gpsData.
+     * @member {"gpsData"|undefined} _gpsData
+     * @memberof SystemStatePacket
+     * @instance
+     */
+    Object.defineProperty(SystemStatePacket.prototype, "_gpsData", {
+        get: $util.oneOfGetter($oneOfFields = ["gpsData"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * Creates a new SystemStatePacket instance using the specified properties.
+     * @function create
+     * @memberof SystemStatePacket
+     * @static
+     * @param {ISystemStatePacket=} [properties] Properties to set
+     * @returns {SystemStatePacket} SystemStatePacket instance
+     */
+    SystemStatePacket.create = function create(properties) {
+        return new SystemStatePacket(properties);
+    };
+
+    /**
+     * Encodes the specified SystemStatePacket message. Does not implicitly {@link SystemStatePacket.verify|verify} messages.
+     * @function encode
+     * @memberof SystemStatePacket
+     * @static
+     * @param {ISystemStatePacket} message SystemStatePacket message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    SystemStatePacket.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.engageState != null && Object.hasOwnProperty.call(message, "engageState"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.engageState);
+        if (message.battery != null && Object.hasOwnProperty.call(message, "battery"))
+            $root.BatteryState.encode(message.battery, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+        if (message.sdcard != null && Object.hasOwnProperty.call(message, "sdcard"))
+            $root.SDCardState.encode(message.sdcard, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+        if (message.gpsData != null && Object.hasOwnProperty.call(message, "gpsData"))
+            $root.GPSData.encode(message.gpsData, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+        if (message.sensors != null && Object.hasOwnProperty.call(message, "sensors"))
+            $root.SimpleSensorReading.encode(message.sensors, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+        if (message.firmwareVersion != null && Object.hasOwnProperty.call(message, "firmwareVersion"))
+            writer.uint32(/* id 6, wireType 2 =*/50).string(message.firmwareVersion);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified SystemStatePacket message, length delimited. Does not implicitly {@link SystemStatePacket.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof SystemStatePacket
+     * @static
+     * @param {ISystemStatePacket} message SystemStatePacket message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    SystemStatePacket.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a SystemStatePacket message from the specified reader or buffer.
+     * @function decode
+     * @memberof SystemStatePacket
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {SystemStatePacket} SystemStatePacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    SystemStatePacket.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.SystemStatePacket();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.engageState = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.battery = $root.BatteryState.decode(reader, reader.uint32());
+                    break;
+                }
+            case 3: {
+                    message.sdcard = $root.SDCardState.decode(reader, reader.uint32());
+                    break;
+                }
+            case 4: {
+                    message.gpsData = $root.GPSData.decode(reader, reader.uint32());
+                    break;
+                }
+            case 5: {
+                    message.sensors = $root.SimpleSensorReading.decode(reader, reader.uint32());
+                    break;
+                }
+            case 6: {
+                    message.firmwareVersion = reader.string();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a SystemStatePacket message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof SystemStatePacket
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {SystemStatePacket} SystemStatePacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    SystemStatePacket.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a SystemStatePacket message.
+     * @function verify
+     * @memberof SystemStatePacket
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    SystemStatePacket.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        let properties = {};
+        if (message.engageState != null && message.hasOwnProperty("engageState"))
+            if (typeof message.engageState !== "boolean")
+                return "engageState: boolean expected";
+        if (message.battery != null && message.hasOwnProperty("battery")) {
+            let error = $root.BatteryState.verify(message.battery);
+            if (error)
+                return "battery." + error;
+        }
+        if (message.sdcard != null && message.hasOwnProperty("sdcard")) {
+            let error = $root.SDCardState.verify(message.sdcard);
+            if (error)
+                return "sdcard." + error;
+        }
+        if (message.gpsData != null && message.hasOwnProperty("gpsData")) {
+            properties._gpsData = 1;
+            {
+                let error = $root.GPSData.verify(message.gpsData);
+                if (error)
+                    return "gpsData." + error;
+            }
+        }
+        if (message.sensors != null && message.hasOwnProperty("sensors")) {
+            let error = $root.SimpleSensorReading.verify(message.sensors);
+            if (error)
+                return "sensors." + error;
+        }
+        if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
+            if (!$util.isString(message.firmwareVersion))
+                return "firmwareVersion: string expected";
+        return null;
+    };
+
+    /**
+     * Creates a SystemStatePacket message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof SystemStatePacket
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {SystemStatePacket} SystemStatePacket
+     */
+    SystemStatePacket.fromObject = function fromObject(object) {
+        if (object instanceof $root.SystemStatePacket)
+            return object;
+        let message = new $root.SystemStatePacket();
+        if (object.engageState != null)
+            message.engageState = Boolean(object.engageState);
+        if (object.battery != null) {
+            if (typeof object.battery !== "object")
+                throw TypeError(".SystemStatePacket.battery: object expected");
+            message.battery = $root.BatteryState.fromObject(object.battery);
+        }
+        if (object.sdcard != null) {
+            if (typeof object.sdcard !== "object")
+                throw TypeError(".SystemStatePacket.sdcard: object expected");
+            message.sdcard = $root.SDCardState.fromObject(object.sdcard);
+        }
+        if (object.gpsData != null) {
+            if (typeof object.gpsData !== "object")
+                throw TypeError(".SystemStatePacket.gpsData: object expected");
+            message.gpsData = $root.GPSData.fromObject(object.gpsData);
+        }
+        if (object.sensors != null) {
+            if (typeof object.sensors !== "object")
+                throw TypeError(".SystemStatePacket.sensors: object expected");
+            message.sensors = $root.SimpleSensorReading.fromObject(object.sensors);
+        }
+        if (object.firmwareVersion != null)
+            message.firmwareVersion = String(object.firmwareVersion);
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a SystemStatePacket message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof SystemStatePacket
+     * @static
+     * @param {SystemStatePacket} message SystemStatePacket
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    SystemStatePacket.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults) {
+            object.engageState = false;
+            object.battery = null;
+            object.sdcard = null;
+            object.sensors = null;
+            object.firmwareVersion = "";
+        }
+        if (message.engageState != null && message.hasOwnProperty("engageState"))
+            object.engageState = message.engageState;
+        if (message.battery != null && message.hasOwnProperty("battery"))
+            object.battery = $root.BatteryState.toObject(message.battery, options);
+        if (message.sdcard != null && message.hasOwnProperty("sdcard"))
+            object.sdcard = $root.SDCardState.toObject(message.sdcard, options);
+        if (message.gpsData != null && message.hasOwnProperty("gpsData")) {
+            object.gpsData = $root.GPSData.toObject(message.gpsData, options);
+            if (options.oneofs)
+                object._gpsData = "gpsData";
+        }
+        if (message.sensors != null && message.hasOwnProperty("sensors"))
+            object.sensors = $root.SimpleSensorReading.toObject(message.sensors, options);
+        if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
+            object.firmwareVersion = message.firmwareVersion;
+        return object;
+    };
+
+    /**
+     * Converts this SystemStatePacket to JSON.
+     * @function toJSON
+     * @memberof SystemStatePacket
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    SystemStatePacket.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for SystemStatePacket
+     * @function getTypeUrl
+     * @memberof SystemStatePacket
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    SystemStatePacket.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/SystemStatePacket";
+    };
+
+    return SystemStatePacket;
+})();
+
+export const Packet = $root.Packet = (() => {
+
+    /**
+     * Properties of a Packet.
+     * @exports IPacket
+     * @interface IPacket
+     * @property {IPacketHeader|null} [header] Packet header
+     * @property {IScheduleConfigPacket|null} [scheduleConfigPacket] Packet scheduleConfigPacket
+     * @property {ISystemStatePacket|null} [systemStatePacket] Packet systemStatePacket
+     * @property {IRadioConfigPacket|null} [radioConfigPacket] Packet radioConfigPacket
+     */
+
+    /**
+     * Constructs a new Packet.
+     * @exports Packet
+     * @classdesc Represents a Packet.
+     * @implements IPacket
+     * @constructor
+     * @param {IPacket=} [properties] Properties to set
+     */
+    function Packet(properties) {
+        if (properties)
+            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * Packet header.
+     * @member {IPacketHeader|null|undefined} header
+     * @memberof Packet
+     * @instance
+     */
+    Packet.prototype.header = null;
+
+    /**
+     * Packet scheduleConfigPacket.
+     * @member {IScheduleConfigPacket|null|undefined} scheduleConfigPacket
+     * @memberof Packet
+     * @instance
+     */
+    Packet.prototype.scheduleConfigPacket = null;
+
+    /**
+     * Packet systemStatePacket.
+     * @member {ISystemStatePacket|null|undefined} systemStatePacket
+     * @memberof Packet
+     * @instance
+     */
+    Packet.prototype.systemStatePacket = null;
+
+    /**
+     * Packet radioConfigPacket.
+     * @member {IRadioConfigPacket|null|undefined} radioConfigPacket
+     * @memberof Packet
+     * @instance
+     */
+    Packet.prototype.radioConfigPacket = null;
+
+    // OneOf field names bound to virtual getters and setters
+    let $oneOfFields;
+
+    /**
+     * Packet payload.
+     * @member {"scheduleConfigPacket"|"systemStatePacket"|"radioConfigPacket"|undefined} payload
+     * @memberof Packet
+     * @instance
+     */
+    Object.defineProperty(Packet.prototype, "payload", {
+        get: $util.oneOfGetter($oneOfFields = ["scheduleConfigPacket", "systemStatePacket", "radioConfigPacket"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * Creates a new Packet instance using the specified properties.
+     * @function create
+     * @memberof Packet
+     * @static
+     * @param {IPacket=} [properties] Properties to set
+     * @returns {Packet} Packet instance
+     */
+    Packet.create = function create(properties) {
+        return new Packet(properties);
+    };
+
+    /**
+     * Encodes the specified Packet message. Does not implicitly {@link Packet.verify|verify} messages.
+     * @function encode
+     * @memberof Packet
+     * @static
+     * @param {IPacket} message Packet message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    Packet.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.header != null && Object.hasOwnProperty.call(message, "header"))
+            $root.PacketHeader.encode(message.header, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+        if (message.scheduleConfigPacket != null && Object.hasOwnProperty.call(message, "scheduleConfigPacket"))
+            $root.ScheduleConfigPacket.encode(message.scheduleConfigPacket, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+        if (message.systemStatePacket != null && Object.hasOwnProperty.call(message, "systemStatePacket"))
+            $root.SystemStatePacket.encode(message.systemStatePacket, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+        if (message.radioConfigPacket != null && Object.hasOwnProperty.call(message, "radioConfigPacket"))
+            $root.RadioConfigPacket.encode(message.radioConfigPacket, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+        return writer;
+    };
+
+    /**
+     * Encodes the specified Packet message, length delimited. Does not implicitly {@link Packet.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof Packet
+     * @static
+     * @param {IPacket} message Packet message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    Packet.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a Packet message from the specified reader or buffer.
+     * @function decode
+     * @memberof Packet
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {Packet} Packet
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    Packet.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.Packet();
+        while (reader.pos < end) {
+            let tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.header = $root.PacketHeader.decode(reader, reader.uint32());
+                    break;
+                }
+            case 2: {
+                    message.scheduleConfigPacket = $root.ScheduleConfigPacket.decode(reader, reader.uint32());
+                    break;
+                }
+            case 3: {
+                    message.systemStatePacket = $root.SystemStatePacket.decode(reader, reader.uint32());
+                    break;
+                }
+            case 4: {
+                    message.radioConfigPacket = $root.RadioConfigPacket.decode(reader, reader.uint32());
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a Packet message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof Packet
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {Packet} Packet
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    Packet.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a Packet message.
+     * @function verify
+     * @memberof Packet
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    Packet.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        let properties = {};
+        if (message.header != null && message.hasOwnProperty("header")) {
+            let error = $root.PacketHeader.verify(message.header);
+            if (error)
+                return "header." + error;
+        }
+        if (message.scheduleConfigPacket != null && message.hasOwnProperty("scheduleConfigPacket")) {
+            properties.payload = 1;
+            {
+                let error = $root.ScheduleConfigPacket.verify(message.scheduleConfigPacket);
+                if (error)
+                    return "scheduleConfigPacket." + error;
+            }
+        }
+        if (message.systemStatePacket != null && message.hasOwnProperty("systemStatePacket")) {
+            if (properties.payload === 1)
+                return "payload: multiple values";
+            properties.payload = 1;
+            {
+                let error = $root.SystemStatePacket.verify(message.systemStatePacket);
+                if (error)
+                    return "systemStatePacket." + error;
+            }
+        }
+        if (message.radioConfigPacket != null && message.hasOwnProperty("radioConfigPacket")) {
+            if (properties.payload === 1)
+                return "payload: multiple values";
+            properties.payload = 1;
+            {
+                let error = $root.RadioConfigPacket.verify(message.radioConfigPacket);
+                if (error)
+                    return "radioConfigPacket." + error;
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Creates a Packet message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof Packet
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {Packet} Packet
+     */
+    Packet.fromObject = function fromObject(object) {
+        if (object instanceof $root.Packet)
+            return object;
+        let message = new $root.Packet();
+        if (object.header != null) {
+            if (typeof object.header !== "object")
+                throw TypeError(".Packet.header: object expected");
+            message.header = $root.PacketHeader.fromObject(object.header);
+        }
+        if (object.scheduleConfigPacket != null) {
+            if (typeof object.scheduleConfigPacket !== "object")
+                throw TypeError(".Packet.scheduleConfigPacket: object expected");
+            message.scheduleConfigPacket = $root.ScheduleConfigPacket.fromObject(object.scheduleConfigPacket);
+        }
+        if (object.systemStatePacket != null) {
+            if (typeof object.systemStatePacket !== "object")
+                throw TypeError(".Packet.systemStatePacket: object expected");
+            message.systemStatePacket = $root.SystemStatePacket.fromObject(object.systemStatePacket);
+        }
+        if (object.radioConfigPacket != null) {
+            if (typeof object.radioConfigPacket !== "object")
+                throw TypeError(".Packet.radioConfigPacket: object expected");
+            message.radioConfigPacket = $root.RadioConfigPacket.fromObject(object.radioConfigPacket);
+        }
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a Packet message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof Packet
+     * @static
+     * @param {Packet} message Packet
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    Packet.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        let object = {};
+        if (options.defaults)
+            object.header = null;
+        if (message.header != null && message.hasOwnProperty("header"))
+            object.header = $root.PacketHeader.toObject(message.header, options);
+        if (message.scheduleConfigPacket != null && message.hasOwnProperty("scheduleConfigPacket")) {
+            object.scheduleConfigPacket = $root.ScheduleConfigPacket.toObject(message.scheduleConfigPacket, options);
+            if (options.oneofs)
+                object.payload = "scheduleConfigPacket";
+        }
+        if (message.systemStatePacket != null && message.hasOwnProperty("systemStatePacket")) {
+            object.systemStatePacket = $root.SystemStatePacket.toObject(message.systemStatePacket, options);
+            if (options.oneofs)
+                object.payload = "systemStatePacket";
+        }
+        if (message.radioConfigPacket != null && message.hasOwnProperty("radioConfigPacket")) {
+            object.radioConfigPacket = $root.RadioConfigPacket.toObject(message.radioConfigPacket, options);
+            if (options.oneofs)
+                object.payload = "radioConfigPacket";
+        }
+        return object;
+    };
+
+    /**
+     * Converts this Packet to JSON.
+     * @function toJSON
+     * @memberof Packet
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    Packet.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for Packet
+     * @function getTypeUrl
+     * @memberof Packet
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    Packet.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/Packet";
+    };
+
+    return Packet;
+})();
+
+export { $root as default };

@@ -23,41 +23,41 @@ export default function EditScheduleScreen() {
   const [name, setName] = useState(schedule.name ?? "");
 
   /* ---------------- TIME WINDOW ---------------- */
-  const [startHour, setStartHour] = useState(schedule.window?.start_hour ?? 0);
-  const [endHour, setEndHour] = useState(schedule.window?.end_hour ?? 0);
+  const [startHour, setStartHour] = useState(schedule.window?.startHour ?? 0);
+  const [endHour, setEndHour] = useState(schedule.window?.endHour ?? 0);
 
   /* ---------------- GPS ---------------- */
   const [gpsEnabled, setGpsEnabled] = useState(schedule.gps?.enabled ?? false);
-  const [gpsInterval, setGpsInterval] = useState(String(schedule.gps?.sample_interval_min ?? 10));
+  const [gpsInterval, setGpsInterval] = useState(String(schedule.gps?.sampleIntervalMin ?? 10));
   const [gpsAccuracy, setGpsAccuracy] = useState(schedule.gps?.accuracy ?? 5);
 
   /* ---------------- LIGHT ---------------- */
   const [lightEnabled, setLightEnabled] = useState(schedule.light?.enabled ?? true);
-  const [lightInterval, setLightInterval] = useState(String(schedule.light?.sample_interval_min ?? 30));
+  const [lightInterval, setLightInterval] = useState(String(schedule.light?.sampleIntervalMin ?? 30));
 
   /* ---------------- ENVIRONMENTAL ---------------- */
   const [envEnabled, setEnvEnabled] = useState(schedule.environmental?.enabled ?? true);
-  const [envInterval, setEnvInterval] = useState(String(schedule.environmental?.sample_interval_min ?? 5));
+  const [envInterval, setEnvInterval] = useState(String(schedule.environmental?.sampleIntervalMin ?? 5));
 
   /* ---------------- PARTICULATE ---------------- */
   const [partEnabled, setPartEnabled] = useState(schedule.particulate?.enabled ?? true);
-  const [partInterval, setPartInterval] = useState(String(schedule.particulate?.sample_interval_min ?? 15));
+  const [partInterval, setPartInterval] = useState(String(schedule.particulate?.sampleIntervalMin ?? 15));
 
   /* ---------------- RADIO ---------------- */
   const [radioEnabled, setRadioEnabled] = useState(schedule.radio?.enabled ?? false);
-  const [radioInterval, setRadioInterval] = useState(String(schedule.radio?.transmit_interval_min ?? 60));
-  const [radioTxOnlyOnGps, setRadioTxOnlyOnGps] = useState(schedule.radio?.tx_only_on_new_gps_fix ?? false);
-  const [radioPower, setRadioPower] = useState(String(schedule.radio?.tx_power_dbm ?? 0));
+  const [radioInterval, setRadioInterval] = useState(String(schedule.radio?.transmitIntervalMin ?? 60));
+  const [radioTxOnlyOnGps, setRadioTxOnlyOnGps] = useState(schedule.radio?.txOnlyOnNewGpsFix ?? false);
+  const [radioPower, setRadioPower] = useState(String(schedule.radio?.txPowerDbm ?? 0));
 
   /* ---------------- MICROPHONE ---------------- */
   const [micEnabled, setMicEnabled] = useState(schedule.microphone?.enabled ?? false);
-  const [micContinuous, setMicContinuous] = useState(schedule.microphone?.continuous_mode ?? false);
-  const [micLength, setMicLength] = useState(String(schedule.microphone?.sample_length_min ?? 0));
-  const [micWindow, setMicWindow] = useState(String(schedule.microphone?.sample_window_min ?? 0));
+  const [micContinuous, setMicContinuous] = useState(schedule.microphone?.continuousMode ?? false);
+  const [micLength, setMicLength] = useState(String(schedule.microphone?.sampleLengthMin ?? 0));
+  const [micWindow, setMicWindow] = useState(String(schedule.microphone?.sampleWindowMin ?? 0));
 
   /* ---------------- ACCELEROMETER ---------------- */
   const [accelEnabled, setAccelEnabled] = useState(schedule.accelerometer?.enabled ?? false);
-  const [accelRate, setAccelRate] = useState(schedule.accelerometer?.sample_rate ?? 0);
+  const [accelRate, setAccelRate] = useState(schedule.accelerometer?.sampleRate ?? 0);
   const [accelSensitivity, setAccelSensitivity] = useState(schedule.accelerometer?.sensitivity ?? 0);
 
   /* ---------------- VALIDATION & SAVE ---------------- */
@@ -70,28 +70,28 @@ export default function EditScheduleScreen() {
     const updated = {
       ...schedule,
       name,
-      window: { start_hour: startHour, end_hour: endHour },
-      gps: { enabled: gpsEnabled, sample_interval_min: Number(gpsInterval), accuracy: gpsAccuracy },
-      light: { enabled: lightEnabled, sample_interval_min: Number(lightInterval) },
-      environmental: { enabled: envEnabled, sample_interval_min: Number(envInterval) },
-      particulate: { enabled: partEnabled, sample_interval_min: Number(partInterval) },
+      window: { startHour, endHour },
+      gps: { enabled: gpsEnabled, sampleIntervalMin: Number(gpsInterval), accuracy: gpsAccuracy },
+      light: { enabled: lightEnabled, sampleIntervalMin: Number(lightInterval) },
+      environmental: { enabled: envEnabled, sampleIntervalMin: Number(envInterval) },
+      particulate: { enabled: partEnabled, sampleIntervalMin: Number(partInterval) },
       radio: {
         enabled: radioEnabled,
         region: 0,
         auth: 0,
-        transmit_interval_min: Number(radioInterval),
-        tx_only_on_new_gps_fix: radioTxOnlyOnGps,
-        tx_power_dbm: Number(radioPower),
+        transmitIntervalMin: Number(radioInterval),
+        txOnlyOnNewGpsFix: radioTxOnlyOnGps,
+        txPowerDbm: Number(radioPower),
       },
       microphone: {
         enabled: micEnabled,
-        continuous_mode: micContinuous,
-        sample_length_min: Number(micLength),
-        sample_window_min: Number(micWindow),
+        continuousMode: micContinuous,
+        sampleLengthMin: Number(micLength),
+        sampleWindowMin: Number(micWindow),
       },
       accelerometer: {
         enabled: accelEnabled,
-        sample_rate: accelRate,
+        sampleRate: accelRate,
         sensitivity: accelSensitivity,
       },
     };

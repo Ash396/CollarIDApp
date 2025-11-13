@@ -1,157 +1,125 @@
 syntax = "proto3";
-
+// ---- Header ----
 message PacketHeader {
   uint32 system_uid     = 1;
   uint32 ms_from_start  = 2;
-  uint64 epoch          = 3;
-  uint32 packet_index   = 4;
+  uint32 epoch          = 3;
+  uint32 packet_index   = 4; // 32->16, wraps
 }
-
 // ================== SCHEDULING / CONFIG ==================
-
-// 20 to 6 means 8pm to 6am
-message TimeWindow {
+message TimeWindow {          // 2 bytes
   uint32 start_hour = 1;  // 0 to 23 (inclusive)
   uint32 end_hour   = 2;  // 0 to 23 (inclusive)
 }
-
 // Enabled/disabled and sample interval for each sensor
 message SamplingConfig {
   bool   enabled              = 1;
   uint32 sample_interval_min  = 2; // minutes
 }
-
-// GPS
 message GPSConfig {
   bool   enabled              = 1;
   uint32 sample_interval_min  = 2;
-  uint32 accuracy     = 3; // 1 to 10
+  uint32 accuracy = 3;        // 1 to 10
 }
-
 enum RadioRegion {
   REGION_US915 = 0;
   REGION_AU915 = 1;
   REGION_EU868 = 2;
 }
-
 enum RadioAuth {
   AUTH_OTAA = 0;
   AUTH_ABP  = 1;
 }
-
 message RadioOTAA {
-  bytes dev_eui  = 1; // 8 bytes
-  bytes join_eui = 2; // 8 bytes
-  bytes app_key  = 3; // 16 bytes
+  bytes dev_eui  = 1; // 8, fixed_length
+  bytes join_eui = 2; // 8, fixed_length
+  bytes app_key  = 3; // 16, fixed_length
 }
-
 message RadioABP {
-  bytes dev_addr        = 1; // 4 bytes
-  bytes nwk_s_key       = 2; // 16 bytes
-  bytes app_s_key       = 3; // 16 bytes
-  bytes f_nwk_s_int_key = 4; // 16 bytes
-  bytes s_nwk_s_int_key = 5; // 16 bytes
+  bytes dev_addr        = 1; // 4,  fixed_length
+  bytes nwk_s_key       = 2; // 16, fixed_length
+  bytes app_s_key       = 3; // 16, fixed_length
+  bytes f_nwk_s_int_key = 4; // 16, fixed_length
+  bytes s_nwk_s_int_key = 5; // 16, fixed_length
 }
-
-message RadioConfig {
+message RadioConfigPacket {
   bool        enabled                   = 1;
   RadioRegion region                    = 2;
   RadioAuth   auth                      = 3;
-
   oneof credentials {
     RadioOTAA otaa = 4;
     RadioABP  abp  = 5;
   }
-
   uint32 transmit_interval_min          = 6;
   bool   tx_only_on_new_gps_fix         = 7;
   int32  tx_power_dbm                   = 8;
 }
-
 message MicrophoneConfig {
   bool            enabled            = 1;
   bool            continuous_mode    = 2; // on if true
   uint32          sample_length_min  = 3;
   uint32          sample_window_min  = 4;
 }
-
 enum AccelSampleRate {
   ACCEL_25HZ = 0;
   ACCEL_50HZ = 1;
 }
-
 enum AccelSensitivity {
   ACCEL_2G = 0;
   ACCEL_4G = 1;
   ACCEL_8G = 2;
 }
-
 message AccelerometerConfig {
   bool             enabled      = 1;
   AccelSampleRate  sample_rate  = 2;
   AccelSensitivity sensitivity  = 3;
 }
-
-message FirmwareInfo {
-  string version = 1;
-}
-
 // schedule that is applied during each TimeWindow
 message ScheduledConfig {
-  TimeWindow         window        = 1;
-  SamplingConfig     light         = 2;
-  SamplingConfig     environmental = 3;
-  SamplingConfig     particulate   = 4;
-  GPSConfig          gps           = 5;
-  RadioConfig        radio         = 6;
-  MicrophoneConfig   microphone    = 7;
-  AccelerometerConfig accelerometer = 8;
-
-  FirmwareInfo       firmware      = 9;
+  TimeWindow          window        = 1;
+  SamplingConfig      light         = 2;
+  SamplingConfig      environmental = 3;
+  SamplingConfig      particulate   = 4;
+  GPSConfig           gps           = 5;
+  MicrophoneConfig    microphone    = 6;
+  AccelerometerConfig accelerometer = 7;
 }
-
 // can include multiple schedules
 message ScheduleConfigPacket {
-  repeated ScheduledConfig schedules = 1;
+  repeated ScheduledConfig schedules = 1; // capped to 5 schedules in options
 }
-
-/* ---------- System state + sensors ---------- */
-
+// ================== SYSTEM STATE + SENSORS ==================
 enum Activity {
   STILL = 0;
   WALK = 1;
   RUN = 2;
 }
-
-message SimpleSensorReading{
-    uint32 index = 1;
-    uint32 epoch = 2;
-    float temperature = 3;
-    float humidity = 4;
-    float pressure = 5;
-    float gas = 6;
-    float pm2_5 = 7;
-    uint32 light = 8;
-    Activity activity = 9;
-    uint32 steps = 10;
-
-    bool particulate_static_obstructed = 11;
-    bool particulate_dynamic_obstructed = 12;
-    bool particulate_outside_detection_limits = 13;
+message SimpleSensorReading {
+  uint32 index = 1;
+  // uint32 epoch = 2;             already in header
+  float temperature = 2;
+  float humidity = 3;
+  float pressure = 4;
+  float gas = 5;
+  float pm2_5 = 6;
+  uint32 light = 7;
+  Activity activity = 8;
+  uint32 steps = 9;
+  bool particulate_static_obstructed = 10;
+  bool particulate_dynamic_obstructed = 11;
+  bool particulate_outside_detection_limits = 12;
 }
-
 message BatteryState {
   bool  charging   = 1;
-  float voltage    = 2;
-  optional float percentage = 3;
+  uint32 mV    = 2;        // uint16
+  // float voltage    = 2;
+  optional uint32 percentage   = 3;        // uint8 (omit if not known)
 }
-
 message SDCardState {
   bool   detected            = 1;
   uint64 space_remaining     = 2; // bytes
   uint64 total_space         = 3; // bytes
 }
-
 message GPSData{
   float latitude = 1;
   float longitude = 2;
@@ -159,22 +127,20 @@ message GPSData{
   float speed = 4;
   float heading = 5;
 }
-
 message SystemStatePacket {
-  bool         engage_state                 = 1;     // engaged/disengaged
-  BatteryState battery_state                = 2;
-  SDCardState  sdcard_state                 = 3;
-  optional GPSData      gps_data            = 4;
-  SimpleSensorReading simple_sensor_reading = 5;
+  bool         engage_state = 1;     // engaged/disengaged
+  BatteryState battery = 2;
+  SDCardState  sdcard  = 3;
+  optional GPSData  gps_data  = 4;
+  SimpleSensorReading sensors = 5;
+  string firmware_version = 6;
 }
-
 // ================== WRAPPER ==================
-
 message Packet {
-    PacketHeader header = 1;
-
-    oneof payload {
-      ScheduleConfigPacket schedule_config_packet = 2;
-      SystemStatePacket    system_state_packet    = 3;
-    }
+  PacketHeader header = 1;
+  oneof payload {
+    ScheduleConfigPacket schedule_config_packet = 2;
+    SystemStatePacket    system_state_packet    = 3;
+    RadioConfigPacket    radio_config_packet    = 4;
+  }
 }

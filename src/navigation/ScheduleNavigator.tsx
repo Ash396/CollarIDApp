@@ -4,33 +4,33 @@ import SchedulesScreen from "../screens/SchedulesScreen";
 import EditScheduleScreen from "../screens/EditScheduleScreen";
 
 /* -----------------------------------------------------
- * Shared Schedule Type
+ * Shared Schedule Type 
  * ----------------------------------------------------- */
 export type Schedule = {
   id: string;
   name: string;
-  window: { start_hour: number; end_hour: number };
+  window: { startHour: number; endHour: number };
 
   /* Sensor + System Configurations */
-  light?: { enabled: boolean; sample_interval_min?: number };
-  gps?: { enabled: boolean; sample_interval_min?: number; accuracy?: number };
-  environmental?: { enabled: boolean; sample_interval_min?: number };
-  particulate?: { enabled: boolean; sample_interval_min?: number };
+  light?: { enabled: boolean; sampleIntervalMin?: number };
+  gps?: { enabled: boolean; sampleIntervalMin?: number; accuracy?: number };
+  environmental?: { enabled: boolean; sampleIntervalMin?: number };
+  particulate?: { enabled: boolean; sampleIntervalMin?: number };
   radio?: {
     enabled: boolean;
-    transmit_interval_min?: number;
-    tx_only_on_new_gps_fix?: boolean;
-    tx_power_dbm?: number;
+    transmitIntervalMin?: number;
+    txOnlyOnNewGpsFix?: boolean;
+    txPowerDbm?: number;
   };
   microphone?: {
     enabled: boolean;
-    continuous_mode?: boolean;
-    sample_length_min?: number;
-    sample_window_min?: number;
+    continuousMode?: boolean;
+    sampleLengthMin?: number;
+    sampleWindowMin?: number;
   };
   accelerometer?: {
     enabled: boolean;
-    sample_rate?: number;
+    sampleRate?: number;
     sensitivity?: number;
   };
   firmware?: { version?: string };
@@ -40,7 +40,7 @@ export type Schedule = {
  * Navigator Type
  * ----------------------------------------------------- */
 export type ScheduleStackParamList = {
-  Schedules: undefined;
+  Schedules: { device?: any } | undefined;
   EditSchedule: { schedule: Schedule };
 };
 
