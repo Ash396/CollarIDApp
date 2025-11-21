@@ -4,7 +4,7 @@ import SchedulesScreen from "../screens/SchedulesScreen";
 import EditScheduleScreen from "../screens/EditScheduleScreen";
 
 /* -----------------------------------------------------
- * Shared Schedule Type 
+ * Shared Schedule Type
  * ----------------------------------------------------- */
 export type Schedule = {
   id: string;
@@ -16,12 +16,6 @@ export type Schedule = {
   gps?: { enabled: boolean; sampleIntervalMin?: number; accuracy?: number };
   environmental?: { enabled: boolean; sampleIntervalMin?: number };
   particulate?: { enabled: boolean; sampleIntervalMin?: number };
-  radio?: {
-    enabled: boolean;
-    transmitIntervalMin?: number;
-    txOnlyOnNewGpsFix?: boolean;
-    txPowerDbm?: number;
-  };
   microphone?: {
     enabled: boolean;
     continuousMode?: boolean;
@@ -33,7 +27,6 @@ export type Schedule = {
     sampleRate?: number;
     sensitivity?: number;
   };
-  firmware?: { version?: string };
 };
 
 /* -----------------------------------------------------

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -11,17 +11,51 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { ScheduleStackParamList } from "../navigation/ScheduleNavigator";
 import { useSchedules } from "../context/SchedulesContext";
-import { buildSchedulePacketFromAppState, sendConfig } from "../ble/bleManager";
+import {
+  buildSchedulePacketFromAppState,
+  sendConfig,
+  connectToCollar,
+} from "../ble/bleManager";
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, "Schedules">;
 
 export default function SchedulesScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<any>();
-  const { device } = route.params || {};
-  const { schedules, addSchedule } = useSchedules();
+  const { device: initialDevice } = route.params || {};
 
-  /* ------------------------- Add New Schedule ------------------------- */
+  const { schedules, addSchedule, loadSchedulesFromDevice } = useSchedules();
+
+  /* ------------------------------------------------------------------
+   * Connect if needed + Load schedules once
+   * ------------------------------------------------------------------ */
+  useEffect(() => {
+    async function load() {
+      try {
+        let device = initialDevice;
+
+        if (!device) {
+          console.warn("⚠️ No device passed to SchedulesScreen");
+          return;
+        }
+
+        // Ensure connected
+        const isConnected = await device.isConnected();
+        if (!isConnected) device = await connectToCollar(device);
+
+        // Load schedules from BLE device
+        await loadSchedulesFromDevice(device);
+      } catch (err) {
+        console.error("❌ Failed to load schedules:", err);
+      }
+    }
+
+    load();
+  }, [initialDevice]);
+
+  /* ---------------------------------------------------------
+   * Add New Schedule Locally
+   * --------------------------------------------------------- */
   const handleAddSchedule = () => {
     const newSchedule = {
       id: Date.now().toString(),
@@ -32,11 +66,18 @@ export default function SchedulesScreen() {
     addSchedule(newSchedule);
   };
 
-  /* ------------------------- Send to Device ------------------------- */
+  /* ---------------------------------------------------------
+   * Send Updated Schedule Packet to the Device
+   * --------------------------------------------------------- */
   const handleSendToDevice = async () => {
     try {
+      if (!initialDevice) {
+        Alert.alert("No Device", "You must connect to a collar first.");
+        return;
+      }
+
       const packet = buildSchedulePacketFromAppState(schedules);
-      const ack = await sendConfig(device, packet);
+      const ack = await sendConfig(initialDevice, packet);
 
       if (ack)
         Alert.alert("✅ Success", "Schedule sent and acknowledged!");
@@ -44,16 +85,25 @@ export default function SchedulesScreen() {
         Alert.alert("⚠️ Sent", "Sent to device but no ACK received.");
     } catch (err) {
       Alert.alert("Error", "Failed to send schedule config.");
+      console.error(err);
     }
   };
 
-  /* ------------------------- Render ------------------------- */
+  /* ---------------------------------------------------------
+   * RENDER
+   * --------------------------------------------------------- */
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>SCHEDULES</Text>
       <Text style={styles.sub}>
-        Configure sampling and time windows for {device?.name ?? "Collar"}
+        Configure sampling and time windows for {initialDevice?.name ?? "Collar"}
       </Text>
+
+      {schedules.length === 0 && (
+        <Text style={{ color: "#777", marginBottom: 20 }}>
+          No schedules loaded from device.
+        </Text>
+      )}
 
       {schedules.map((s) => {
         const isDisabled =
@@ -62,7 +112,6 @@ export default function SchedulesScreen() {
             s.light?.enabled ||
             s.environmental?.enabled ||
             s.particulate?.enabled ||
-            s.radio?.enabled ||
             s.microphone?.enabled ||
             s.accelerometer?.enabled
           );
@@ -92,7 +141,7 @@ export default function SchedulesScreen() {
               )}
               {s.environmental?.enabled && (
                 <Text style={styles.cardDetail}>
-                  🌡️ Environmental: every {s.environmental.sampleIntervalMin} min
+                  🌡️ Env: every {s.environmental.sampleIntervalMin} min
                 </Text>
               )}
               {s.particulate?.enabled && (
@@ -100,16 +149,10 @@ export default function SchedulesScreen() {
                   💨 Particulate: every {s.particulate.sampleIntervalMin} min
                 </Text>
               )}
-              {s.radio?.enabled && (
-                <Text style={styles.cardDetail}>
-                  📡 Radio: every {s.radio.transmitIntervalMin} min, power{" "}
-                  {s.radio.txPowerDbm ?? 0} dBm
-                </Text>
-              )}
               {s.microphone?.enabled && (
                 <Text style={styles.cardDetail}>
                   🎙️ Microphone:{" "}
-                  {s.microphone.continuousMode ? "continuous" : "windowed"} mode
+                  {s.microphone.continuousMode ? "continuous" : "windowed"}
                 </Text>
               )}
               {s.accelerometer?.enabled && (

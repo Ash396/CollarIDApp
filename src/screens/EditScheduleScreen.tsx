@@ -43,12 +43,6 @@ export default function EditScheduleScreen() {
   const [partEnabled, setPartEnabled] = useState(schedule.particulate?.enabled ?? true);
   const [partInterval, setPartInterval] = useState(String(schedule.particulate?.sampleIntervalMin ?? 15));
 
-  /* ---------------- RADIO ---------------- */
-  const [radioEnabled, setRadioEnabled] = useState(schedule.radio?.enabled ?? false);
-  const [radioInterval, setRadioInterval] = useState(String(schedule.radio?.transmitIntervalMin ?? 60));
-  const [radioTxOnlyOnGps, setRadioTxOnlyOnGps] = useState(schedule.radio?.txOnlyOnNewGpsFix ?? false);
-  const [radioPower, setRadioPower] = useState(String(schedule.radio?.txPowerDbm ?? 0));
-
   /* ---------------- MICROPHONE ---------------- */
   const [micEnabled, setMicEnabled] = useState(schedule.microphone?.enabled ?? false);
   const [micContinuous, setMicContinuous] = useState(schedule.microphone?.continuousMode ?? false);
@@ -75,14 +69,6 @@ export default function EditScheduleScreen() {
       light: { enabled: lightEnabled, sampleIntervalMin: Number(lightInterval) },
       environmental: { enabled: envEnabled, sampleIntervalMin: Number(envInterval) },
       particulate: { enabled: partEnabled, sampleIntervalMin: Number(partInterval) },
-      radio: {
-        enabled: radioEnabled,
-        region: 0,
-        auth: 0,
-        transmitIntervalMin: Number(radioInterval),
-        txOnlyOnNewGpsFix: radioTxOnlyOnGps,
-        txPowerDbm: Number(radioPower),
-      },
       microphone: {
         enabled: micEnabled,
         continuousMode: micContinuous,
@@ -214,19 +200,6 @@ export default function EditScheduleScreen() {
           <TextInput style={styles.input} keyboardType="numeric" value={partInterval} onChangeText={setPartInterval} />
         </>
       ), partEnabled, setPartEnabled)}
-
-      {renderCard("📡 Radio", (
-        <>
-          <Text style={styles.label}>Transmit Interval (min)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={radioInterval} onChangeText={setRadioInterval} />
-          <View style={styles.row}>
-            <Text>Tx only on new GPS fix</Text>
-            <Switch value={radioTxOnlyOnGps} onValueChange={setRadioTxOnlyOnGps} />
-          </View>
-          <Text style={styles.label}>Tx Power (dBm)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={radioPower} onChangeText={setRadioPower} />
-        </>
-      ), radioEnabled, setRadioEnabled)}
 
       {renderCard("🎙️ Microphone", (
         <>

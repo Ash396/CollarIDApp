@@ -139,7 +139,6 @@ export function buildSchedulePacketFromAppState(
     environmental?: { enabled?: boolean; sampleIntervalMin?: number };
     particulate?: { enabled?: boolean; sampleIntervalMin?: number };
     gps?: { enabled?: boolean; sampleIntervalMin?: number; accuracy?: number };
-    radio?: { enabled?: boolean; transmitIntervalMin?: number; txPowerDbm?: number };
     microphone?: {
       enabled?: boolean;
       continuousMode?: boolean;
@@ -175,14 +174,6 @@ export function buildSchedulePacketFromAppState(
         enabled: Boolean(s.gps?.enabled ?? true),
         sampleIntervalMin: Number(s.gps?.sampleIntervalMin ?? 20),
         accuracy: Math.min(Math.max(1, Number(s.gps?.accuracy ?? 5)), 10),
-      }),
-      radio: PB.RadioConfigPacket.create({
-        enabled: Boolean(s.radio?.enabled ?? false),
-        region: 0, // REGION_US915
-        auth: 0, // AUTH_OTAA
-        transmitIntervalMin: Number(s.radio?.transmitIntervalMin ?? 60),
-        txOnlyOnNewGpsFix: false,
-        txPowerDbm: Number(s.radio?.txPowerDbm ?? 0),
       }),
       microphone: PB.MicrophoneConfig.create({
         enabled: Boolean(s.microphone?.enabled ?? false),
