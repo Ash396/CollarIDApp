@@ -17,44 +17,44 @@ export default function EditScheduleScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { schedule } = route.params;
+
   const { updateSchedule, deleteSchedule } = useSchedules();
 
-  /* ---------------- NAME ---------------- */
+  /* ---------------- STATE ---------------- */
   const [name, setName] = useState(schedule.name ?? "");
 
-  /* ---------------- TIME WINDOW ---------------- */
   const [startHour, setStartHour] = useState(schedule.window?.startHour ?? 0);
   const [endHour, setEndHour] = useState(schedule.window?.endHour ?? 0);
 
-  /* ---------------- GPS ---------------- */
+  /* GPS */
   const [gpsEnabled, setGpsEnabled] = useState(schedule.gps?.enabled ?? false);
-  const [gpsInterval, setGpsInterval] = useState(String(schedule.gps?.sampleIntervalMin ?? 10));
+  const [gpsInterval, setGpsInterval] = useState(String(schedule.gps?.sampleIntervalMin ?? ""));
   const [gpsAccuracy, setGpsAccuracy] = useState(schedule.gps?.accuracy ?? 5);
 
-  /* ---------------- LIGHT ---------------- */
+  /* Light */
   const [lightEnabled, setLightEnabled] = useState(schedule.light?.enabled ?? true);
-  const [lightInterval, setLightInterval] = useState(String(schedule.light?.sampleIntervalMin ?? 30));
+  const [lightInterval, setLightInterval] = useState(String(schedule.light?.sampleIntervalMin ?? ""));
 
-  /* ---------------- ENVIRONMENTAL ---------------- */
+  /* Environmental */
   const [envEnabled, setEnvEnabled] = useState(schedule.environmental?.enabled ?? true);
-  const [envInterval, setEnvInterval] = useState(String(schedule.environmental?.sampleIntervalMin ?? 5));
+  const [envInterval, setEnvInterval] = useState(String(schedule.environmental?.sampleIntervalMin ?? ""));
 
-  /* ---------------- PARTICULATE ---------------- */
+  /* Particulate */
   const [partEnabled, setPartEnabled] = useState(schedule.particulate?.enabled ?? true);
-  const [partInterval, setPartInterval] = useState(String(schedule.particulate?.sampleIntervalMin ?? 15));
+  const [partInterval, setPartInterval] = useState(String(schedule.particulate?.sampleIntervalMin ?? ""));
 
-  /* ---------------- MICROPHONE ---------------- */
+  /* Microphone */
   const [micEnabled, setMicEnabled] = useState(schedule.microphone?.enabled ?? false);
   const [micContinuous, setMicContinuous] = useState(schedule.microphone?.continuousMode ?? false);
-  const [micLength, setMicLength] = useState(String(schedule.microphone?.sampleLengthMin ?? 0));
-  const [micWindow, setMicWindow] = useState(String(schedule.microphone?.sampleWindowMin ?? 0));
+  const [micLength, setMicLength] = useState(String(schedule.microphone?.sampleLengthMin ?? ""));
+  const [micWindow, setMicWindow] = useState(String(schedule.microphone?.sampleWindowMin ?? ""));
 
-  /* ---------------- ACCELEROMETER ---------------- */
+  /* Accelerometer */
   const [accelEnabled, setAccelEnabled] = useState(schedule.accelerometer?.enabled ?? false);
   const [accelRate, setAccelRate] = useState(schedule.accelerometer?.sampleRate ?? 0);
   const [accelSensitivity, setAccelSensitivity] = useState(schedule.accelerometer?.sensitivity ?? 0);
 
-  /* ---------------- VALIDATION & SAVE ---------------- */
+  /* ---------------- SAVE ---------------- */
   const handleSave = () => {
     if (!name.trim()) {
       Alert.alert("Invalid name", "Please enter a schedule name.");
@@ -65,10 +65,23 @@ export default function EditScheduleScreen() {
       ...schedule,
       name,
       window: { startHour, endHour },
-      gps: { enabled: gpsEnabled, sampleIntervalMin: Number(gpsInterval), accuracy: gpsAccuracy },
-      light: { enabled: lightEnabled, sampleIntervalMin: Number(lightInterval) },
-      environmental: { enabled: envEnabled, sampleIntervalMin: Number(envInterval) },
-      particulate: { enabled: partEnabled, sampleIntervalMin: Number(partInterval) },
+      gps: {
+        enabled: gpsEnabled,
+        sampleIntervalMin: Number(gpsInterval),
+        accuracy: gpsAccuracy,
+      },
+      light: {
+        enabled: lightEnabled,
+        sampleIntervalMin: Number(lightInterval),
+      },
+      environmental: {
+        enabled: envEnabled,
+        sampleIntervalMin: Number(envInterval),
+      },
+      particulate: {
+        enabled: partEnabled,
+        sampleIntervalMin: Number(partInterval),
+      },
       microphone: {
         enabled: micEnabled,
         continuousMode: micContinuous,
@@ -87,36 +100,40 @@ export default function EditScheduleScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert("Delete Schedule", `Are you sure you want to delete "${schedule.name}"?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          deleteSchedule(schedule.id);
-          navigation.goBack();
+    Alert.alert(
+      "Delete Schedule",
+      `Are you sure you want to delete "${schedule.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteSchedule(schedule.id);
+            navigation.goBack();
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
-  /* ---------------- HELPER: CARD COMPONENT ---------------- */
+  /* ---------------- CARD HELPER ---------------- */
   const renderCard = (
     title: string,
     children: React.ReactNode,
     enabled?: boolean,
-    onToggle?: (v: boolean) => void
+    onToggle?: (val: boolean) => void
   ) => {
-    const dimmed = enabled === false;
+    const dim = enabled === false;
     return (
-      <View style={[styles.card, dimmed && styles.cardDisabled]}>
+      <View style={[styles.card, dim && styles.cardDisabled]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{title}</Text>
           {typeof enabled === "boolean" && onToggle && (
             <Switch value={enabled} onValueChange={onToggle} />
           )}
         </View>
-        <View style={{ opacity: dimmed ? 0.5 : 1 }}>{children}</View>
+        <View style={{ opacity: dim ? 0.5 : 1 }}>{children}</View>
       </View>
     );
   };
@@ -126,7 +143,7 @@ export default function EditScheduleScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Edit Schedule</Text>
 
-      {/* 🏷️ Schedule Info */}
+      {/* NAME */}
       {renderCard("Schedule Info", (
         <>
           <Text style={styles.label}>Name</Text>
@@ -140,7 +157,7 @@ export default function EditScheduleScreen() {
         </>
       ))}
 
-      {/* 🕓 Time Window */}
+      {/* TIME WINDOW */}
       {renderCard("🕓 Time Window", (
         <>
           <Text style={styles.label}>Start Hour</Text>
@@ -153,6 +170,7 @@ export default function EditScheduleScreen() {
               <Picker.Item key={h} label={`${h}:00`} value={h} />
             ))}
           </Picker>
+
           <Text style={styles.label}>End Hour</Text>
           <Picker
             selectedValue={endHour}
@@ -166,13 +184,25 @@ export default function EditScheduleScreen() {
         </>
       ))}
 
-      {/* SENSOR CARDS */}
+      {/* GPS */}
       {renderCard("📍 GPS", (
         <>
-          <Text style={styles.label}>Interval (min)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={gpsInterval} onChangeText={setGpsInterval} />
+          <Text style={styles.label}>Interval (minutes)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={gpsInterval}
+            onChangeText={setGpsInterval}
+            placeholder="1–720 min"
+            placeholderTextColor="#999"
+          />
+
           <Text style={styles.label}>Accuracy (1–10)</Text>
-          <Picker selectedValue={gpsAccuracy} onValueChange={(v) => setGpsAccuracy(Number(v))} itemStyle={{ color: "#111" }}>
+          <Picker
+            selectedValue={gpsAccuracy}
+            onValueChange={(v) => setGpsAccuracy(Number(v))}
+            itemStyle={{ color: "#111" }}
+          >
             {[...Array(10).keys()].map((a) => (
               <Picker.Item key={a + 1} label={`${a + 1}`} value={a + 1} />
             ))}
@@ -180,47 +210,95 @@ export default function EditScheduleScreen() {
         </>
       ), gpsEnabled, setGpsEnabled)}
 
+      {/* LIGHT */}
       {renderCard("💡 Light", (
         <>
-          <Text style={styles.label}>Interval (min)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={lightInterval} onChangeText={setLightInterval} />
+          <Text style={styles.label}>Interval (minutes)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={lightInterval}
+            onChangeText={setLightInterval}
+            placeholder="1–60 min"
+            placeholderTextColor="#999"
+          />
         </>
       ), lightEnabled, setLightEnabled)}
 
+      {/* ENVIRONMENTAL */}
       {renderCard("🌡️ Environmental", (
         <>
-          <Text style={styles.label}>Interval (min)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={envInterval} onChangeText={setEnvInterval} />
+          <Text style={styles.label}>Interval (minutes)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={envInterval}
+            onChangeText={setEnvInterval}
+            placeholder="1–60 min"
+            placeholderTextColor="#999"
+          />
         </>
       ), envEnabled, setEnvEnabled)}
 
+      {/* PARTICULATE */}
       {renderCard("💨 Particulate", (
         <>
-          <Text style={styles.label}>Interval (min)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={partInterval} onChangeText={setPartInterval} />
+          <Text style={styles.label}>Interval (minutes)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={partInterval}
+            onChangeText={setPartInterval}
+            placeholder="1–720 min"
+            placeholderTextColor="#999"
+          />
         </>
       ), partEnabled, setPartEnabled)}
 
+      {/* MICROPHONE */}
       {renderCard("🎙️ Microphone", (
         <>
           <View style={styles.row}>
-            <Text>Continuous Mode</Text>
+            <Text style={{ color: "#333" }}>Continuous Mode</Text>
             <Switch value={micContinuous} onValueChange={setMicContinuous} />
           </View>
-          <Text style={styles.label}>Sample Length (min)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={micLength} onChangeText={setMicLength} />
-          <Text style={styles.label}>Sample Window (min)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={micWindow} onChangeText={setMicWindow} />
+
+          <Text style={styles.label}>Sample Window (minutes)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={micWindow}
+            onChangeText={setMicWindow}
+            placeholder="1–60 min"
+            placeholderTextColor="#999"
+          />
+
+          <Text style={styles.label}>Sample Length (minutes)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={micLength}
+            onChangeText={setMicLength}
+            placeholder={`1–${micWindow || "?"} min`}
+            placeholderTextColor="#999"
+          />
+
         </>
       ), micEnabled, setMicEnabled)}
 
+      {/* ACCEL */}
       {renderCard("🏃 Accelerometer", (
         <>
           <Text style={styles.label}>Sample Rate</Text>
-          <Picker selectedValue={accelRate} onValueChange={(v) => setAccelRate(Number(v))} itemStyle={{ color: "#111" }}>
+          <Picker
+            selectedValue={accelRate}
+            onValueChange={(v) => setAccelRate(Number(v))}
+            itemStyle={{ color: "#111" }}
+          >
             <Picker.Item label="25 Hz" value={0} />
             <Picker.Item label="50 Hz" value={1} />
           </Picker>
+
           <Text style={styles.label}>Sensitivity</Text>
           <Picker
             selectedValue={accelSensitivity}
@@ -234,7 +312,7 @@ export default function EditScheduleScreen() {
         </>
       ), accelEnabled, setAccelEnabled)}
 
-      {/* Buttons */}
+      {/* BUTTONS */}
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveText}>SAVE</Text>
       </TouchableOpacity>
@@ -250,57 +328,65 @@ export default function EditScheduleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FAFAFA", padding: 20 },
   title: { fontSize: 30, fontWeight: "700", color: "#111", marginBottom: 20 },
+
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFF",
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     shadowColor: "#000",
     shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
   },
+  cardDisabled: { backgroundColor: "#EEE" },
+
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
-  },
-  cardDisabled: {
-    backgroundColor: "#EEE",
+    marginBottom: 8,
   },
   cardTitle: { fontSize: 18, fontWeight: "700", color: "#111" },
-  label: { fontSize: 15, fontWeight: "500", color: "#333", marginBottom: 4, marginTop: 8 },
+
+  label: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#333",
+    marginTop: 10,
+    marginBottom: 4,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#DDD",
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 10,
-    marginVertical: 6,
     fontSize: 15,
     color: "#111",
+    marginBottom: 6,
   },
+
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginVertical: 8,
+    marginVertical: 6,
   },
+
   saveButton: {
     backgroundColor: "#FDC996",
-    borderRadius: 12,
-    marginTop: 10,
     paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
   },
-  saveText: { color: "white", fontWeight: "700", fontSize: 17 },
+  saveText: { color: "#FFF", fontWeight: "700", fontSize: 17 },
+
   deleteButton: {
     backgroundColor: "#F87171",
-    borderRadius: 12,
-    marginTop: 14,
     paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
+    marginTop: 14,
   },
-  deleteText: { color: "white", fontWeight: "700", fontSize: 17 },
+  deleteText: { color: "#FFF", fontWeight: "700", fontSize: 17 },
 });

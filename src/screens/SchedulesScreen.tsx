@@ -16,7 +16,7 @@ import {
   sendConfig,
   connectToCollar,
 } from "../ble/bleManager";
-import { estimateScheduleSolarHours } from "../utils/powerEstimator";
+import { estimateScheduleSolar } from "../utils/powerEstimator";
 
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, "Schedules">;
@@ -26,7 +26,7 @@ export default function SchedulesScreen() {
   const route = useRoute<any>();
   const { device: initialDevice } = route.params || {};
 
-  const { schedules, addSchedule, loadSchedulesFromDevice } = useSchedules();
+  const { draftSchedules, addSchedule, loadSchedulesFromDevice } = useSchedules();
 
   /* ------------------------------------------------------------------
    * Connect if needed + Load schedules once
@@ -61,7 +61,7 @@ export default function SchedulesScreen() {
   const handleAddSchedule = () => {
     const newSchedule = {
       id: Date.now().toString(),
-      name: `New Schedule ${schedules.length + 1}`,
+      name: `New Schedule ${draftSchedules.length + 1}`,
       window: { startHour: 8, endHour: 20 },
       gps: { enabled: true, sampleIntervalMin: 10 },
     };
@@ -78,7 +78,7 @@ export default function SchedulesScreen() {
         return;
       }
 
-      const packet = buildSchedulePacketFromAppState(schedules);
+      const packet = buildSchedulePacketFromAppState(draftSchedules);
       const ack = await sendConfig(initialDevice, packet);
 
       if (ack)
@@ -101,13 +101,13 @@ export default function SchedulesScreen() {
         Configure sampling and time windows for {initialDevice?.name ?? "Collar"}
       </Text>
 
-      {schedules.length === 0 && (
+      {draftSchedules.length === 0 && (
         <Text style={{ color: "#777", marginBottom: 20 }}>
           No schedules loaded from device.
         </Text>
       )}
 
-      {schedules.map((s) => {
+      {draftSchedules.map((s) => {
         const isDisabled =
           !(
             s.gps?.enabled ||
@@ -118,7 +118,7 @@ export default function SchedulesScreen() {
             s.accelerometer?.enabled
           );
 
-        const solarHours = estimateScheduleSolarHours(s);
+        const solarEstimate = estimateScheduleSolar(s).totalSolarHours;
 
         return (
           <TouchableOpacity
@@ -131,8 +131,8 @@ export default function SchedulesScreen() {
               🕓 {s.window.startHour}:00 – {s.window.endHour}:00
             </Text>
 
-            <Text style={{ fontSize: 14, color: "#F28C28", fontWeight: "600", marginBottom: 6 }}>
-              🌞 Solar Hours: {solarHours.toFixed(1)} hrs/day
+            <Text style={styles.cardText}>
+              ☀️ {solarEstimate.toFixed(1)} solar-hours / day
             </Text>
 
             <View style={styles.detailsContainer}>

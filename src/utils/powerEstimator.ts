@@ -1,280 +1,167 @@
 // utils/powerEstimator.ts
 import type { Schedule } from "../navigation/ScheduleNavigator";
 
-/** ---------- Constants (fake-but-plausible model) ---------- **/
-
-// mW constants (from your slide / approximations)
-const BASE_CORE_MW = 2.8;
-const ACCEL_LUX_MW = 1.4;
-const ENV_MW = 0.3;
-
-const MIC_FULL_MW = 1.9;
-
-const GPS_ACQ_MW = 53.6;
-const GPS_STANDBY_MW = 0.4;
-
-const PARTICULATE_INTEGRATION_MW = 87;
-const PARTICULATE_STANDBY_MW = 0.1;
-
-// Very rough placeholder for “always-on” radio / LoRa overhead
-const LORA_BASE_MW = 3.0;
-
-// Solar panel output assumption (mWh per “solar hour”)
-const SOLAR_PANEL_OUTPUT_PER_HOUR_MWH = 30;
-
-/** ---------- Helpers ---------- **/
-
-function clamp(value: number, min: number, max: number): number {
-  if (Number.isNaN(value)) return min;
-  return Math.max(min, Math.min(max, value));
-}
-
-/**
- * Map an interval in [minInterval, maxInterval] minutes
- * to a factor in [1.0, 0.1] (shorter interval => higher duty).
- */
-function intervalDutyFactor(
-  intervalMin: number,
-  minInterval: number,
-  maxInterval: number
-): number {
-  const clamped = clamp(intervalMin, minInterval, maxInterval);
-  const t = (clamped - minInterval) / (maxInterval - minInterval); // 0..1
-  return 1.0 - 0.9 * t; // 1.0 at minInterval, 0.1 at maxInterval
-}
-
-/**
- * Compute the number of active hours for a window.
- * Handles wraparound (e.g., 20 -> 4 => 8 hours).
- */
-function computeWindowHours(startHour?: number, endHour?: number): number {
-  const s = clamp(startHour ?? 0, 0, 23);
-  const e = clamp(endHour ?? 23, 0, 23);
-
-  if (s === e) {
-    // treat as full day if equal — or you can choose 0
-    return 24;
-  }
-
-  const diff = (e - s + 24) % 24;
-  return diff > 0 ? diff : 24;
-}
-
-/** ---------- Types for breakdown ---------- **/
-
-export type ComponentKey =
-  | "base"
-  | "gps"
-  | "lora"
-  | "particulate"
-  | "microphone"
-  | "accelerometer"
-  | "lightEnv";
-
-export type ComponentContribution = {
-  key: ComponentKey;
-  label: string;
-  mW: number; // average mW during the active window
-};
-
-export type SchedulePowerBreakdown = {
-  schedule: Schedule;
-  activeHours: number;
-  components: ComponentContribution[];
-  totalMilliwatts: number;
-};
-
-export type SystemSolarEstimate = {
-  totalSolarHoursPerDay: number;
-  perSchedule: {
-    id?: string;
-    name?: string;
-    solarHoursPerDay: number;
-  }[];
+export type PowerBreakdown = {
+  totalSolarHours: number;
   components: {
-    key: ComponentKey;
-    label: string;
-    share: number; // 0..1 fraction of total (for heaviest schedule)
-  }[];
+    gps: number;
+    lora: number;
+    particulate: number;
+    microphone: number;
+    accelerometer: number;
+    lightEnv: number;
+  };
 };
 
-/** ---------- Core per-schedule power model ---------- **/
+/** Clamp helper */
+function clamp(v: number, min: number, max: number): number {
+  if (Number.isNaN(v)) return min;
+  return Math.max(min, Math.min(max, v));
+}
 
-export function computeSchedulePower(schedule: Schedule): SchedulePowerBreakdown {
-  const hours = computeWindowHours(
-    schedule.window?.startHour,
-    schedule.window?.endHour
-  );
+/** Hours in a schedule window, handling overnight windows. */
+function windowHours(window: { startHour: number; endHour: number }): number {
+  const start = clamp(window.startHour ?? 0, 0, 23);
+  const end = clamp(window.endHour ?? 0, 0, 23);
+  let diff = end - start;
+  if (diff <= 0) diff += 24;
+  return diff;
+}
 
-  const components: ComponentContribution[] = [];
+/**
+ * Estimate solar-hours per day for a single schedule.
+ * Placeholder model (easy to tweak later).
+ */
+export function estimateScheduleSolar(schedule: Schedule): PowerBreakdown {
+  const hours = schedule.window
+    ? windowHours(schedule.window)
+    : 24;
 
-  // Base + accel + env (always on while schedule is active)
-  const base_mW = BASE_CORE_MW + ACCEL_LUX_MW + ENV_MW;
-  components.push({
-    key: "base",
-    label: "Base + Accel + Env",
-    mW: base_mW,
-  });
+  const fracDay = hours / 24;
 
-  // Light + Environmental intervals (we’ll treat them as part of base load;
-  // if you want, you can tweak this later to respond to sampling intervals)
+  // ---- Placeholder base weights (tune with mentor later) ----
+  const GPS_BASE = 2.0;           // at 1 min interval over full day
+  const LORA_BASE = 1.5;          // roughly tied to GPS / transmit activity
+  const PARTICULATE_BASE = 1.6;   // PM sensor, 1 min interval full day
+  const MIC_BASE = 2.2;           // microphone at full duty
+  const ACCEL_BASE = 0.8;         // accelerometer baseline
+  const LIGHT_ENV_BASE = 0.7;     // lux + environmental baseline
 
-  // GPS
-  let gps_mW = 0;
+  // ---- GPS ----
+  let gpsHours = 0;
   if (schedule.gps?.enabled) {
-    const gpsInterval = clamp(schedule.gps.sampleIntervalMin ?? 60, 1, 12 * 60); // 1..720
-    const factor = intervalDutyFactor(gpsInterval, 1, 12 * 60);
-    gps_mW =
-      GPS_STANDBY_MW + (GPS_ACQ_MW - GPS_STANDBY_MW) * factor; // standby + bursts
+    const gpsInterval = clamp(schedule.gps.sampleIntervalMin ?? 10, 1, 12 * 60);
+    const norm = Math.sqrt(1 / gpsInterval); // slower decay than linear
+    gpsHours = fracDay * GPS_BASE * norm;
   }
-  components.push({
-    key: "gps",
-    label: "GPS",
-    mW: gps_mW,
-  });
 
-  // Particulate
-  let particulate_mW = 0;
+  // ---- LoRa (fake, derived from GPS interval for now) ----
+  let loraHours = 0;
+  if (schedule.gps?.enabled) {
+    const txInterval = clamp(schedule.gps.sampleIntervalMin ?? 30, 1, 12 * 60);
+    const norm = Math.sqrt(1 / txInterval);
+    loraHours = fracDay * LORA_BASE * norm;
+  }
+
+  // ---- Particulate ----
+  let particulateHours = 0;
   if (schedule.particulate?.enabled) {
-    const partInterval = clamp(
-      schedule.particulate.sampleIntervalMin ?? 30,
+    const pInterval = clamp(
+      schedule.particulate.sampleIntervalMin ?? 15,
       1,
       12 * 60
     );
-    const factor = intervalDutyFactor(partInterval, 1, 12 * 60);
-    particulate_mW =
-      PARTICULATE_STANDBY_MW +
-      (PARTICULATE_INTEGRATION_MW - PARTICULATE_STANDBY_MW) * factor;
+    const norm = Math.sqrt(1 / pInterval);
+    particulateHours = fracDay * PARTICULATE_BASE * norm;
   }
-  components.push({
-    key: "particulate",
-    label: "Particulate",
-    mW: particulate_mW,
-  });
 
-  // Microphone – duty-cycled based on sample_length / sample_window
-  let mic_mW = 0;
+  // ---- Microphone ----
+  let micHours = 0;
   if (schedule.microphone?.enabled) {
-    const rawWindow = schedule.microphone.sampleWindowMin ?? 10;
-    const sampleWindow = clamp(rawWindow, 1, 60);
-    const rawLength = schedule.microphone.sampleLengthMin ?? 1;
-    const sampleLength = clamp(rawLength, 1, sampleWindow);
-
-    const duty = sampleLength / sampleWindow; // e.g., 1/10 => 10% active
-    mic_mW = MIC_FULL_MW * duty;
+    if (schedule.microphone.continuousMode) {
+      micHours = fracDay * MIC_BASE; // always on during window
+    } else {
+      const sampleLen = clamp(schedule.microphone.sampleLengthMin ?? 1, 1, 60);
+      const sampleWindow = clamp(
+        schedule.microphone.sampleWindowMin ?? 10,
+        1,
+        60
+      );
+      const duty = clamp(sampleLen / sampleWindow, 0, 1);
+      micHours = fracDay * MIC_BASE * duty;
+    }
   }
-  components.push({
-    key: "microphone",
-    label: "Microphone",
-    mW: mic_mW,
-  });
 
-  // Accelerometer – small bump if 50 Hz vs 25 Hz
-  let accelExtra_mW = 0;
+  // ---- Accelerometer (assumed "roughly constant" when enabled) ----
+  let accelHours = 0;
   if (schedule.accelerometer?.enabled) {
-    // proto enum: 0 => 25Hz, 1 => 50Hz
-    const srEnum = schedule.accelerometer.sampleRate ?? 0;
-    const is50Hz = srEnum === 1;
-    accelExtra_mW = is50Hz ? 0.5 : 0.2; // tweakable
+    const rate = schedule.accelerometer.sampleRate ?? 0; // 0=25Hz,1=50Hz
+    const sensitivityIdx = schedule.accelerometer.sensitivity ?? 0; // 0,1,2
+    const rateFactor = rate === 1 ? 1.3 : 1.0;
+    const sensitivityFactor = 1 + sensitivityIdx * 0.15;
+    accelHours = fracDay * ACCEL_BASE * rateFactor * sensitivityFactor;
   }
-  components.push({
-    key: "accelerometer",
-    label: "Accelerometer",
-    mW: accelExtra_mW,
-  });
 
-  // Light & Env “extra” (if you want them adjustable later)
-  components.push({
-    key: "lightEnv",
-    label: "Light & Environmental",
-    mW: 0, // already roughly “inside” base; you can make this respond to intervals later
-  });
+  // ---- Light + Environmental (treated as mostly constant if enabled) ----
+  let lightEnvHours = 0;
+  const lightEnabled = schedule.light?.enabled ?? true;
+  const envEnabled = schedule.environmental?.enabled ?? true;
+  if (lightEnabled || envEnabled) {
+    const sensorsCount = (lightEnabled ? 1 : 0) + (envEnabled ? 1 : 0);
+    lightEnvHours = fracDay * LIGHT_ENV_BASE * (sensorsCount / 2);
+  }
 
-  // LoRa – placeholder constant for now
-  components.push({
-    key: "lora",
-    label: "LoRa Radio",
-    mW: LORA_BASE_MW,
-  });
-
-  const total_mW = components.reduce((sum, c) => sum + c.mW, 0);
+  const totalSolarHours =
+    gpsHours +
+    loraHours +
+    particulateHours +
+    micHours +
+    accelHours +
+    lightEnvHours;
 
   return {
-    schedule,
-    activeHours: hours,
-    components,
-    totalMilliwatts: total_mW,
+    totalSolarHours,
+    components: {
+      gps: gpsHours,
+      lora: loraHours,
+      particulate: particulateHours,
+      microphone: micHours,
+      accelerometer: accelHours,
+      lightEnv: lightEnvHours,
+    },
   };
 }
 
-/** ---------- Solar hours per schedule ---------- **/
-
-export function estimateScheduleSolarHours(schedule: Schedule): number {
-  const breakdown = computeSchedulePower(schedule);
-
-  // mWh per day for this schedule, assuming its config applies
-  const mWhPerDay = breakdown.totalMilliwatts * breakdown.activeHours;
-  const solarHours =
-    mWhPerDay / SOLAR_PANEL_OUTPUT_PER_HOUR_MWH || 0;
-
-  return solarHours;
-}
-
-/** ---------- System-level estimate (for Power tab) ---------- **/
-
-export function estimateSystemSolarHours(
+/**
+ * Aggregate solar-hours over many schedules (e.g. per-collar).
+ */
+export function estimateMultiScheduleSolar(
   schedules: Schedule[]
-): SystemSolarEstimate {
-  if (!schedules.length) {
-    return {
-      totalSolarHoursPerDay: 0,
-      perSchedule: [],
-      components: [],
-    };
+): PowerBreakdown {
+  let total = 0;
+
+  const agg = {
+    gps: 0,
+    lora: 0,
+    particulate: 0,
+    microphone: 0,
+    accelerometer: 0,
+    lightEnv: 0,
+  };
+
+  for (const s of schedules) {
+    const est = estimateScheduleSolar(s);
+    total += est.totalSolarHours;
+    agg.gps += est.components.gps;
+    agg.lora += est.components.lora;
+    agg.particulate += est.components.particulate;
+    agg.microphone += est.components.microphone;
+    agg.accelerometer += est.components.accelerometer;
+    agg.lightEnv += est.components.lightEnv;
   }
 
-  const perScheduleBreakdowns = schedules.map((s) =>
-    computeSchedulePower(s)
-  );
-
-  const perScheduleSolar = perScheduleBreakdowns.map((b) => {
-    const mWhPerDay = b.totalMilliwatts * b.activeHours;
-    const solarHours =
-      mWhPerDay / SOLAR_PANEL_OUTPUT_PER_HOUR_MWH || 0;
-
-    return {
-      id: (b.schedule as any).id,
-      name: (b.schedule as any).name,
-      solarHoursPerDay: solarHours,
-    };
-  });
-
-  // For now, assume the “worst” schedule dictates panel requirement
-  const heaviest = perScheduleBreakdowns.reduce((max, curr) => {
-    const max_mWh = max.totalMilliwatts * max.activeHours;
-    const curr_mWh = curr.totalMilliwatts * curr.activeHours;
-    return curr_mWh > max_mWh ? curr : max;
-  }, perScheduleBreakdowns[0]);
-
-  const heaviest_mWhPerDay =
-    heaviest.totalMilliwatts * heaviest.activeHours;
-  const totalSolarHoursPerDay =
-    heaviest_mWhPerDay / SOLAR_PANEL_OUTPUT_PER_HOUR_MWH || 0;
-
-  const totalHeaviest_mW = heaviest.components.reduce(
-    (sum, c) => sum + c.mW,
-    0
-  );
-
-  const components = heaviest.components.map((c) => ({
-    key: c.key,
-    label: c.label,
-    share: totalHeaviest_mW > 0 ? c.mW / totalHeaviest_mW : 0,
-  }));
-
   return {
-    totalSolarHoursPerDay,
-    perSchedule: perScheduleSolar,
-    components,
+    totalSolarHours: total,
+    components: agg,
   };
 }
