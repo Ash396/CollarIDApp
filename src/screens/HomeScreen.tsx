@@ -8,16 +8,17 @@ import {
   PermissionsAndroid,
   Platform,
 } from "react-native";
+
 import { useNavigation } from "@react-navigation/native";
 import { State } from "react-native-ble-plx";
 import { Buffer } from "buffer";
 import * as PB from "../proto/message_pb.js";
+
 import CollarCard from "../components/CollarCard";
 import {
   manager,
   COLLAR_SERVICE_UUID,
   STATUS_CHAR_UUID,
-  connectToCollar,
   disconnectFromCollar,
 } from "../ble/bleManager";
 
@@ -36,10 +37,13 @@ export default function HomeScreen() {
   const [collars, setCollars] = useState<Collar[]>([]);
   const [scanning, setScanning] = useState(false);
   const [connectedDevice, setConnectedDevice] = useState<Collar | null>(null);
+
   const navigation = useNavigation<any>();
   const lastSeenRef = useRef<Record<string, number>>({});
 
-  /* ---------------- Ensure Bluetooth Ready ---------------- */
+  /* ----------------------------------------------------------
+   * Ensure Bluetooth ON
+   * ---------------------------------------------------------- */
   async function ensureBluetoothReady() {
     if (Platform.OS === "android") {
       await PermissionsAndroid.requestMultiple([
@@ -51,25 +55,22 @@ export default function HomeScreen() {
 
     const state = await manager.state();
     if (state !== State.PoweredOn) {
-      console.log(`Bluetooth state = ${state}. Waiting...`);
       await new Promise<void>((resolve) => {
         const sub = manager.onStateChange((newState) => {
           if (newState === State.PoweredOn) {
-            console.log("✅ Bluetooth powered on.");
             sub.remove();
             resolve();
           }
         }, true);
       });
-    } else {
-      console.log("✅ Bluetooth already ON.");
     }
   }
 
-  /* ---------------- Continuous Scan (only when not connected) ---------------- */
+  /* ----------------------------------------------------------
+   * Scan (only when NOT connected)
+   * ---------------------------------------------------------- */
   useEffect(() => {
     if (connectedDevice) {
-      console.log("🔇 Connected — skipping scan");
       manager.stopDeviceScan();
       setScanning(false);
       return;
@@ -80,52 +81,31 @@ export default function HomeScreen() {
 
     const startScan = async () => {
       await ensureBluetoothReady();
-      console.log("🔍 Starting BLE scan...");
       setScanning(true);
 
       manager.startDeviceScan(null, { allowDuplicates: true }, (error, device) => {
         if (isCancelled) return;
         if (error) {
-          console.error("❌ Scan error:", error);
+          console.error("Scan error:", error);
           setScanning(false);
           return;
         }
 
-      //   // ✅ Log every device we see
-      //   if (device) {
-      //     console.log(
-      //       "📡 Device:",
-      //       device.name ?? "(no name)",
-      //       "| ID:",
-      //       device.id,
-      //       "| RSSI:",
-      //       device.rssi
-      //     );
-      // }
-
         if (!device?.name?.startsWith("CollarID")) return;
+
         const now = Date.now();
         lastSeen[device.id] = now;
 
         setCollars((prev) => {
           const existing = prev.find((c) => c.id === device.id);
-          if (existing) {
-            if (existing.name !== device.name) {
-              return prev.map((c) =>
-                c.id === device.id ? { ...c, name: device.name! } : c
-              );
-            }
-            return prev;
-          } else {
-            return [
-              ...prev,
-              { id: device.id, name: device.name ?? "Unknown Collar", connected: false },
-            ];
-          }
+          if (existing) return prev;
+          return [
+            ...prev,
+            { id: device.id, name: device.name ?? "Unknown", connected: false },
+          ];
         });
       });
 
-      // Remove stale devices
       const interval = setInterval(() => {
         const now = Date.now();
         setCollars((prev) =>
@@ -134,7 +114,6 @@ export default function HomeScreen() {
       }, 2000);
 
       return () => {
-        console.log("🛑 Stopping scan...");
         isCancelled = true;
         clearInterval(interval);
         manager.stopDeviceScan();
@@ -149,27 +128,23 @@ export default function HomeScreen() {
       manager.stopDeviceScan();
       setScanning(false);
     };
-  }, [connectedDevice]); // 👈 scan only when not connected
+  }, [connectedDevice]);
 
-  /* ---------------- Connect ---------------- */
+  /* ----------------------------------------------------------
+   * Connect
+   * ---------------------------------------------------------- */
   const handleConnect = async (collar: Collar) => {
     try {
-      console.log("🔗 Connecting to", collar.name);
       manager.stopDeviceScan();
       setScanning(false);
 
-      // Correct way: get real connected instance
       const connected = await manager.connectToDevice(collar.id, {
         autoConnect: false,
       });
 
       await connected.discoverAllServicesAndCharacteristics();
-      console.log("✅ Connected to", connected.name);
 
-      /* ------------------------------------------------------------------
-      * READ STATUS METADATA (battery, sdRemaining, sdTotal)
-      * ------------------------------------------------------------------ */
-      /* ---------- READ STATUS METADATA ---------- */
+      /* ---------- Read STATUS metadata ---------- */
       try {
         const ch = await connected.readCharacteristicForService(
           COLLAR_SERVICE_UUID,
@@ -180,24 +155,15 @@ export default function HomeScreen() {
           const bytes = Buffer.from(ch.value, "base64");
           const decoded = PB.Packet.decode(bytes);
 
-          console.log("🧩 Decoded system state:", JSON.stringify(decoded, null, 2));
-
           const sys = decoded.systemStatePacket;
-
-          // Battery
-          const batteryPct = sys?.battery?.percentage ?? null;
-
-          // SD card — fields come through as strings!
-          const spaceRemaining = Number(sys?.sdcard?.spaceRemaining ?? 0);
-          const totalSpace = Number(sys?.sdcard?.totalSpace ?? 0);
 
           const updated = {
             ...collar,
             connected: true,
             device: connected,
-            battery: batteryPct,
-            sdRemaining: spaceRemaining,
-            sdTotal: totalSpace,
+            battery: sys?.battery?.percentage ?? null,
+            sdRemaining: Number(sys?.sdcard?.spaceRemaining ?? 0),
+            sdTotal: Number(sys?.sdcard?.totalSpace ?? 0),
             lastUpdate: new Date().toLocaleTimeString(),
           };
 
@@ -205,13 +171,9 @@ export default function HomeScreen() {
           setCollars([updated]);
         }
       } catch (err) {
-        console.error("⚠️ Failed to read metadata:", err);
+        console.error("Metadata read error:", err);
       }
 
-
-      /* ------------------------------------------------------------------
-      * Navigate with correct device instance
-      * ------------------------------------------------------------------ */
       navigation.navigate("SchedulesTab", {
         screen: "Schedules",
         params: { device: connected },
@@ -221,23 +183,23 @@ export default function HomeScreen() {
     }
   };
 
-
-  /* ---------------- Disconnect ---------------- */
+  /* ----------------------------------------------------------
+   * Disconnect
+   * ---------------------------------------------------------- */
   const handleDisconnect = async (collar: Collar) => {
     if (!collar.device) return;
+
     try {
       await disconnectFromCollar(collar.device);
       setConnectedDevice(null);
-      setCollars([]); // reset list before resuming scan
-      console.log("🔌 Disconnected — resuming scan...");
+      setCollars([]);
     } catch (err) {
-      console.error("Failed to disconnect:", err);
+      console.error("Disconnect failed:", err);
     }
   };
 
-  /* ---------------- UI ---------------- */
   const displayList = connectedDevice
-    ? [connectedDevice] // show only connected device
+    ? [connectedDevice]
     : collars.sort((a, b) => a.name.localeCompare(b.name));
 
   return (
@@ -251,7 +213,7 @@ export default function HomeScreen() {
       {scanning && !connectedDevice && (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#f8b26a" />
-          <Text style={styles.subtext}>Scanning for CollarID devices...</Text>
+          <Text style={styles.subtext}>Scanning for CollarID devices…</Text>
         </View>
       )}
 

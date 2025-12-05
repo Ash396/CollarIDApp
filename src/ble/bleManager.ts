@@ -5,11 +5,11 @@ import * as PB from "../proto/message_pb.js";
 export const manager = new BleManager();
 
 export const COLLAR_SERVICE_UUID = "1a17b2cd-7314-493d-a4b5-32a2d53e6fd7";
-export const UPDATE_CHAR_UUID = "c4dd1054-f3f3-456b-8ad5-44aaa7ba4fd2"; // read/write
-export const STATUS_CHAR_UUID = "9eaf9ebe-c3e9-4bd6-956e-5ca63d222fbb"; // read/notify
+export const UPDATE_CHAR_UUID = "c4dd1054-f3f3-456b-8ad5-44aaa7ba4fd2";
+export const STATUS_CHAR_UUID = "9eaf9ebe-c3e9-4bd6-956e-5ca63d222fbb";
 
 /* -------------------------------------------------------------------------- */
-/*                               Type Definitions                             */
+/*                          Type Definitions                                  */
 /* -------------------------------------------------------------------------- */
 
 export type DecodedPacket = Partial<{
@@ -19,27 +19,19 @@ export type DecodedPacket = Partial<{
 }> | null;
 
 /* -------------------------------------------------------------------------- */
-/*                              Decode Utilities                              */
+/*                           Decode Utilities                                 */
 /* -------------------------------------------------------------------------- */
 
 function safeDecode(bytes: Uint8Array): DecodedPacket {
   try {
     const pkt = PB.Packet.decode(bytes);
-
-    if (
-      pkt.systemStatePacket ||
-      pkt.scheduleConfigPacket ||
-      pkt.radioConfigPacket
-    ) {
-      return {
-        systemStatePacket: pkt.systemStatePacket ?? undefined,
-        scheduleConfigPacket: pkt.scheduleConfigPacket ?? undefined,
-        radioConfigPacket: pkt.radioConfigPacket ?? undefined,
-      };
-    }
+    return {
+      systemStatePacket: pkt.systemStatePacket ?? undefined,
+      scheduleConfigPacket: pkt.scheduleConfigPacket ?? undefined,
+      radioConfigPacket: pkt.radioConfigPacket ?? undefined,
+    };
   } catch (_) {}
 
-  // Fallback: device ACK (SystemStatePacket-only)
   try {
     const sys = PB.SystemStatePacket.decode(bytes);
     return { systemStatePacket: sys };
@@ -51,14 +43,14 @@ function safeDecode(bytes: Uint8Array): DecodedPacket {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                            Bluetooth State Helpers                         */
+/*                               Bluetooth                                    */
 /* -------------------------------------------------------------------------- */
 
 export async function ensureBluetoothOn(): Promise<void> {
   const state = await manager.state();
   if (state === State.PoweredOn) return;
 
-  console.log(`Bluetooth state = ${state}. Waiting to power on...`);
+  console.log(`Bluetooth = ${state}, waiting...`);
   await new Promise<void>((resolve) => {
     const sub = manager.onStateChange((newState) => {
       if (newState === State.PoweredOn) {
@@ -70,14 +62,11 @@ export async function ensureBluetoothOn(): Promise<void> {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                            Connect / Read / Notify                         */
+/*                        Connect / Read / Notify                             */
 /* -------------------------------------------------------------------------- */
 
 export async function connectToCollar(device: Device): Promise<Device | null> {
-  if (!device) {
-    console.warn("connectToCollar: no device provided");
-    return null;
-  }
+  if (!device) return null;
 
   await ensureBluetoothOn();
 
@@ -93,13 +82,16 @@ export async function connectToCollar(device: Device): Promise<Device | null> {
   }
 }
 
+/* --------- Initial state read (Schedules) --------- */
 export async function readInitialState(device: Device): Promise<DecodedPacket> {
   try {
     const ch = await device.readCharacteristicForService(
       COLLAR_SERVICE_UUID,
       UPDATE_CHAR_UUID
     );
+
     if (!ch?.value) return null;
+
     const bytes = Buffer.from(ch.value, "base64");
     return safeDecode(bytes);
   } catch (err) {
@@ -108,6 +100,7 @@ export async function readInitialState(device: Device): Promise<DecodedPacket> {
   }
 }
 
+/* --------- STATUS notifications --------- */
 export function subscribeToStatus(
   device: Device,
   callback: (data: DecodedPacket) => void
@@ -121,6 +114,7 @@ export function subscribeToStatus(
         return;
       }
       if (!characteristic?.value) return;
+
       const bytes = Buffer.from(characteristic.value, "base64");
       const decoded = safeDecode(bytes);
       if (decoded) callback(decoded);
@@ -128,30 +122,42 @@ export function subscribeToStatus(
   );
 }
 
+/* --------- UPDATE notifications (Schedules live updates) --------- */
+export function subscribeToUpdates(
+  device: Device,
+  callback: (data: DecodedPacket) => void
+) {
+  const subscription = device.monitorCharacteristicForService(
+    COLLAR_SERVICE_UUID,
+    UPDATE_CHAR_UUID,
+    (error, characteristic) => {
+      if (error) {
+        // Ignore expected disconnect errors
+        if (error.message?.includes("disconnected")) return;
+        if (error.message?.includes("cancelled")) return;
+
+        console.error("UPDATE notify error:", error);
+        return;
+      }
+
+      if (!characteristic?.value) return;
+
+      const bytes = Buffer.from(characteristic.value, "base64");
+      const decoded = safeDecode(bytes);
+
+      if (decoded) callback(decoded);
+    }
+  );
+
+  return subscription;  
+}
+
+
 /* -------------------------------------------------------------------------- */
-/*                         Build Schedule Configuration                       */
+/*                   Build Schedule Packet to Send to Device                  */
 /* -------------------------------------------------------------------------- */
 
-export function buildSchedulePacketFromAppState(
-  appSchedules: Array<{
-    window?: { startHour?: number; endHour?: number };
-    light?: { enabled?: boolean; sampleIntervalMin?: number };
-    environmental?: { enabled?: boolean; sampleIntervalMin?: number };
-    particulate?: { enabled?: boolean; sampleIntervalMin?: number };
-    gps?: { enabled?: boolean; sampleIntervalMin?: number; accuracy?: number };
-    microphone?: {
-      enabled?: boolean;
-      continuousMode?: boolean;
-      sampleLengthMin?: number;
-      sampleWindowMin?: number;
-    };
-    accelerometer?: {
-      enabled?: boolean;
-      sampleRate?: number;
-      sensitivity?: number;
-    };
-  }>
-): PB.Packet {
+export function buildSchedulePacketFromAppState(appSchedules: any[]): PB.Packet {
   const schedules = appSchedules.map((s) =>
     PB.ScheduledConfig.create({
       window: PB.TimeWindow.create({
@@ -189,7 +195,7 @@ export function buildSchedulePacketFromAppState(
     })
   );
 
-  const packet = PB.Packet.create({
+  return PB.Packet.create({
     header: PB.PacketHeader.create({
       systemUid: 1,
       msFromStart: 0,
@@ -198,93 +204,64 @@ export function buildSchedulePacketFromAppState(
     }),
     scheduleConfigPacket: PB.ScheduleConfigPacket.create({ schedules }),
   });
-
-  return packet;
 }
 
 /* -------------------------------------------------------------------------- */
-/*                            Send Configuration Packet                       */
+/*                              Send Config                                    */
 /* -------------------------------------------------------------------------- */
 
 export async function sendConfig(device: Device, packet: PB.Packet) {
   try {
-    console.log("📦 [sendConfig] Preparing to send packet...");
+    console.log("📤 Sending schedule packet…");
 
-    const isConnected = await device.isConnected();
-    if (!isConnected) {
-      console.log("🟡 Device not connected, reconnecting...");
-      await device.connect();
-    }
-
-    await device.discoverAllServicesAndCharacteristics();
-
-    // Encode
     const encoded = PB.Packet.encode(packet).finish();
+    const base64 = Buffer.from(encoded).toString("base64");
 
-    // Validate roundtrip decode
-    try {
-      const roundTrip = PB.Packet.decode(encoded);
-      console.log("✅ [Validation] Roundtrip decode OK:", roundTrip);
-    } catch (decodeErr) {
-      console.error("❌ [Validation] Decode failed:", decodeErr);
-      throw new Error("Packet encoding validation failed!");
-    }
-
-    // Convert to Base64 for BLE write
-    const base64data = Buffer.from(encoded).toString("base64");
-    console.log("📤 Sending Base64 (length):", base64data.length);
-
-    // Write
     const written = await device.writeCharacteristicWithResponseForService(
       COLLAR_SERVICE_UUID,
       UPDATE_CHAR_UUID,
-      base64data
+      base64
     );
-    console.log("✅ [BLE] Write complete:", written);
 
-    // Wait for ACK
-    console.log("⏳ Waiting for ACK...");
-    const ackPromise = new Promise<boolean>((resolve) => {
-      let ackReceived = false;
+    console.log("✅ Write complete:", written);
 
-      const subscription = subscribeToStatus(device, (pkt) => {
-        if (pkt && pkt.systemStatePacket) {
-          ackReceived = true;
-          console.log("📩 [ACK] System state received:", pkt.systemStatePacket);
-          subscription.remove();
+    // Wait for ACK (STATUS characteristic)
+    console.log("⏳ Waiting for ACK from STATUS…");
+    return new Promise<boolean>((resolve) => {
+      let gotAck = false;
+
+      const sub = subscribeToStatus(device, (pkt) => {
+        if (pkt?.systemStatePacket) {
+          console.log("📩 ACK received:", pkt.systemStatePacket);
+          gotAck = true;
+          sub.remove();
           resolve(true);
         }
       });
 
       setTimeout(() => {
-        if (!ackReceived) {
-          console.warn("⚠️ [ACK Timeout] No ACK within 6s");
-          subscription.remove();
+        if (!gotAck) {
+          console.warn("⚠️ ACK timeout");
+          sub.remove();
           resolve(false);
         }
       }, 6000);
     });
-
-    const ack = await ackPromise;
-    if (ack) console.log("✅ [sendConfig] ACK received successfully!");
-    else console.warn("⚠️ [sendConfig] No ACK (might still have applied).");
-
-    return ack;
   } catch (err) {
-    console.error("❌ [sendConfig] BLE write failed:", err);
+    console.error("❌ sendConfig failed:", err);
     throw err;
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                 Disconnect                                 */
+/*                           Disconnect                                       */
 /* -------------------------------------------------------------------------- */
 
 export async function disconnectFromCollar(device: Device) {
   try {
     await device.cancelConnection();
     console.log("🔌 Disconnected");
-  } catch (error) {
-    console.error("❌ Failed to disconnect:", error);
+  } catch (err) {
+    console.error("❌ Failed to disconnect:", err);
   }
 }

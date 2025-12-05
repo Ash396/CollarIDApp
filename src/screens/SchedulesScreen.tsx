@@ -16,6 +16,8 @@ import {
   sendConfig,
   connectToCollar,
 } from "../ble/bleManager";
+import { estimateScheduleSolarHours } from "../utils/powerEstimator";
+
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, "Schedules">;
 
@@ -116,6 +118,8 @@ export default function SchedulesScreen() {
             s.accelerometer?.enabled
           );
 
+        const solarHours = estimateScheduleSolarHours(s);
+
         return (
           <TouchableOpacity
             key={s.id}
@@ -125,6 +129,10 @@ export default function SchedulesScreen() {
             <Text style={styles.cardTitle}>{s.name}</Text>
             <Text style={styles.cardText}>
               🕓 {s.window.startHour}:00 – {s.window.endHour}:00
+            </Text>
+
+            <Text style={{ fontSize: 14, color: "#F28C28", fontWeight: "600", marginBottom: 6 }}>
+              🌞 Solar Hours: {solarHours.toFixed(1)} hrs/day
             </Text>
 
             <View style={styles.detailsContainer}>

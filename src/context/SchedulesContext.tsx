@@ -1,14 +1,27 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  ReactNode,
+  useEffect,
+} from "react";
+
 import type { Schedule } from "../navigation/ScheduleNavigator";
-import { readInitialState } from "../ble/bleManager";
+import {
+  readInitialState,
+  subscribeToUpdates,
+} from "../ble/bleManager";
 import { mapProtoSchedule } from "../utils/mapProtoSchedule";
 
 /* ----------------------------------------------------------
  * Context Type
  * ---------------------------------------------------------- */
+
 type SchedulesContextType = {
   schedules: Schedule[];
   loadSchedulesFromDevice: (device: any) => Promise<void>;
+  subscribeToScheduleUpdates: (device: any) => void;
   updateSchedule: (id: string, updated: Schedule) => void;
   deleteSchedule: (id: string) => void;
   addSchedule: (schedule: Schedule) => void;
@@ -17,59 +30,85 @@ type SchedulesContextType = {
 /* ----------------------------------------------------------
  * Context Setup
  * ---------------------------------------------------------- */
+
 const SchedulesContext = createContext<SchedulesContextType | undefined>(
   undefined
 );
 
 export function SchedulesProvider({ children }: { children: ReactNode }) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const updateSubscriptionRef = useRef<any>(null);
 
   /* ----------------------------------------------------------
-   * Load schedules from BLE device
+   * Load schedules (initial read)
    * ---------------------------------------------------------- */
   const loadSchedulesFromDevice = async (device: any) => {
     try {
-      console.log("📡 [Schedules] Reading initial schedule state from device…");
+      console.log("📡 [Schedules] Reading initial schedule state…");
 
       const decoded = await readInitialState(device);
       const raw = decoded?.scheduleConfigPacket?.schedules;
 
       if (!raw) {
-        console.warn("⚠️ No schedules found on device.");
+        console.warn("⚠️ No schedules found.");
         setSchedules([]);
         return;
       }
 
-      const mapped: Schedule[] = raw.map((protoSchedule, index) =>
-        mapProtoSchedule(protoSchedule, index)
+      const mapped = raw.map((proto, index) =>
+        mapProtoSchedule(proto, index)
       );
 
-      console.log("📥 [Schedules] Loaded schedules from device:", mapped);
+      console.log("📥 [Schedules] Initial schedules:", mapped);
       setSchedules(mapped);
     } catch (err) {
-      console.error("❌ Failed to load schedules from BLE:", err);
+      console.error("❌ Failed to load schedules:", err);
     }
   };
 
   /* ----------------------------------------------------------
-   * Update a single schedule
+   * Live updates via UPDATE characteristic
    * ---------------------------------------------------------- */
+  const subscribeToScheduleUpdates = (device: any) => {
+    // Remove previous subscription if any
+    updateSubscriptionRef.current?.remove();
+
+    updateSubscriptionRef.current = subscribeToUpdates(device, (pkt) => {
+      if (pkt?.scheduleConfigPacket?.schedules) {
+        console.log("🔔 [Schedules] LIVE update:", pkt);
+
+        const mapped = pkt.scheduleConfigPacket.schedules.map(
+          mapProtoSchedule
+        );
+
+        setSchedules(mapped);
+      }
+    });
+  };
+
+  /* ----------------------------------------------------------
+   * Cleanup on unmount
+   * ---------------------------------------------------------- */
+  useEffect(() => {
+    return () => {
+      updateSubscriptionRef.current?.remove();
+    };
+  }, []);
+
+  /* ----------------------------------------------------------
+   * Mutators
+   * ---------------------------------------------------------- */
+
   const updateSchedule = (id: string, updated: Schedule) => {
     setSchedules((prev) =>
       prev.map((s) => (s.id === id ? { ...s, ...updated } : s))
     );
   };
 
-  /* ----------------------------------------------------------
-   * Delete
-   * ---------------------------------------------------------- */
   const deleteSchedule = (id: string) => {
     setSchedules((prev) => prev.filter((s) => s.id !== id));
   };
 
-  /* ----------------------------------------------------------
-   * Add
-   * ---------------------------------------------------------- */
   const addSchedule = (schedule: Schedule) => {
     setSchedules((prev) => [...prev, schedule]);
   };
@@ -79,6 +118,7 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
       value={{
         schedules,
         loadSchedulesFromDevice,
+        subscribeToScheduleUpdates,
         updateSchedule,
         deleteSchedule,
         addSchedule,
@@ -93,9 +133,7 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
  * Hook
  * ---------------------------------------------------------- */
 export function useSchedules() {
-  const context = useContext(SchedulesContext);
-  if (!context) {
-    throw new Error("useSchedules must be used within SchedulesProvider");
-  }
-  return context;
+  const ctx = useContext(SchedulesContext);
+  if (!ctx) throw new Error("useSchedules must be used within provider.");
+  return ctx;
 }
