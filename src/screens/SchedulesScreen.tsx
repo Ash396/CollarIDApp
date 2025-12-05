@@ -26,7 +26,26 @@ export default function SchedulesScreen() {
   const route = useRoute<any>();
   const { device: initialDevice } = route.params || {};
 
-  const { draftSchedules, addSchedule, loadSchedulesFromDevice } = useSchedules();
+  const { draftSchedules, addSchedule, loadSchedulesFromDevice, subscribeToScheduleUpdates } = useSchedules();
+
+  useEffect(() => {
+    if (!initialDevice) return;
+
+    (async () => {
+      let device = initialDevice;
+      if (!(await device.isConnected())) {
+        device = await connectToCollar(device);
+      }
+
+      console.log("🔔 Subscribing to live schedule updates…");
+      subscribeToScheduleUpdates(device);
+    })();
+
+    return () => {
+      console.log("🔕 Unsubscribing from schedule updates");
+      subscribeToScheduleUpdates(null); // or updateSubscriptionRef.current?.remove()
+    };
+  }, [initialDevice]);
 
   /* ------------------------------------------------------------------
    * Connect if needed + Load schedules once
