@@ -27,6 +27,14 @@ export type Schedule = {
     sampleRate?: number;
     sensitivity?: number;
   };
+  lorawan?: {
+  enabled: boolean;
+  sendIntervalMin?: number;
+  };
+  magnetometer?: {
+    enabled: boolean;
+    sampleIntervalS?: number;
+  };
 };
 
 /* -----------------------------------------------------

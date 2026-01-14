@@ -55,6 +55,18 @@ export function mapProtoSchedule(p: PB.ScheduledConfig, index: number): Schedule
         sampleRate: p.accelerometer.sampleRate ?? undefined,
         sensitivity: p.accelerometer.sensitivity ?? undefined,
         }
-    : undefined
+    : undefined,
+    
+    lorawan: {
+      enabled: Boolean(p.lorawanEnabled),
+      sendIntervalMin: p.lorawanSendIntervalMin ?? undefined,
+    },
+
+    magnetometer: p.magnetometer
+      ? {
+          enabled: Boolean(p.magnetometer.enabled),
+          sampleIntervalS: p.magnetometer.sampleIntervalS ?? undefined,
+        }
+      : undefined,
   };
 }

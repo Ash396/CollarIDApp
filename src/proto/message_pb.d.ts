@@ -963,6 +963,99 @@ export class AccelerometerConfig implements IAccelerometerConfig {
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
+/** Represents a MagnetometerConfig. */
+export class MagnetometerConfig implements IMagnetometerConfig {
+
+    /**
+     * Constructs a new MagnetometerConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IMagnetometerConfig);
+
+    /** MagnetometerConfig enabled. */
+    public enabled: boolean;
+
+    /** MagnetometerConfig sampleIntervalS. */
+    public sampleIntervalS: number;
+
+    /**
+     * Creates a new MagnetometerConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns MagnetometerConfig instance
+     */
+    public static create(properties?: IMagnetometerConfig): MagnetometerConfig;
+
+    /**
+     * Encodes the specified MagnetometerConfig message. Does not implicitly {@link MagnetometerConfig.verify|verify} messages.
+     * @param message MagnetometerConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IMagnetometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified MagnetometerConfig message, length delimited. Does not implicitly {@link MagnetometerConfig.verify|verify} messages.
+     * @param message MagnetometerConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IMagnetometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a MagnetometerConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns MagnetometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): MagnetometerConfig;
+
+    /**
+     * Decodes a MagnetometerConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns MagnetometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): MagnetometerConfig;
+
+    /**
+     * Verifies a MagnetometerConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a MagnetometerConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns MagnetometerConfig
+     */
+    public static fromObject(object: { [k: string]: any }): MagnetometerConfig;
+
+    /**
+     * Creates a plain object from a MagnetometerConfig message. Also converts values to other types if specified.
+     * @param message MagnetometerConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: MagnetometerConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this MagnetometerConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for MagnetometerConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
 /** Represents a ScheduledConfig. */
 export class ScheduledConfig implements IScheduledConfig {
 
@@ -992,6 +1085,15 @@ export class ScheduledConfig implements IScheduledConfig {
 
     /** ScheduledConfig accelerometer. */
     public accelerometer?: (IAccelerometerConfig|null);
+
+    /** ScheduledConfig lorawanEnabled. */
+    public lorawanEnabled: boolean;
+
+    /** ScheduledConfig lorawanSendIntervalMin. */
+    public lorawanSendIntervalMin: number;
+
+    /** ScheduledConfig magnetometer. */
+    public magnetometer?: (IMagnetometerConfig|null);
 
     /**
      * Creates a new ScheduledConfig instance using the specified properties.
@@ -1696,6 +1798,195 @@ export class SystemStatePacket implements ISystemStatePacket {
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
+/** PeripheralType enum. */
+export enum PeripheralType {
+    PERIPHERAL_SATCOM = 0,
+    PERIPHERAL_DETACHMENT = 1
+}
+
+/** Represents a PeripheralPacket. */
+export class PeripheralPacket implements IPeripheralPacket {
+
+    /**
+     * Constructs a new PeripheralPacket.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IPeripheralPacket);
+
+    /** PeripheralPacket macAddress. */
+    public macAddress: Uint8Array;
+
+    /** PeripheralPacket type. */
+    public type: PeripheralType;
+
+    /**
+     * Creates a new PeripheralPacket instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns PeripheralPacket instance
+     */
+    public static create(properties?: IPeripheralPacket): PeripheralPacket;
+
+    /**
+     * Encodes the specified PeripheralPacket message. Does not implicitly {@link PeripheralPacket.verify|verify} messages.
+     * @param message PeripheralPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IPeripheralPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified PeripheralPacket message, length delimited. Does not implicitly {@link PeripheralPacket.verify|verify} messages.
+     * @param message PeripheralPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IPeripheralPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a PeripheralPacket message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns PeripheralPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): PeripheralPacket;
+
+    /**
+     * Decodes a PeripheralPacket message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns PeripheralPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): PeripheralPacket;
+
+    /**
+     * Verifies a PeripheralPacket message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a PeripheralPacket message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns PeripheralPacket
+     */
+    public static fromObject(object: { [k: string]: any }): PeripheralPacket;
+
+    /**
+     * Creates a plain object from a PeripheralPacket message. Also converts values to other types if specified.
+     * @param message PeripheralPacket
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: PeripheralPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this PeripheralPacket to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for PeripheralPacket
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a PeripheralInfo. */
+export class PeripheralInfo implements IPeripheralInfo {
+
+    /**
+     * Constructs a new PeripheralInfo.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IPeripheralInfo);
+
+    /** PeripheralInfo deviceUids. */
+    public deviceUids: string[];
+
+    /**
+     * Creates a new PeripheralInfo instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns PeripheralInfo instance
+     */
+    public static create(properties?: IPeripheralInfo): PeripheralInfo;
+
+    /**
+     * Encodes the specified PeripheralInfo message. Does not implicitly {@link PeripheralInfo.verify|verify} messages.
+     * @param message PeripheralInfo message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IPeripheralInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified PeripheralInfo message, length delimited. Does not implicitly {@link PeripheralInfo.verify|verify} messages.
+     * @param message PeripheralInfo message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IPeripheralInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a PeripheralInfo message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns PeripheralInfo
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): PeripheralInfo;
+
+    /**
+     * Decodes a PeripheralInfo message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns PeripheralInfo
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): PeripheralInfo;
+
+    /**
+     * Verifies a PeripheralInfo message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a PeripheralInfo message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns PeripheralInfo
+     */
+    public static fromObject(object: { [k: string]: any }): PeripheralInfo;
+
+    /**
+     * Creates a plain object from a PeripheralInfo message. Also converts values to other types if specified.
+     * @param message PeripheralInfo
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: PeripheralInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this PeripheralInfo to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for PeripheralInfo
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
 /** Represents a Packet. */
 export class Packet implements IPacket {
 
@@ -1717,8 +2008,14 @@ export class Packet implements IPacket {
     /** Packet radioConfigPacket. */
     public radioConfigPacket?: (IRadioConfigPacket|null);
 
+    /** Packet peripheralPacket. */
+    public peripheralPacket?: (IPeripheralPacket|null);
+
+    /** Packet peripheralInfo. */
+    public peripheralInfo?: (IPeripheralInfo|null);
+
     /** Packet payload. */
-    public payload?: ("scheduleConfigPacket"|"systemStatePacket"|"radioConfigPacket");
+    public payload?: ("scheduleConfigPacket"|"systemStatePacket"|"radioConfigPacket"|"peripheralPacket"|"peripheralInfo");
 
     /**
      * Creates a new Packet instance using the specified properties.

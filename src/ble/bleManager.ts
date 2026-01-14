@@ -16,6 +16,8 @@ export type DecodedPacket = Partial<{
   systemStatePacket: PB.SystemStatePacket;
   scheduleConfigPacket: PB.ScheduleConfigPacket;
   radioConfigPacket: PB.RadioConfigPacket;
+  peripheralPacket: PB.PeripheralPacket;
+  peripheralInfo: PB.PeripheralInfo;
 }> | null;
 
 /* -------------------------------------------------------------------------- */
@@ -29,6 +31,8 @@ function safeDecode(bytes: Uint8Array): DecodedPacket {
       systemStatePacket: pkt.systemStatePacket ?? undefined,
       scheduleConfigPacket: pkt.scheduleConfigPacket ?? undefined,
       radioConfigPacket: pkt.radioConfigPacket ?? undefined,
+      peripheralPacket: pkt.peripheralPacket ?? undefined,
+      peripheralInfo: pkt.peripheralInfo ?? undefined,
     };
   } catch (_) {}
 
@@ -149,7 +153,7 @@ export function subscribeToUpdates(
     }
   );
 
-  return subscription;  
+  return subscription;
 }
 
 
@@ -191,6 +195,12 @@ export function buildSchedulePacketFromAppState(appSchedules: any[]): PB.Packet 
         enabled: Boolean(s.accelerometer?.enabled ?? false),
         sampleRate: Number(s.accelerometer?.sampleRate ?? 0),
         sensitivity: Number(s.accelerometer?.sensitivity ?? 0),
+      }),
+      lorawanEnabled: Boolean(s.lorawan?.enabled ?? false),
+      lorawanSendIntervalMin: Number(s.lorawan?.sendIntervalMin ?? 0),
+      magnetometer: PB.MagnetometerConfig.create({
+        enabled: Boolean(s.magnetometer?.enabled ?? false),
+        sampleIntervalS: Number(s.magnetometer?.sampleIntervalS ?? 0),
       }),
     })
   );

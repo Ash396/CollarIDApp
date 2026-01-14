@@ -1,13 +1,15 @@
 /*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
-import * as $protobuf from "protobufjs/minimal";
+"use strict";
+
+var $protobuf = require("protobufjs/minimal");
 
 // Common aliases
-const $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
+var $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
 
 // Exported root namespace
-const $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
+var $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
 
-export const PacketHeader = $root.PacketHeader = (() => {
+$root.PacketHeader = (function() {
 
     /**
      * Properties of a PacketHeader.
@@ -29,7 +31,7 @@ export const PacketHeader = $root.PacketHeader = (() => {
      */
     function PacketHeader(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -128,9 +130,9 @@ export const PacketHeader = $root.PacketHeader = (() => {
     PacketHeader.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.PacketHeader();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.PacketHeader();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -211,7 +213,7 @@ export const PacketHeader = $root.PacketHeader = (() => {
     PacketHeader.fromObject = function fromObject(object) {
         if (object instanceof $root.PacketHeader)
             return object;
-        let message = new $root.PacketHeader();
+        var message = new $root.PacketHeader();
         if (object.systemUid != null)
             message.systemUid = object.systemUid >>> 0;
         if (object.msFromStart != null)
@@ -235,7 +237,7 @@ export const PacketHeader = $root.PacketHeader = (() => {
     PacketHeader.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.systemUid = 0;
             object.msFromStart = 0;
@@ -282,7 +284,7 @@ export const PacketHeader = $root.PacketHeader = (() => {
     return PacketHeader;
 })();
 
-export const TimeWindow = $root.TimeWindow = (() => {
+$root.TimeWindow = (function() {
 
     /**
      * Properties of a TimeWindow.
@@ -302,7 +304,7 @@ export const TimeWindow = $root.TimeWindow = (() => {
      */
     function TimeWindow(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -381,9 +383,9 @@ export const TimeWindow = $root.TimeWindow = (() => {
     TimeWindow.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.TimeWindow();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.TimeWindow();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -450,7 +452,7 @@ export const TimeWindow = $root.TimeWindow = (() => {
     TimeWindow.fromObject = function fromObject(object) {
         if (object instanceof $root.TimeWindow)
             return object;
-        let message = new $root.TimeWindow();
+        var message = new $root.TimeWindow();
         if (object.startHour != null)
             message.startHour = object.startHour >>> 0;
         if (object.endHour != null)
@@ -470,7 +472,7 @@ export const TimeWindow = $root.TimeWindow = (() => {
     TimeWindow.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.startHour = 0;
             object.endHour = 0;
@@ -511,7 +513,7 @@ export const TimeWindow = $root.TimeWindow = (() => {
     return TimeWindow;
 })();
 
-export const SamplingConfig = $root.SamplingConfig = (() => {
+$root.SamplingConfig = (function() {
 
     /**
      * Properties of a SamplingConfig.
@@ -531,7 +533,7 @@ export const SamplingConfig = $root.SamplingConfig = (() => {
      */
     function SamplingConfig(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -610,9 +612,9 @@ export const SamplingConfig = $root.SamplingConfig = (() => {
     SamplingConfig.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.SamplingConfig();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SamplingConfig();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -679,7 +681,7 @@ export const SamplingConfig = $root.SamplingConfig = (() => {
     SamplingConfig.fromObject = function fromObject(object) {
         if (object instanceof $root.SamplingConfig)
             return object;
-        let message = new $root.SamplingConfig();
+        var message = new $root.SamplingConfig();
         if (object.enabled != null)
             message.enabled = Boolean(object.enabled);
         if (object.sampleIntervalMin != null)
@@ -699,7 +701,7 @@ export const SamplingConfig = $root.SamplingConfig = (() => {
     SamplingConfig.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.enabled = false;
             object.sampleIntervalMin = 0;
@@ -740,7 +742,7 @@ export const SamplingConfig = $root.SamplingConfig = (() => {
     return SamplingConfig;
 })();
 
-export const GPSConfig = $root.GPSConfig = (() => {
+$root.GPSConfig = (function() {
 
     /**
      * Properties of a GPSConfig.
@@ -761,7 +763,7 @@ export const GPSConfig = $root.GPSConfig = (() => {
      */
     function GPSConfig(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -850,9 +852,9 @@ export const GPSConfig = $root.GPSConfig = (() => {
     GPSConfig.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.GPSConfig();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.GPSConfig();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -926,7 +928,7 @@ export const GPSConfig = $root.GPSConfig = (() => {
     GPSConfig.fromObject = function fromObject(object) {
         if (object instanceof $root.GPSConfig)
             return object;
-        let message = new $root.GPSConfig();
+        var message = new $root.GPSConfig();
         if (object.enabled != null)
             message.enabled = Boolean(object.enabled);
         if (object.sampleIntervalMin != null)
@@ -948,7 +950,7 @@ export const GPSConfig = $root.GPSConfig = (() => {
     GPSConfig.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.enabled = false;
             object.sampleIntervalMin = 0;
@@ -1000,8 +1002,8 @@ export const GPSConfig = $root.GPSConfig = (() => {
  * @property {number} REGION_AU915=1 REGION_AU915 value
  * @property {number} REGION_EU868=2 REGION_EU868 value
  */
-export const RadioRegion = $root.RadioRegion = (() => {
-    const valuesById = {}, values = Object.create(valuesById);
+$root.RadioRegion = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
     values[valuesById[0] = "REGION_US915"] = 0;
     values[valuesById[1] = "REGION_AU915"] = 1;
     values[valuesById[2] = "REGION_EU868"] = 2;
@@ -1015,14 +1017,14 @@ export const RadioRegion = $root.RadioRegion = (() => {
  * @property {number} AUTH_OTAA=0 AUTH_OTAA value
  * @property {number} AUTH_ABP=1 AUTH_ABP value
  */
-export const RadioAuth = $root.RadioAuth = (() => {
-    const valuesById = {}, values = Object.create(valuesById);
+$root.RadioAuth = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
     values[valuesById[0] = "AUTH_OTAA"] = 0;
     values[valuesById[1] = "AUTH_ABP"] = 1;
     return values;
 })();
 
-export const RadioOTAA = $root.RadioOTAA = (() => {
+$root.RadioOTAA = (function() {
 
     /**
      * Properties of a RadioOTAA.
@@ -1043,7 +1045,7 @@ export const RadioOTAA = $root.RadioOTAA = (() => {
      */
     function RadioOTAA(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -1132,9 +1134,9 @@ export const RadioOTAA = $root.RadioOTAA = (() => {
     RadioOTAA.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioOTAA();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioOTAA();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -1208,7 +1210,7 @@ export const RadioOTAA = $root.RadioOTAA = (() => {
     RadioOTAA.fromObject = function fromObject(object) {
         if (object instanceof $root.RadioOTAA)
             return object;
-        let message = new $root.RadioOTAA();
+        var message = new $root.RadioOTAA();
         if (object.devEui != null)
             if (typeof object.devEui === "string")
                 $util.base64.decode(object.devEui, message.devEui = $util.newBuffer($util.base64.length(object.devEui)), 0);
@@ -1239,7 +1241,7 @@ export const RadioOTAA = $root.RadioOTAA = (() => {
     RadioOTAA.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             if (options.bytes === String)
                 object.devEui = "";
@@ -1301,7 +1303,7 @@ export const RadioOTAA = $root.RadioOTAA = (() => {
     return RadioOTAA;
 })();
 
-export const RadioABP = $root.RadioABP = (() => {
+$root.RadioABP = (function() {
 
     /**
      * Properties of a RadioABP.
@@ -1324,7 +1326,7 @@ export const RadioABP = $root.RadioABP = (() => {
      */
     function RadioABP(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -1433,9 +1435,9 @@ export const RadioABP = $root.RadioABP = (() => {
     RadioABP.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioABP();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioABP();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -1523,7 +1525,7 @@ export const RadioABP = $root.RadioABP = (() => {
     RadioABP.fromObject = function fromObject(object) {
         if (object instanceof $root.RadioABP)
             return object;
-        let message = new $root.RadioABP();
+        var message = new $root.RadioABP();
         if (object.devAddr != null)
             if (typeof object.devAddr === "string")
                 $util.base64.decode(object.devAddr, message.devAddr = $util.newBuffer($util.base64.length(object.devAddr)), 0);
@@ -1564,7 +1566,7 @@ export const RadioABP = $root.RadioABP = (() => {
     RadioABP.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             if (options.bytes === String)
                 object.devAddr = "";
@@ -1644,7 +1646,7 @@ export const RadioABP = $root.RadioABP = (() => {
     return RadioABP;
 })();
 
-export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
+$root.RadioConfigPacket = (function() {
 
     /**
      * Properties of a RadioConfigPacket.
@@ -1670,7 +1672,7 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
      */
     function RadioConfigPacket(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -1740,7 +1742,7 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
     RadioConfigPacket.prototype.txPowerDbm = 0;
 
     // OneOf field names bound to virtual getters and setters
-    let $oneOfFields;
+    var $oneOfFields;
 
     /**
      * RadioConfigPacket credentials.
@@ -1823,9 +1825,9 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
     RadioConfigPacket.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioConfigPacket();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.RadioConfigPacket();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -1896,7 +1898,7 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
     RadioConfigPacket.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        let properties = {};
+        var properties = {};
         if (message.enabled != null && message.hasOwnProperty("enabled"))
             if (typeof message.enabled !== "boolean")
                 return "enabled: boolean expected";
@@ -1920,7 +1922,7 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
         if (message.otaa != null && message.hasOwnProperty("otaa")) {
             properties.credentials = 1;
             {
-                let error = $root.RadioOTAA.verify(message.otaa);
+                var error = $root.RadioOTAA.verify(message.otaa);
                 if (error)
                     return "otaa." + error;
             }
@@ -1930,7 +1932,7 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
                 return "credentials: multiple values";
             properties.credentials = 1;
             {
-                let error = $root.RadioABP.verify(message.abp);
+                var error = $root.RadioABP.verify(message.abp);
                 if (error)
                     return "abp." + error;
             }
@@ -1958,7 +1960,7 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
     RadioConfigPacket.fromObject = function fromObject(object) {
         if (object instanceof $root.RadioConfigPacket)
             return object;
-        let message = new $root.RadioConfigPacket();
+        var message = new $root.RadioConfigPacket();
         if (object.enabled != null)
             message.enabled = Boolean(object.enabled);
         switch (object.region) {
@@ -2028,7 +2030,7 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
     RadioConfigPacket.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.enabled = false;
             object.region = options.enums === String ? "REGION_US915" : 0;
@@ -2091,7 +2093,7 @@ export const RadioConfigPacket = $root.RadioConfigPacket = (() => {
     return RadioConfigPacket;
 })();
 
-export const MicrophoneConfig = $root.MicrophoneConfig = (() => {
+$root.MicrophoneConfig = (function() {
 
     /**
      * Properties of a MicrophoneConfig.
@@ -2113,7 +2115,7 @@ export const MicrophoneConfig = $root.MicrophoneConfig = (() => {
      */
     function MicrophoneConfig(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -2212,9 +2214,9 @@ export const MicrophoneConfig = $root.MicrophoneConfig = (() => {
     MicrophoneConfig.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.MicrophoneConfig();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.MicrophoneConfig();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -2295,7 +2297,7 @@ export const MicrophoneConfig = $root.MicrophoneConfig = (() => {
     MicrophoneConfig.fromObject = function fromObject(object) {
         if (object instanceof $root.MicrophoneConfig)
             return object;
-        let message = new $root.MicrophoneConfig();
+        var message = new $root.MicrophoneConfig();
         if (object.enabled != null)
             message.enabled = Boolean(object.enabled);
         if (object.continuousMode != null)
@@ -2319,7 +2321,7 @@ export const MicrophoneConfig = $root.MicrophoneConfig = (() => {
     MicrophoneConfig.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.enabled = false;
             object.continuousMode = false;
@@ -2373,8 +2375,8 @@ export const MicrophoneConfig = $root.MicrophoneConfig = (() => {
  * @property {number} ACCEL_25HZ=0 ACCEL_25HZ value
  * @property {number} ACCEL_50HZ=1 ACCEL_50HZ value
  */
-export const AccelSampleRate = $root.AccelSampleRate = (() => {
-    const valuesById = {}, values = Object.create(valuesById);
+$root.AccelSampleRate = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
     values[valuesById[0] = "ACCEL_25HZ"] = 0;
     values[valuesById[1] = "ACCEL_50HZ"] = 1;
     return values;
@@ -2388,15 +2390,15 @@ export const AccelSampleRate = $root.AccelSampleRate = (() => {
  * @property {number} ACCEL_4G=1 ACCEL_4G value
  * @property {number} ACCEL_8G=2 ACCEL_8G value
  */
-export const AccelSensitivity = $root.AccelSensitivity = (() => {
-    const valuesById = {}, values = Object.create(valuesById);
+$root.AccelSensitivity = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
     values[valuesById[0] = "ACCEL_2G"] = 0;
     values[valuesById[1] = "ACCEL_4G"] = 1;
     values[valuesById[2] = "ACCEL_8G"] = 2;
     return values;
 })();
 
-export const AccelerometerConfig = $root.AccelerometerConfig = (() => {
+$root.AccelerometerConfig = (function() {
 
     /**
      * Properties of an AccelerometerConfig.
@@ -2417,7 +2419,7 @@ export const AccelerometerConfig = $root.AccelerometerConfig = (() => {
      */
     function AccelerometerConfig(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -2506,9 +2508,9 @@ export const AccelerometerConfig = $root.AccelerometerConfig = (() => {
     AccelerometerConfig.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.AccelerometerConfig();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.AccelerometerConfig();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -2593,7 +2595,7 @@ export const AccelerometerConfig = $root.AccelerometerConfig = (() => {
     AccelerometerConfig.fromObject = function fromObject(object) {
         if (object instanceof $root.AccelerometerConfig)
             return object;
-        let message = new $root.AccelerometerConfig();
+        var message = new $root.AccelerometerConfig();
         if (object.enabled != null)
             message.enabled = Boolean(object.enabled);
         switch (object.sampleRate) {
@@ -2647,7 +2649,7 @@ export const AccelerometerConfig = $root.AccelerometerConfig = (() => {
     AccelerometerConfig.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.enabled = false;
             object.sampleRate = options.enums === String ? "ACCEL_25HZ" : 0;
@@ -2691,7 +2693,236 @@ export const AccelerometerConfig = $root.AccelerometerConfig = (() => {
     return AccelerometerConfig;
 })();
 
-export const ScheduledConfig = $root.ScheduledConfig = (() => {
+$root.MagnetometerConfig = (function() {
+
+    /**
+     * Properties of a MagnetometerConfig.
+     * @exports IMagnetometerConfig
+     * @interface IMagnetometerConfig
+     * @property {boolean|null} [enabled] MagnetometerConfig enabled
+     * @property {number|null} [sampleIntervalS] MagnetometerConfig sampleIntervalS
+     */
+
+    /**
+     * Constructs a new MagnetometerConfig.
+     * @exports MagnetometerConfig
+     * @classdesc Represents a MagnetometerConfig.
+     * @implements IMagnetometerConfig
+     * @constructor
+     * @param {IMagnetometerConfig=} [properties] Properties to set
+     */
+    function MagnetometerConfig(properties) {
+        if (properties)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * MagnetometerConfig enabled.
+     * @member {boolean} enabled
+     * @memberof MagnetometerConfig
+     * @instance
+     */
+    MagnetometerConfig.prototype.enabled = false;
+
+    /**
+     * MagnetometerConfig sampleIntervalS.
+     * @member {number} sampleIntervalS
+     * @memberof MagnetometerConfig
+     * @instance
+     */
+    MagnetometerConfig.prototype.sampleIntervalS = 0;
+
+    /**
+     * Creates a new MagnetometerConfig instance using the specified properties.
+     * @function create
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {IMagnetometerConfig=} [properties] Properties to set
+     * @returns {MagnetometerConfig} MagnetometerConfig instance
+     */
+    MagnetometerConfig.create = function create(properties) {
+        return new MagnetometerConfig(properties);
+    };
+
+    /**
+     * Encodes the specified MagnetometerConfig message. Does not implicitly {@link MagnetometerConfig.verify|verify} messages.
+     * @function encode
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {IMagnetometerConfig} message MagnetometerConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    MagnetometerConfig.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.enabled != null && Object.hasOwnProperty.call(message, "enabled"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enabled);
+        if (message.sampleIntervalS != null && Object.hasOwnProperty.call(message, "sampleIntervalS"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.sampleIntervalS);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified MagnetometerConfig message, length delimited. Does not implicitly {@link MagnetometerConfig.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {IMagnetometerConfig} message MagnetometerConfig message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    MagnetometerConfig.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a MagnetometerConfig message from the specified reader or buffer.
+     * @function decode
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {MagnetometerConfig} MagnetometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    MagnetometerConfig.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.MagnetometerConfig();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.enabled = reader.bool();
+                    break;
+                }
+            case 2: {
+                    message.sampleIntervalS = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a MagnetometerConfig message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {MagnetometerConfig} MagnetometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    MagnetometerConfig.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a MagnetometerConfig message.
+     * @function verify
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    MagnetometerConfig.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            if (typeof message.enabled !== "boolean")
+                return "enabled: boolean expected";
+        if (message.sampleIntervalS != null && message.hasOwnProperty("sampleIntervalS"))
+            if (!$util.isInteger(message.sampleIntervalS))
+                return "sampleIntervalS: integer expected";
+        return null;
+    };
+
+    /**
+     * Creates a MagnetometerConfig message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {MagnetometerConfig} MagnetometerConfig
+     */
+    MagnetometerConfig.fromObject = function fromObject(object) {
+        if (object instanceof $root.MagnetometerConfig)
+            return object;
+        var message = new $root.MagnetometerConfig();
+        if (object.enabled != null)
+            message.enabled = Boolean(object.enabled);
+        if (object.sampleIntervalS != null)
+            message.sampleIntervalS = object.sampleIntervalS >>> 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a MagnetometerConfig message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {MagnetometerConfig} message MagnetometerConfig
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    MagnetometerConfig.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        var object = {};
+        if (options.defaults) {
+            object.enabled = false;
+            object.sampleIntervalS = 0;
+        }
+        if (message.enabled != null && message.hasOwnProperty("enabled"))
+            object.enabled = message.enabled;
+        if (message.sampleIntervalS != null && message.hasOwnProperty("sampleIntervalS"))
+            object.sampleIntervalS = message.sampleIntervalS;
+        return object;
+    };
+
+    /**
+     * Converts this MagnetometerConfig to JSON.
+     * @function toJSON
+     * @memberof MagnetometerConfig
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    MagnetometerConfig.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for MagnetometerConfig
+     * @function getTypeUrl
+     * @memberof MagnetometerConfig
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    MagnetometerConfig.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/MagnetometerConfig";
+    };
+
+    return MagnetometerConfig;
+})();
+
+$root.ScheduledConfig = (function() {
 
     /**
      * Properties of a ScheduledConfig.
@@ -2704,6 +2935,9 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
      * @property {IGPSConfig|null} [gps] ScheduledConfig gps
      * @property {IMicrophoneConfig|null} [microphone] ScheduledConfig microphone
      * @property {IAccelerometerConfig|null} [accelerometer] ScheduledConfig accelerometer
+     * @property {boolean|null} [lorawanEnabled] ScheduledConfig lorawanEnabled
+     * @property {number|null} [lorawanSendIntervalMin] ScheduledConfig lorawanSendIntervalMin
+     * @property {IMagnetometerConfig|null} [magnetometer] ScheduledConfig magnetometer
      */
 
     /**
@@ -2716,7 +2950,7 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
      */
     function ScheduledConfig(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -2778,6 +3012,30 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
     ScheduledConfig.prototype.accelerometer = null;
 
     /**
+     * ScheduledConfig lorawanEnabled.
+     * @member {boolean} lorawanEnabled
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.lorawanEnabled = false;
+
+    /**
+     * ScheduledConfig lorawanSendIntervalMin.
+     * @member {number} lorawanSendIntervalMin
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.lorawanSendIntervalMin = 0;
+
+    /**
+     * ScheduledConfig magnetometer.
+     * @member {IMagnetometerConfig|null|undefined} magnetometer
+     * @memberof ScheduledConfig
+     * @instance
+     */
+    ScheduledConfig.prototype.magnetometer = null;
+
+    /**
      * Creates a new ScheduledConfig instance using the specified properties.
      * @function create
      * @memberof ScheduledConfig
@@ -2815,6 +3073,12 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
             $root.MicrophoneConfig.encode(message.microphone, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
         if (message.accelerometer != null && Object.hasOwnProperty.call(message, "accelerometer"))
             $root.AccelerometerConfig.encode(message.accelerometer, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+        if (message.lorawanEnabled != null && Object.hasOwnProperty.call(message, "lorawanEnabled"))
+            writer.uint32(/* id 8, wireType 0 =*/64).bool(message.lorawanEnabled);
+        if (message.lorawanSendIntervalMin != null && Object.hasOwnProperty.call(message, "lorawanSendIntervalMin"))
+            writer.uint32(/* id 9, wireType 0 =*/72).uint32(message.lorawanSendIntervalMin);
+        if (message.magnetometer != null && Object.hasOwnProperty.call(message, "magnetometer"))
+            $root.MagnetometerConfig.encode(message.magnetometer, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
         return writer;
     };
 
@@ -2845,9 +3109,9 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
     ScheduledConfig.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ScheduledConfig();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.ScheduledConfig();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -2877,6 +3141,18 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
                 }
             case 7: {
                     message.accelerometer = $root.AccelerometerConfig.decode(reader, reader.uint32());
+                    break;
+                }
+            case 8: {
+                    message.lorawanEnabled = reader.bool();
+                    break;
+                }
+            case 9: {
+                    message.lorawanSendIntervalMin = reader.uint32();
+                    break;
+                }
+            case 10: {
+                    message.magnetometer = $root.MagnetometerConfig.decode(reader, reader.uint32());
                     break;
                 }
             default:
@@ -2915,39 +3191,50 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
         if (typeof message !== "object" || message === null)
             return "object expected";
         if (message.window != null && message.hasOwnProperty("window")) {
-            let error = $root.TimeWindow.verify(message.window);
+            var error = $root.TimeWindow.verify(message.window);
             if (error)
                 return "window." + error;
         }
         if (message.light != null && message.hasOwnProperty("light")) {
-            let error = $root.SamplingConfig.verify(message.light);
+            var error = $root.SamplingConfig.verify(message.light);
             if (error)
                 return "light." + error;
         }
         if (message.environmental != null && message.hasOwnProperty("environmental")) {
-            let error = $root.SamplingConfig.verify(message.environmental);
+            var error = $root.SamplingConfig.verify(message.environmental);
             if (error)
                 return "environmental." + error;
         }
         if (message.particulate != null && message.hasOwnProperty("particulate")) {
-            let error = $root.SamplingConfig.verify(message.particulate);
+            var error = $root.SamplingConfig.verify(message.particulate);
             if (error)
                 return "particulate." + error;
         }
         if (message.gps != null && message.hasOwnProperty("gps")) {
-            let error = $root.GPSConfig.verify(message.gps);
+            var error = $root.GPSConfig.verify(message.gps);
             if (error)
                 return "gps." + error;
         }
         if (message.microphone != null && message.hasOwnProperty("microphone")) {
-            let error = $root.MicrophoneConfig.verify(message.microphone);
+            var error = $root.MicrophoneConfig.verify(message.microphone);
             if (error)
                 return "microphone." + error;
         }
         if (message.accelerometer != null && message.hasOwnProperty("accelerometer")) {
-            let error = $root.AccelerometerConfig.verify(message.accelerometer);
+            var error = $root.AccelerometerConfig.verify(message.accelerometer);
             if (error)
                 return "accelerometer." + error;
+        }
+        if (message.lorawanEnabled != null && message.hasOwnProperty("lorawanEnabled"))
+            if (typeof message.lorawanEnabled !== "boolean")
+                return "lorawanEnabled: boolean expected";
+        if (message.lorawanSendIntervalMin != null && message.hasOwnProperty("lorawanSendIntervalMin"))
+            if (!$util.isInteger(message.lorawanSendIntervalMin))
+                return "lorawanSendIntervalMin: integer expected";
+        if (message.magnetometer != null && message.hasOwnProperty("magnetometer")) {
+            var error = $root.MagnetometerConfig.verify(message.magnetometer);
+            if (error)
+                return "magnetometer." + error;
         }
         return null;
     };
@@ -2963,7 +3250,7 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
     ScheduledConfig.fromObject = function fromObject(object) {
         if (object instanceof $root.ScheduledConfig)
             return object;
-        let message = new $root.ScheduledConfig();
+        var message = new $root.ScheduledConfig();
         if (object.window != null) {
             if (typeof object.window !== "object")
                 throw TypeError(".ScheduledConfig.window: object expected");
@@ -2999,6 +3286,15 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
                 throw TypeError(".ScheduledConfig.accelerometer: object expected");
             message.accelerometer = $root.AccelerometerConfig.fromObject(object.accelerometer);
         }
+        if (object.lorawanEnabled != null)
+            message.lorawanEnabled = Boolean(object.lorawanEnabled);
+        if (object.lorawanSendIntervalMin != null)
+            message.lorawanSendIntervalMin = object.lorawanSendIntervalMin >>> 0;
+        if (object.magnetometer != null) {
+            if (typeof object.magnetometer !== "object")
+                throw TypeError(".ScheduledConfig.magnetometer: object expected");
+            message.magnetometer = $root.MagnetometerConfig.fromObject(object.magnetometer);
+        }
         return message;
     };
 
@@ -3014,7 +3310,7 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
     ScheduledConfig.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.window = null;
             object.light = null;
@@ -3023,6 +3319,9 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
             object.gps = null;
             object.microphone = null;
             object.accelerometer = null;
+            object.lorawanEnabled = false;
+            object.lorawanSendIntervalMin = 0;
+            object.magnetometer = null;
         }
         if (message.window != null && message.hasOwnProperty("window"))
             object.window = $root.TimeWindow.toObject(message.window, options);
@@ -3038,6 +3337,12 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
             object.microphone = $root.MicrophoneConfig.toObject(message.microphone, options);
         if (message.accelerometer != null && message.hasOwnProperty("accelerometer"))
             object.accelerometer = $root.AccelerometerConfig.toObject(message.accelerometer, options);
+        if (message.lorawanEnabled != null && message.hasOwnProperty("lorawanEnabled"))
+            object.lorawanEnabled = message.lorawanEnabled;
+        if (message.lorawanSendIntervalMin != null && message.hasOwnProperty("lorawanSendIntervalMin"))
+            object.lorawanSendIntervalMin = message.lorawanSendIntervalMin;
+        if (message.magnetometer != null && message.hasOwnProperty("magnetometer"))
+            object.magnetometer = $root.MagnetometerConfig.toObject(message.magnetometer, options);
         return object;
     };
 
@@ -3070,7 +3375,7 @@ export const ScheduledConfig = $root.ScheduledConfig = (() => {
     return ScheduledConfig;
 })();
 
-export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
+$root.ScheduleConfigPacket = (function() {
 
     /**
      * Properties of a ScheduleConfigPacket.
@@ -3090,7 +3395,7 @@ export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
     function ScheduleConfigPacket(properties) {
         this.schedules = [];
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -3128,7 +3433,7 @@ export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
         if (!writer)
             writer = $Writer.create();
         if (message.schedules != null && message.schedules.length)
-            for (let i = 0; i < message.schedules.length; ++i)
+            for (var i = 0; i < message.schedules.length; ++i)
                 $root.ScheduledConfig.encode(message.schedules[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
         return writer;
     };
@@ -3160,9 +3465,9 @@ export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
     ScheduleConfigPacket.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ScheduleConfigPacket();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.ScheduleConfigPacket();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -3210,8 +3515,8 @@ export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
         if (message.schedules != null && message.hasOwnProperty("schedules")) {
             if (!Array.isArray(message.schedules))
                 return "schedules: array expected";
-            for (let i = 0; i < message.schedules.length; ++i) {
-                let error = $root.ScheduledConfig.verify(message.schedules[i]);
+            for (var i = 0; i < message.schedules.length; ++i) {
+                var error = $root.ScheduledConfig.verify(message.schedules[i]);
                 if (error)
                     return "schedules." + error;
             }
@@ -3230,12 +3535,12 @@ export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
     ScheduleConfigPacket.fromObject = function fromObject(object) {
         if (object instanceof $root.ScheduleConfigPacket)
             return object;
-        let message = new $root.ScheduleConfigPacket();
+        var message = new $root.ScheduleConfigPacket();
         if (object.schedules) {
             if (!Array.isArray(object.schedules))
                 throw TypeError(".ScheduleConfigPacket.schedules: array expected");
             message.schedules = [];
-            for (let i = 0; i < object.schedules.length; ++i) {
+            for (var i = 0; i < object.schedules.length; ++i) {
                 if (typeof object.schedules[i] !== "object")
                     throw TypeError(".ScheduleConfigPacket.schedules: object expected");
                 message.schedules[i] = $root.ScheduledConfig.fromObject(object.schedules[i]);
@@ -3256,12 +3561,12 @@ export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
     ScheduleConfigPacket.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.arrays || options.defaults)
             object.schedules = [];
         if (message.schedules && message.schedules.length) {
             object.schedules = [];
-            for (let j = 0; j < message.schedules.length; ++j)
+            for (var j = 0; j < message.schedules.length; ++j)
                 object.schedules[j] = $root.ScheduledConfig.toObject(message.schedules[j], options);
         }
         return object;
@@ -3304,15 +3609,15 @@ export const ScheduleConfigPacket = $root.ScheduleConfigPacket = (() => {
  * @property {number} WALK=1 WALK value
  * @property {number} RUN=2 RUN value
  */
-export const Activity = $root.Activity = (() => {
-    const valuesById = {}, values = Object.create(valuesById);
+$root.Activity = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
     values[valuesById[0] = "STILL"] = 0;
     values[valuesById[1] = "WALK"] = 1;
     values[valuesById[2] = "RUN"] = 2;
     return values;
 })();
 
-export const SimpleSensorReading = $root.SimpleSensorReading = (() => {
+$root.SimpleSensorReading = (function() {
 
     /**
      * Properties of a SimpleSensorReading.
@@ -3342,7 +3647,7 @@ export const SimpleSensorReading = $root.SimpleSensorReading = (() => {
      */
     function SimpleSensorReading(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -3521,9 +3826,9 @@ export const SimpleSensorReading = $root.SimpleSensorReading = (() => {
     SimpleSensorReading.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.SimpleSensorReading();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SimpleSensorReading();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -3666,7 +3971,7 @@ export const SimpleSensorReading = $root.SimpleSensorReading = (() => {
     SimpleSensorReading.fromObject = function fromObject(object) {
         if (object instanceof $root.SimpleSensorReading)
             return object;
-        let message = new $root.SimpleSensorReading();
+        var message = new $root.SimpleSensorReading();
         if (object.index != null)
             message.index = object.index >>> 0;
         if (object.temperature != null)
@@ -3724,7 +4029,7 @@ export const SimpleSensorReading = $root.SimpleSensorReading = (() => {
     SimpleSensorReading.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.index = 0;
             object.temperature = 0;
@@ -3795,7 +4100,7 @@ export const SimpleSensorReading = $root.SimpleSensorReading = (() => {
     return SimpleSensorReading;
 })();
 
-export const BatteryState = $root.BatteryState = (() => {
+$root.BatteryState = (function() {
 
     /**
      * Properties of a BatteryState.
@@ -3816,7 +4121,7 @@ export const BatteryState = $root.BatteryState = (() => {
      */
     function BatteryState(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -3846,7 +4151,7 @@ export const BatteryState = $root.BatteryState = (() => {
     BatteryState.prototype.percentage = null;
 
     // OneOf field names bound to virtual getters and setters
-    let $oneOfFields;
+    var $oneOfFields;
 
     /**
      * BatteryState _percentage.
@@ -3919,9 +4224,9 @@ export const BatteryState = $root.BatteryState = (() => {
     BatteryState.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.BatteryState();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.BatteryState();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -3972,7 +4277,7 @@ export const BatteryState = $root.BatteryState = (() => {
     BatteryState.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        let properties = {};
+        var properties = {};
         if (message.charging != null && message.hasOwnProperty("charging"))
             if (typeof message.charging !== "boolean")
                 return "charging: boolean expected";
@@ -3998,7 +4303,7 @@ export const BatteryState = $root.BatteryState = (() => {
     BatteryState.fromObject = function fromObject(object) {
         if (object instanceof $root.BatteryState)
             return object;
-        let message = new $root.BatteryState();
+        var message = new $root.BatteryState();
         if (object.charging != null)
             message.charging = Boolean(object.charging);
         if (object.mV != null)
@@ -4020,7 +4325,7 @@ export const BatteryState = $root.BatteryState = (() => {
     BatteryState.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.charging = false;
             object.mV = 0;
@@ -4066,7 +4371,7 @@ export const BatteryState = $root.BatteryState = (() => {
     return BatteryState;
 })();
 
-export const SDCardState = $root.SDCardState = (() => {
+$root.SDCardState = (function() {
 
     /**
      * Properties of a SDCardState.
@@ -4087,7 +4392,7 @@ export const SDCardState = $root.SDCardState = (() => {
      */
     function SDCardState(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -4176,9 +4481,9 @@ export const SDCardState = $root.SDCardState = (() => {
     SDCardState.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.SDCardState();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SDCardState();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -4252,7 +4557,7 @@ export const SDCardState = $root.SDCardState = (() => {
     SDCardState.fromObject = function fromObject(object) {
         if (object instanceof $root.SDCardState)
             return object;
-        let message = new $root.SDCardState();
+        var message = new $root.SDCardState();
         if (object.detected != null)
             message.detected = Boolean(object.detected);
         if (object.spaceRemaining != null)
@@ -4288,16 +4593,16 @@ export const SDCardState = $root.SDCardState = (() => {
     SDCardState.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.detected = false;
             if ($util.Long) {
-                let long = new $util.Long(0, 0, true);
+                var long = new $util.Long(0, 0, true);
                 object.spaceRemaining = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
             } else
                 object.spaceRemaining = options.longs === String ? "0" : 0;
             if ($util.Long) {
-                let long = new $util.Long(0, 0, true);
+                var long = new $util.Long(0, 0, true);
                 object.totalSpace = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
             } else
                 object.totalSpace = options.longs === String ? "0" : 0;
@@ -4346,7 +4651,7 @@ export const SDCardState = $root.SDCardState = (() => {
     return SDCardState;
 })();
 
-export const GPSData = $root.GPSData = (() => {
+$root.GPSData = (function() {
 
     /**
      * Properties of a GPSData.
@@ -4369,7 +4674,7 @@ export const GPSData = $root.GPSData = (() => {
      */
     function GPSData(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -4478,9 +4783,9 @@ export const GPSData = $root.GPSData = (() => {
     GPSData.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.GPSData();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.GPSData();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -4568,7 +4873,7 @@ export const GPSData = $root.GPSData = (() => {
     GPSData.fromObject = function fromObject(object) {
         if (object instanceof $root.GPSData)
             return object;
-        let message = new $root.GPSData();
+        var message = new $root.GPSData();
         if (object.latitude != null)
             message.latitude = Number(object.latitude);
         if (object.longitude != null)
@@ -4594,7 +4899,7 @@ export const GPSData = $root.GPSData = (() => {
     GPSData.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.latitude = 0;
             object.longitude = 0;
@@ -4644,7 +4949,7 @@ export const GPSData = $root.GPSData = (() => {
     return GPSData;
 })();
 
-export const SystemStatePacket = $root.SystemStatePacket = (() => {
+$root.SystemStatePacket = (function() {
 
     /**
      * Properties of a SystemStatePacket.
@@ -4668,7 +4973,7 @@ export const SystemStatePacket = $root.SystemStatePacket = (() => {
      */
     function SystemStatePacket(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -4722,7 +5027,7 @@ export const SystemStatePacket = $root.SystemStatePacket = (() => {
     SystemStatePacket.prototype.firmwareVersion = "";
 
     // OneOf field names bound to virtual getters and setters
-    let $oneOfFields;
+    var $oneOfFields;
 
     /**
      * SystemStatePacket _gpsData.
@@ -4801,9 +5106,9 @@ export const SystemStatePacket = $root.SystemStatePacket = (() => {
     SystemStatePacket.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.SystemStatePacket();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SystemStatePacket();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -4866,30 +5171,30 @@ export const SystemStatePacket = $root.SystemStatePacket = (() => {
     SystemStatePacket.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        let properties = {};
+        var properties = {};
         if (message.engageState != null && message.hasOwnProperty("engageState"))
             if (typeof message.engageState !== "boolean")
                 return "engageState: boolean expected";
         if (message.battery != null && message.hasOwnProperty("battery")) {
-            let error = $root.BatteryState.verify(message.battery);
+            var error = $root.BatteryState.verify(message.battery);
             if (error)
                 return "battery." + error;
         }
         if (message.sdcard != null && message.hasOwnProperty("sdcard")) {
-            let error = $root.SDCardState.verify(message.sdcard);
+            var error = $root.SDCardState.verify(message.sdcard);
             if (error)
                 return "sdcard." + error;
         }
         if (message.gpsData != null && message.hasOwnProperty("gpsData")) {
             properties._gpsData = 1;
             {
-                let error = $root.GPSData.verify(message.gpsData);
+                var error = $root.GPSData.verify(message.gpsData);
                 if (error)
                     return "gpsData." + error;
             }
         }
         if (message.sensors != null && message.hasOwnProperty("sensors")) {
-            let error = $root.SimpleSensorReading.verify(message.sensors);
+            var error = $root.SimpleSensorReading.verify(message.sensors);
             if (error)
                 return "sensors." + error;
         }
@@ -4910,7 +5215,7 @@ export const SystemStatePacket = $root.SystemStatePacket = (() => {
     SystemStatePacket.fromObject = function fromObject(object) {
         if (object instanceof $root.SystemStatePacket)
             return object;
-        let message = new $root.SystemStatePacket();
+        var message = new $root.SystemStatePacket();
         if (object.engageState != null)
             message.engageState = Boolean(object.engageState);
         if (object.battery != null) {
@@ -4950,7 +5255,7 @@ export const SystemStatePacket = $root.SystemStatePacket = (() => {
     SystemStatePacket.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults) {
             object.engageState = false;
             object.battery = null;
@@ -5005,7 +5310,499 @@ export const SystemStatePacket = $root.SystemStatePacket = (() => {
     return SystemStatePacket;
 })();
 
-export const Packet = $root.Packet = (() => {
+/**
+ * PeripheralType enum.
+ * @exports PeripheralType
+ * @enum {number}
+ * @property {number} PERIPHERAL_SATCOM=0 PERIPHERAL_SATCOM value
+ * @property {number} PERIPHERAL_DETACHMENT=1 PERIPHERAL_DETACHMENT value
+ */
+$root.PeripheralType = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "PERIPHERAL_SATCOM"] = 0;
+    values[valuesById[1] = "PERIPHERAL_DETACHMENT"] = 1;
+    return values;
+})();
+
+$root.PeripheralPacket = (function() {
+
+    /**
+     * Properties of a PeripheralPacket.
+     * @exports IPeripheralPacket
+     * @interface IPeripheralPacket
+     * @property {Uint8Array|null} [macAddress] PeripheralPacket macAddress
+     * @property {PeripheralType|null} [type] PeripheralPacket type
+     */
+
+    /**
+     * Constructs a new PeripheralPacket.
+     * @exports PeripheralPacket
+     * @classdesc Represents a PeripheralPacket.
+     * @implements IPeripheralPacket
+     * @constructor
+     * @param {IPeripheralPacket=} [properties] Properties to set
+     */
+    function PeripheralPacket(properties) {
+        if (properties)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * PeripheralPacket macAddress.
+     * @member {Uint8Array} macAddress
+     * @memberof PeripheralPacket
+     * @instance
+     */
+    PeripheralPacket.prototype.macAddress = $util.newBuffer([]);
+
+    /**
+     * PeripheralPacket type.
+     * @member {PeripheralType} type
+     * @memberof PeripheralPacket
+     * @instance
+     */
+    PeripheralPacket.prototype.type = 0;
+
+    /**
+     * Creates a new PeripheralPacket instance using the specified properties.
+     * @function create
+     * @memberof PeripheralPacket
+     * @static
+     * @param {IPeripheralPacket=} [properties] Properties to set
+     * @returns {PeripheralPacket} PeripheralPacket instance
+     */
+    PeripheralPacket.create = function create(properties) {
+        return new PeripheralPacket(properties);
+    };
+
+    /**
+     * Encodes the specified PeripheralPacket message. Does not implicitly {@link PeripheralPacket.verify|verify} messages.
+     * @function encode
+     * @memberof PeripheralPacket
+     * @static
+     * @param {IPeripheralPacket} message PeripheralPacket message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    PeripheralPacket.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.macAddress != null && Object.hasOwnProperty.call(message, "macAddress"))
+            writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.macAddress);
+        if (message.type != null && Object.hasOwnProperty.call(message, "type"))
+            writer.uint32(/* id 2, wireType 0 =*/16).int32(message.type);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified PeripheralPacket message, length delimited. Does not implicitly {@link PeripheralPacket.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof PeripheralPacket
+     * @static
+     * @param {IPeripheralPacket} message PeripheralPacket message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    PeripheralPacket.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a PeripheralPacket message from the specified reader or buffer.
+     * @function decode
+     * @memberof PeripheralPacket
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {PeripheralPacket} PeripheralPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    PeripheralPacket.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.PeripheralPacket();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.macAddress = reader.bytes();
+                    break;
+                }
+            case 2: {
+                    message.type = reader.int32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a PeripheralPacket message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof PeripheralPacket
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {PeripheralPacket} PeripheralPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    PeripheralPacket.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a PeripheralPacket message.
+     * @function verify
+     * @memberof PeripheralPacket
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    PeripheralPacket.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.macAddress != null && message.hasOwnProperty("macAddress"))
+            if (!(message.macAddress && typeof message.macAddress.length === "number" || $util.isString(message.macAddress)))
+                return "macAddress: buffer expected";
+        if (message.type != null && message.hasOwnProperty("type"))
+            switch (message.type) {
+            default:
+                return "type: enum value expected";
+            case 0:
+            case 1:
+                break;
+            }
+        return null;
+    };
+
+    /**
+     * Creates a PeripheralPacket message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof PeripheralPacket
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {PeripheralPacket} PeripheralPacket
+     */
+    PeripheralPacket.fromObject = function fromObject(object) {
+        if (object instanceof $root.PeripheralPacket)
+            return object;
+        var message = new $root.PeripheralPacket();
+        if (object.macAddress != null)
+            if (typeof object.macAddress === "string")
+                $util.base64.decode(object.macAddress, message.macAddress = $util.newBuffer($util.base64.length(object.macAddress)), 0);
+            else if (object.macAddress.length >= 0)
+                message.macAddress = object.macAddress;
+        switch (object.type) {
+        default:
+            if (typeof object.type === "number") {
+                message.type = object.type;
+                break;
+            }
+            break;
+        case "PERIPHERAL_SATCOM":
+        case 0:
+            message.type = 0;
+            break;
+        case "PERIPHERAL_DETACHMENT":
+        case 1:
+            message.type = 1;
+            break;
+        }
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a PeripheralPacket message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof PeripheralPacket
+     * @static
+     * @param {PeripheralPacket} message PeripheralPacket
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    PeripheralPacket.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        var object = {};
+        if (options.defaults) {
+            if (options.bytes === String)
+                object.macAddress = "";
+            else {
+                object.macAddress = [];
+                if (options.bytes !== Array)
+                    object.macAddress = $util.newBuffer(object.macAddress);
+            }
+            object.type = options.enums === String ? "PERIPHERAL_SATCOM" : 0;
+        }
+        if (message.macAddress != null && message.hasOwnProperty("macAddress"))
+            object.macAddress = options.bytes === String ? $util.base64.encode(message.macAddress, 0, message.macAddress.length) : options.bytes === Array ? Array.prototype.slice.call(message.macAddress) : message.macAddress;
+        if (message.type != null && message.hasOwnProperty("type"))
+            object.type = options.enums === String ? $root.PeripheralType[message.type] === undefined ? message.type : $root.PeripheralType[message.type] : message.type;
+        return object;
+    };
+
+    /**
+     * Converts this PeripheralPacket to JSON.
+     * @function toJSON
+     * @memberof PeripheralPacket
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    PeripheralPacket.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for PeripheralPacket
+     * @function getTypeUrl
+     * @memberof PeripheralPacket
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    PeripheralPacket.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/PeripheralPacket";
+    };
+
+    return PeripheralPacket;
+})();
+
+$root.PeripheralInfo = (function() {
+
+    /**
+     * Properties of a PeripheralInfo.
+     * @exports IPeripheralInfo
+     * @interface IPeripheralInfo
+     * @property {Array.<string>|null} [deviceUids] PeripheralInfo deviceUids
+     */
+
+    /**
+     * Constructs a new PeripheralInfo.
+     * @exports PeripheralInfo
+     * @classdesc Represents a PeripheralInfo.
+     * @implements IPeripheralInfo
+     * @constructor
+     * @param {IPeripheralInfo=} [properties] Properties to set
+     */
+    function PeripheralInfo(properties) {
+        this.deviceUids = [];
+        if (properties)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * PeripheralInfo deviceUids.
+     * @member {Array.<string>} deviceUids
+     * @memberof PeripheralInfo
+     * @instance
+     */
+    PeripheralInfo.prototype.deviceUids = $util.emptyArray;
+
+    /**
+     * Creates a new PeripheralInfo instance using the specified properties.
+     * @function create
+     * @memberof PeripheralInfo
+     * @static
+     * @param {IPeripheralInfo=} [properties] Properties to set
+     * @returns {PeripheralInfo} PeripheralInfo instance
+     */
+    PeripheralInfo.create = function create(properties) {
+        return new PeripheralInfo(properties);
+    };
+
+    /**
+     * Encodes the specified PeripheralInfo message. Does not implicitly {@link PeripheralInfo.verify|verify} messages.
+     * @function encode
+     * @memberof PeripheralInfo
+     * @static
+     * @param {IPeripheralInfo} message PeripheralInfo message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    PeripheralInfo.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.deviceUids != null && message.deviceUids.length)
+            for (var i = 0; i < message.deviceUids.length; ++i)
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.deviceUids[i]);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified PeripheralInfo message, length delimited. Does not implicitly {@link PeripheralInfo.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof PeripheralInfo
+     * @static
+     * @param {IPeripheralInfo} message PeripheralInfo message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    PeripheralInfo.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a PeripheralInfo message from the specified reader or buffer.
+     * @function decode
+     * @memberof PeripheralInfo
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {PeripheralInfo} PeripheralInfo
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    PeripheralInfo.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.PeripheralInfo();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    if (!(message.deviceUids && message.deviceUids.length))
+                        message.deviceUids = [];
+                    message.deviceUids.push(reader.string());
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a PeripheralInfo message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof PeripheralInfo
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {PeripheralInfo} PeripheralInfo
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    PeripheralInfo.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a PeripheralInfo message.
+     * @function verify
+     * @memberof PeripheralInfo
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    PeripheralInfo.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.deviceUids != null && message.hasOwnProperty("deviceUids")) {
+            if (!Array.isArray(message.deviceUids))
+                return "deviceUids: array expected";
+            for (var i = 0; i < message.deviceUids.length; ++i)
+                if (!$util.isString(message.deviceUids[i]))
+                    return "deviceUids: string[] expected";
+        }
+        return null;
+    };
+
+    /**
+     * Creates a PeripheralInfo message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof PeripheralInfo
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {PeripheralInfo} PeripheralInfo
+     */
+    PeripheralInfo.fromObject = function fromObject(object) {
+        if (object instanceof $root.PeripheralInfo)
+            return object;
+        var message = new $root.PeripheralInfo();
+        if (object.deviceUids) {
+            if (!Array.isArray(object.deviceUids))
+                throw TypeError(".PeripheralInfo.deviceUids: array expected");
+            message.deviceUids = [];
+            for (var i = 0; i < object.deviceUids.length; ++i)
+                message.deviceUids[i] = String(object.deviceUids[i]);
+        }
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a PeripheralInfo message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof PeripheralInfo
+     * @static
+     * @param {PeripheralInfo} message PeripheralInfo
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    PeripheralInfo.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        var object = {};
+        if (options.arrays || options.defaults)
+            object.deviceUids = [];
+        if (message.deviceUids && message.deviceUids.length) {
+            object.deviceUids = [];
+            for (var j = 0; j < message.deviceUids.length; ++j)
+                object.deviceUids[j] = message.deviceUids[j];
+        }
+        return object;
+    };
+
+    /**
+     * Converts this PeripheralInfo to JSON.
+     * @function toJSON
+     * @memberof PeripheralInfo
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    PeripheralInfo.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for PeripheralInfo
+     * @function getTypeUrl
+     * @memberof PeripheralInfo
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    PeripheralInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/PeripheralInfo";
+    };
+
+    return PeripheralInfo;
+})();
+
+$root.Packet = (function() {
 
     /**
      * Properties of a Packet.
@@ -5015,6 +5812,8 @@ export const Packet = $root.Packet = (() => {
      * @property {IScheduleConfigPacket|null} [scheduleConfigPacket] Packet scheduleConfigPacket
      * @property {ISystemStatePacket|null} [systemStatePacket] Packet systemStatePacket
      * @property {IRadioConfigPacket|null} [radioConfigPacket] Packet radioConfigPacket
+     * @property {IPeripheralPacket|null} [peripheralPacket] Packet peripheralPacket
+     * @property {IPeripheralInfo|null} [peripheralInfo] Packet peripheralInfo
      */
 
     /**
@@ -5027,7 +5826,7 @@ export const Packet = $root.Packet = (() => {
      */
     function Packet(properties) {
         if (properties)
-            for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                 if (properties[keys[i]] != null)
                     this[keys[i]] = properties[keys[i]];
     }
@@ -5064,17 +5863,33 @@ export const Packet = $root.Packet = (() => {
      */
     Packet.prototype.radioConfigPacket = null;
 
+    /**
+     * Packet peripheralPacket.
+     * @member {IPeripheralPacket|null|undefined} peripheralPacket
+     * @memberof Packet
+     * @instance
+     */
+    Packet.prototype.peripheralPacket = null;
+
+    /**
+     * Packet peripheralInfo.
+     * @member {IPeripheralInfo|null|undefined} peripheralInfo
+     * @memberof Packet
+     * @instance
+     */
+    Packet.prototype.peripheralInfo = null;
+
     // OneOf field names bound to virtual getters and setters
-    let $oneOfFields;
+    var $oneOfFields;
 
     /**
      * Packet payload.
-     * @member {"scheduleConfigPacket"|"systemStatePacket"|"radioConfigPacket"|undefined} payload
+     * @member {"scheduleConfigPacket"|"systemStatePacket"|"radioConfigPacket"|"peripheralPacket"|"peripheralInfo"|undefined} payload
      * @memberof Packet
      * @instance
      */
     Object.defineProperty(Packet.prototype, "payload", {
-        get: $util.oneOfGetter($oneOfFields = ["scheduleConfigPacket", "systemStatePacket", "radioConfigPacket"]),
+        get: $util.oneOfGetter($oneOfFields = ["scheduleConfigPacket", "systemStatePacket", "radioConfigPacket", "peripheralPacket", "peripheralInfo"]),
         set: $util.oneOfSetter($oneOfFields)
     });
 
@@ -5110,6 +5925,10 @@ export const Packet = $root.Packet = (() => {
             $root.SystemStatePacket.encode(message.systemStatePacket, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
         if (message.radioConfigPacket != null && Object.hasOwnProperty.call(message, "radioConfigPacket"))
             $root.RadioConfigPacket.encode(message.radioConfigPacket, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+        if (message.peripheralPacket != null && Object.hasOwnProperty.call(message, "peripheralPacket"))
+            $root.PeripheralPacket.encode(message.peripheralPacket, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+        if (message.peripheralInfo != null && Object.hasOwnProperty.call(message, "peripheralInfo"))
+            $root.PeripheralInfo.encode(message.peripheralInfo, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
         return writer;
     };
 
@@ -5140,9 +5959,9 @@ export const Packet = $root.Packet = (() => {
     Packet.decode = function decode(reader, length, error) {
         if (!(reader instanceof $Reader))
             reader = $Reader.create(reader);
-        let end = length === undefined ? reader.len : reader.pos + length, message = new $root.Packet();
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.Packet();
         while (reader.pos < end) {
-            let tag = reader.uint32();
+            var tag = reader.uint32();
             if (tag === error)
                 break;
             switch (tag >>> 3) {
@@ -5160,6 +5979,14 @@ export const Packet = $root.Packet = (() => {
                 }
             case 4: {
                     message.radioConfigPacket = $root.RadioConfigPacket.decode(reader, reader.uint32());
+                    break;
+                }
+            case 5: {
+                    message.peripheralPacket = $root.PeripheralPacket.decode(reader, reader.uint32());
+                    break;
+                }
+            case 6: {
+                    message.peripheralInfo = $root.PeripheralInfo.decode(reader, reader.uint32());
                     break;
                 }
             default:
@@ -5197,16 +6024,16 @@ export const Packet = $root.Packet = (() => {
     Packet.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        let properties = {};
+        var properties = {};
         if (message.header != null && message.hasOwnProperty("header")) {
-            let error = $root.PacketHeader.verify(message.header);
+            var error = $root.PacketHeader.verify(message.header);
             if (error)
                 return "header." + error;
         }
         if (message.scheduleConfigPacket != null && message.hasOwnProperty("scheduleConfigPacket")) {
             properties.payload = 1;
             {
-                let error = $root.ScheduleConfigPacket.verify(message.scheduleConfigPacket);
+                var error = $root.ScheduleConfigPacket.verify(message.scheduleConfigPacket);
                 if (error)
                     return "scheduleConfigPacket." + error;
             }
@@ -5216,7 +6043,7 @@ export const Packet = $root.Packet = (() => {
                 return "payload: multiple values";
             properties.payload = 1;
             {
-                let error = $root.SystemStatePacket.verify(message.systemStatePacket);
+                var error = $root.SystemStatePacket.verify(message.systemStatePacket);
                 if (error)
                     return "systemStatePacket." + error;
             }
@@ -5226,9 +6053,29 @@ export const Packet = $root.Packet = (() => {
                 return "payload: multiple values";
             properties.payload = 1;
             {
-                let error = $root.RadioConfigPacket.verify(message.radioConfigPacket);
+                var error = $root.RadioConfigPacket.verify(message.radioConfigPacket);
                 if (error)
                     return "radioConfigPacket." + error;
+            }
+        }
+        if (message.peripheralPacket != null && message.hasOwnProperty("peripheralPacket")) {
+            if (properties.payload === 1)
+                return "payload: multiple values";
+            properties.payload = 1;
+            {
+                var error = $root.PeripheralPacket.verify(message.peripheralPacket);
+                if (error)
+                    return "peripheralPacket." + error;
+            }
+        }
+        if (message.peripheralInfo != null && message.hasOwnProperty("peripheralInfo")) {
+            if (properties.payload === 1)
+                return "payload: multiple values";
+            properties.payload = 1;
+            {
+                var error = $root.PeripheralInfo.verify(message.peripheralInfo);
+                if (error)
+                    return "peripheralInfo." + error;
             }
         }
         return null;
@@ -5245,7 +6092,7 @@ export const Packet = $root.Packet = (() => {
     Packet.fromObject = function fromObject(object) {
         if (object instanceof $root.Packet)
             return object;
-        let message = new $root.Packet();
+        var message = new $root.Packet();
         if (object.header != null) {
             if (typeof object.header !== "object")
                 throw TypeError(".Packet.header: object expected");
@@ -5266,6 +6113,16 @@ export const Packet = $root.Packet = (() => {
                 throw TypeError(".Packet.radioConfigPacket: object expected");
             message.radioConfigPacket = $root.RadioConfigPacket.fromObject(object.radioConfigPacket);
         }
+        if (object.peripheralPacket != null) {
+            if (typeof object.peripheralPacket !== "object")
+                throw TypeError(".Packet.peripheralPacket: object expected");
+            message.peripheralPacket = $root.PeripheralPacket.fromObject(object.peripheralPacket);
+        }
+        if (object.peripheralInfo != null) {
+            if (typeof object.peripheralInfo !== "object")
+                throw TypeError(".Packet.peripheralInfo: object expected");
+            message.peripheralInfo = $root.PeripheralInfo.fromObject(object.peripheralInfo);
+        }
         return message;
     };
 
@@ -5281,7 +6138,7 @@ export const Packet = $root.Packet = (() => {
     Packet.toObject = function toObject(message, options) {
         if (!options)
             options = {};
-        let object = {};
+        var object = {};
         if (options.defaults)
             object.header = null;
         if (message.header != null && message.hasOwnProperty("header"))
@@ -5300,6 +6157,16 @@ export const Packet = $root.Packet = (() => {
             object.radioConfigPacket = $root.RadioConfigPacket.toObject(message.radioConfigPacket, options);
             if (options.oneofs)
                 object.payload = "radioConfigPacket";
+        }
+        if (message.peripheralPacket != null && message.hasOwnProperty("peripheralPacket")) {
+            object.peripheralPacket = $root.PeripheralPacket.toObject(message.peripheralPacket, options);
+            if (options.oneofs)
+                object.payload = "peripheralPacket";
+        }
+        if (message.peripheralInfo != null && message.hasOwnProperty("peripheralInfo")) {
+            object.peripheralInfo = $root.PeripheralInfo.toObject(message.peripheralInfo, options);
+            if (options.oneofs)
+                object.payload = "peripheralInfo";
         }
         return object;
     };
@@ -5333,4 +6200,4 @@ export const Packet = $root.Packet = (() => {
     return Packet;
 })();
 
-export { $root as default };
+module.exports = $root;

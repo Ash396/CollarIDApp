@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 // ---- Header ----
 message PacketHeader {
   uint32 system_uid     = 1;
@@ -74,6 +75,12 @@ message AccelerometerConfig {
   AccelSampleRate  sample_rate  = 2;
   AccelSensitivity sensitivity  = 3;
 }
+
+message MagnetometerConfig {
+  bool   enabled           = 1;
+  uint32 sample_interval_s = 2; // in seconds
+}
+
 // schedule that is applied during each TimeWindow
 message ScheduledConfig {
   TimeWindow          window        = 1;
@@ -83,11 +90,19 @@ message ScheduledConfig {
   GPSConfig           gps           = 5;
   MicrophoneConfig    microphone    = 6;
   AccelerometerConfig accelerometer = 7;
+
+  // LoRaWAN behavior within this schedule
+  bool   lorawan_enabled            = 8;
+  uint32 lorawan_send_interval_min  = 9;
+
+  MagnetometerConfig magnetometer   = 10;
 }
+
 // can include multiple schedules
 message ScheduleConfigPacket {
   repeated ScheduledConfig schedules = 1; // capped to 5 schedules in options
 }
+
 // ================== SYSTEM STATE + SENSORS ==================
 enum Activity {
   STILL = 0;
@@ -96,7 +111,6 @@ enum Activity {
 }
 message SimpleSensorReading {
   uint32 index = 1;
-  // uint32 epoch = 2;             already in header
   float temperature = 2;
   float humidity = 3;
   float pressure = 4;
@@ -135,6 +149,25 @@ message SystemStatePacket {
   SimpleSensorReading sensors = 5;
   string firmware_version = 6;
 }
+
+// ================== PERIPHERAL CONNECTION ==================
+
+enum PeripheralType {
+  PERIPHERAL_SATCOM     = 0;
+  PERIPHERAL_DETACHMENT = 1;
+}
+
+message PeripheralPacket {
+  bytes mac_address = 1;   // 6 bytes, fixed-length in options
+  PeripheralType type = 2;
+}
+
+// ================== PERIPHERAL INFO ==================
+
+message PeripheralInfo {
+  repeated string device_uids = 1;
+}
+
 // ================== WRAPPER ==================
 message Packet {
   PacketHeader header = 1;
@@ -142,5 +175,7 @@ message Packet {
     ScheduleConfigPacket schedule_config_packet = 2;
     SystemStatePacket    system_state_packet    = 3;
     RadioConfigPacket    radio_config_packet    = 4;
+    PeripheralPacket     peripheral_packet      = 5;
+    PeripheralInfo       peripheral_info        = 6;
   }
 }

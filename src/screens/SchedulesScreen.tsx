@@ -82,7 +82,7 @@ export default function SchedulesScreen() {
       id: Date.now().toString(),
       name: `New Schedule ${draftSchedules.length + 1}`,
       window: { startHour: 8, endHour: 20 },
-      gps: { enabled: true, sampleIntervalMin: 10 },
+      gps: { enabled: true, sampleIntervalMin: 10, accuracy: 5},
     };
     addSchedule(newSchedule);
   };
@@ -134,7 +134,9 @@ export default function SchedulesScreen() {
             s.environmental?.enabled ||
             s.particulate?.enabled ||
             s.microphone?.enabled ||
-            s.accelerometer?.enabled
+            s.accelerometer?.enabled ||
+            s.magnetometer?.enabled ||
+            s.lorawan?.enabled
           );
 
         const solarEstimate = estimateScheduleSolar(s).totalSolarHours;
@@ -187,6 +189,17 @@ export default function SchedulesScreen() {
                   🏃 Accelerometer:{" "}
                   {s.accelerometer.sampleRate === 0 ? "25Hz" : "50Hz"},{" "}
                   {["2G", "4G", "8G"][s.accelerometer.sensitivity ?? 0]}
+                </Text>
+              )}
+              {s.lorawan?.enabled && (
+                <Text style={styles.cardDetail}>
+                  📡 LoRaWAN: every {s.lorawan.sendIntervalMin ?? "?"} min
+                </Text>
+              )}
+
+              {s.magnetometer?.enabled && (
+                <Text style={styles.cardDetail}>
+                  🧲 Magnetometer: every {s.magnetometer.sampleIntervalS ?? "?"} s
                 </Text>
               )}
 
