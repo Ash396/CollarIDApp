@@ -1,26 +1,46 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import LottieView from 'lottie-react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Image, Animated } from 'react-native';
 
 interface SplashScreenProps {
   onFinish: () => void;
 }
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.96)).current;
+
   useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     const timer = setTimeout(onFinish, 2500);
     return () => clearTimeout(timer);
-  }, [onFinish]);
+  }, [onFinish, opacity, scale]);
 
   return (
     <View style={styles.container}>
-      <LottieView
-        source={require('../assets/ripple.json')}
-        autoPlay
-        loop={false}
-        style={styles.lottie}
-      />
-      <Text style={styles.text}>CollarID</Text>
+      <Animated.View
+        style={{
+          opacity,
+          transform: [{ scale }], // ⭐ NEW
+        }}
+      >
+        <Image
+          source={require('../assets/collarid_logo_mkII.png')}
+          style={styles.image}
+          resizeMode="contain"
+        />
+      </Animated.View>
     </View>
   );
 };
@@ -30,19 +50,12 @@ export default SplashScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // ✅ white background
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  lottie: {
+  image: {
     width: 200,
     height: 200,
-  },
-  text: {
-    color: '#111111', // ✅ dark gray text for contrast
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginTop: 16,
   },
 });
