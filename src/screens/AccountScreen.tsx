@@ -6,23 +6,6 @@ export default function AccountScreen() {
     <View style={styles.container}>
       <Text style={styles.header}>Account</Text>
       <Text>Coming Soon</Text>
-      {/* <View style={styles.card}>
-        <Text>Profile (Name / Email)</Text>
-        <Button title="Log In / Log Out" onPress={() => {}} />
-      </View>
-
-      <View style={styles.card}>
-        <Text>App Info - About Project</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text>Help & Support</Text>
-        <Text>Quick Start Guide / FAQs</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text>Legal</Text>
-      </View> */}
     </View>
   );
 }

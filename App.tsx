@@ -8,6 +8,7 @@ import AccountScreen from './src/screens/AccountScreen';
 import { enableScreens } from 'react-native-screens';
 import ScheduleNavigator from './src/navigation/ScheduleNavigator';
 import { SchedulesProvider } from './src/context/SchedulesContext';
+import { RadioConfigProvider } from './src/context/RadioConfigContext';
 import SplashScreen from './src/screens/SplashScreen';
 
 enableScreens();
@@ -27,19 +28,21 @@ export default function App() {
   }
 
   return (
-    <SchedulesProvider>
-      <NavigationContainer>
-        <Tab.Navigator>
-          <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen
-            name="SchedulesTab"
-            component={ScheduleNavigator}
-            options={{ title: 'Schedules' }}
-          />
-          <Tab.Screen name="Power Consumption" component={PowerConsumptionScreen} />
-          <Tab.Screen name="Account" component={AccountScreen} />
-        </Tab.Navigator>
-      </NavigationContainer>
-    </SchedulesProvider>
+    <RadioConfigProvider>
+      <SchedulesProvider>
+        <NavigationContainer>
+          <Tab.Navigator>
+            <Tab.Screen name="Home" component={HomeScreen} />
+            <Tab.Screen
+              name="SchedulesTab"
+              component={ScheduleNavigator}
+              options={{ title: 'Schedules' }}
+            />
+            <Tab.Screen name="Power Consumption" component={PowerConsumptionScreen} />
+            <Tab.Screen name="Account" component={AccountScreen} />
+          </Tab.Navigator>
+        </NavigationContainer>
+      </SchedulesProvider>
+    </RadioConfigProvider>
   );
 }

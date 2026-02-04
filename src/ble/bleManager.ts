@@ -7,6 +7,7 @@ export const manager = new BleManager();
 export const COLLAR_SERVICE_UUID = "1a17b2cd-7314-493d-a4b5-32a2d53e6fd7";
 export const UPDATE_CHAR_UUID = "c4dd1054-f3f3-456b-8ad5-44aaa7ba4fd2";
 export const STATUS_CHAR_UUID = "9eaf9ebe-c3e9-4bd6-956e-5ca63d222fbb";
+export const RADIO_CHAR_UUID = "68a6a356-49c1-4bed-b152-a02c0cb2c024";
 
 /* -------------------------------------------------------------------------- */
 /*                          Type Definitions                                  */
@@ -34,6 +35,16 @@ function safeDecode(bytes: Uint8Array): DecodedPacket {
       peripheralPacket: pkt.peripheralPacket ?? undefined,
       peripheralInfo: pkt.peripheralInfo ?? undefined,
     };
+  } catch (_) {}
+
+  try {
+    const sched = PB.ScheduleConfigPacket.decode(bytes);
+    return { scheduleConfigPacket: sched };
+  } catch (_) {}
+
+  try {
+    const radio = PB.RadioConfigPacket.decode(bytes);
+    return { radioConfigPacket: radio };
   } catch (_) {}
 
   try {
@@ -100,6 +111,24 @@ export async function readInitialState(device: Device): Promise<DecodedPacket> {
     return safeDecode(bytes);
   } catch (err) {
     console.warn("⚠️ readInitialState failed:", err);
+    return null;
+  }
+}
+
+// Radio state read
+export async function readRadioState(device: Device): Promise<DecodedPacket> {
+  try {
+    const ch = await device.readCharacteristicForService(
+      COLLAR_SERVICE_UUID,
+      RADIO_CHAR_UUID
+    );
+
+    if (!ch?.value) return null;
+
+    const bytes = Buffer.from(ch.value, "base64");
+    return safeDecode(bytes);
+  } catch (err) {
+    console.warn("⚠️ readRadioState failed:", err);
     return null;
   }
 }
@@ -217,6 +246,37 @@ export function buildSchedulePacketFromAppState(appSchedules: any[]): PB.Packet 
 }
 
 /* -------------------------------------------------------------------------- */
+/*                   Build Radio Packet to Send to Device                     */
+/* -------------------------------------------------------------------------- */
+
+export function buildDefaultRadioPacket(): PB.Packet {
+  return PB.Packet.create({
+    header: PB.PacketHeader.create({
+      systemUid: 1,
+      msFromStart: 0,
+      epoch: Math.floor(Date.now() / 1000),
+      packetIndex: 0,
+    }),
+    radioConfigPacket: PB.RadioConfigPacket.fromObject({
+      enabled: true,
+      region: "REGION_US915",
+      auth: "AUTH_OTAA",
+      otaa: {
+        devEui: [1, 2, 3, 4, 5, 6, 7, 8],
+        joinEui: [16, 17, 18, 19, 20, 21, 22, 23],
+        appKey: [
+          160, 161, 162, 163, 164, 165, 166, 167,
+          168, 169, 170, 171, 172, 173, 174, 175
+        ],
+      },
+      transmitIntervalMin: 10,
+      txOnlyOnNewGpsFix: false,
+      txPowerDbm: 14,
+    }),
+  });
+}
+
+/* -------------------------------------------------------------------------- */
 /*                              Send Config                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -262,6 +322,50 @@ export async function sendConfig(device: Device, packet: PB.Packet) {
     throw err;
   }
 }
+
+export async function sendRadioConfig(device: Device, packet: PB.Packet) {
+  try {
+    console.log("📤 Sending radio packet…");
+
+    const encoded = PB.Packet.encode(packet).finish();
+    const base64 = Buffer.from(encoded).toString("base64");
+
+    const written = await device.writeCharacteristicWithResponseForService(
+      COLLAR_SERVICE_UUID,
+      RADIO_CHAR_UUID,
+      base64
+    );
+
+    console.log("✅ Radio write complete:", written);
+
+    // Wait for ACK (STATUS characteristic)
+    console.log("⏳ Waiting for ACK from STATUS…");
+    return new Promise<boolean>((resolve) => {
+      let gotAck = false;
+
+      const sub = subscribeToStatus(device, (pkt) => {
+        if (pkt?.systemStatePacket) {
+          console.log("📩 ACK received:", pkt.systemStatePacket);
+          gotAck = true;
+          sub.remove();
+          resolve(true);
+        }
+      });
+
+      setTimeout(() => {
+        if (!gotAck) {
+          console.warn("⚠️ ACK timeout (radio)");
+          sub.remove();
+          resolve(false);
+        }
+      }, 6000);
+    });
+  } catch (err) {
+    console.error("❌ sendRadioConfig failed:", err);
+    throw err;
+  }
+}
+
 
 /* -------------------------------------------------------------------------- */
 /*                           Disconnect                                       */
