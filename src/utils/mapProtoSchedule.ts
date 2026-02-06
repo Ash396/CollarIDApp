@@ -1,7 +1,13 @@
-import * as PB from "../proto/message_pb";
+import * as PB from "../proto/collar_pb.js";
 import type { Schedule } from "../navigation/ScheduleNavigator";
 
-export function mapProtoSchedule(p: PB.ScheduledConfig, index: number): Schedule {
+export function mapProtoSchedule(p: PB.ScheduleConfig, index: number): Schedule {
+  const lorawanEnabled = Boolean(p.lorawanEnabled);
+  const lorawanInterval = p.lorawanSendIntervalMin ?? undefined;
+
+  const loraEnabled = Boolean(p.loraEnabled);
+  const loraInterval = p.loraSendIntervalMin ?? undefined;
+
   return {
     id: index.toString(),
     name: `Schedule ${index + 1}`,
@@ -56,11 +62,15 @@ export function mapProtoSchedule(p: PB.ScheduledConfig, index: number): Schedule
         sensitivity: p.accelerometer.sensitivity ?? undefined,
         }
     : undefined,
-    
-    lorawan: {
-      enabled: Boolean(p.lorawanEnabled),
-      sendIntervalMin: p.lorawanSendIntervalMin ?? undefined,
-    },
+
+    lorawan: (lorawanEnabled || lorawanInterval !== undefined)
+      ? { enabled: lorawanEnabled, sendIntervalMin: lorawanInterval }
+      : undefined,
+
+
+    lora: (loraEnabled || loraInterval !== undefined)
+      ? { enabled: loraEnabled, sendIntervalMin: loraInterval }
+      : undefined,
 
     magnetometer: p.magnetometer
       ? {

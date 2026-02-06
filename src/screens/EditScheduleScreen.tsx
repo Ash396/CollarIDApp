@@ -82,20 +82,28 @@ export default function EditScheduleScreen() {
     schedule.accelerometer?.sensitivity ?? 0,
   );
 
-   /* LoRaWAN */
+  /* LoRaWAN */
   const [lorawanEnabled, setLorawanEnabled] = useState(
-    schedule.lorawan?.enabled ?? false
+    schedule.lorawan?.enabled ?? false,
   );
   const [lorawanInterval, setLorawanInterval] = useState(
-    String(schedule.lorawan?.sendIntervalMin ?? '')
+    String(schedule.lorawan?.sendIntervalMin ?? ''),
+  );
+
+  /* LoRa */
+  const [loraEnabled, setLoraEnabled] = useState(
+    schedule.lora?.enabled ?? false,
+  );
+  const [loraInterval, setLoraInterval] = useState(
+    String(schedule.lora?.sendIntervalMin ?? ''),
   );
 
   /* Magnetometer */
   const [magEnabled, setMagEnabled] = useState(
-    schedule.magnetometer?.enabled ?? false
+    schedule.magnetometer?.enabled ?? false,
   );
   const [magIntervalS, setMagIntervalS] = useState(
-    String(schedule.magnetometer?.sampleIntervalS ?? '')
+    String(schedule.magnetometer?.sampleIntervalS ?? ''),
   );
   /* ---------------- SAVE ---------------- */
   const handleSave = () => {
@@ -139,6 +147,10 @@ export default function EditScheduleScreen() {
       lorawan: {
         enabled: lorawanEnabled,
         sendIntervalMin: Number(lorawanInterval),
+      },
+      lora: {
+        enabled: loraEnabled,
+        sendIntervalMin: Number(loraInterval),
       },
       magnetometer: {
         enabled: magEnabled,
@@ -398,7 +410,26 @@ export default function EditScheduleScreen() {
           />
         </>,
         lorawanEnabled,
-        setLorawanEnabled
+        setLorawanEnabled,
+      )}
+
+      {/* LORA */}
+      {renderCard(
+        '📻 LoRa',
+        <>
+          <Text style={styles.label}>Send Interval (minutes)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={loraInterval}
+            onChangeText={setLoraInterval}
+            placeholder="e.g. 1–60"
+            placeholderTextColor="#999"
+            editable={loraEnabled}
+          />
+        </>,
+        loraEnabled,
+        setLoraEnabled,
       )}
 
       {/* MAGNETOMETER */}
@@ -417,9 +448,8 @@ export default function EditScheduleScreen() {
           />
         </>,
         magEnabled,
-        setMagEnabled
+        setMagEnabled,
       )}
-
 
       {/* BUTTONS */}
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>

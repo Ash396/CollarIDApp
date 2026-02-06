@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,20 @@ import {
   ActivityIndicator,
   PermissionsAndroid,
   Platform,
-} from "react-native";
+} from 'react-native';
 
-import { useNavigation } from "@react-navigation/native";
-import { State } from "react-native-ble-plx";
-import { Buffer } from "buffer";
-import * as PB from "../proto/message_pb.js";
+import { useNavigation } from '@react-navigation/native';
+import { State } from 'react-native-ble-plx';
+import { Buffer } from 'buffer';
+import * as PB from '../proto/collar_pb.js';
 
-import CollarCard from "../components/CollarCard";
+import CollarCard from '../components/CollarCard';
 import {
   manager,
   COLLAR_SERVICE_UUID,
   STATUS_CHAR_UUID,
   disconnectFromCollar,
-} from "../ble/bleManager";
+} from '../ble/bleManager';
 
 interface Collar {
   id: string;
@@ -45,7 +45,7 @@ export default function HomeScreen() {
    * Ensure Bluetooth ON
    * ---------------------------------------------------------- */
   async function ensureBluetoothReady() {
-    if (Platform.OS === "android") {
+    if (Platform.OS === 'android') {
       await PermissionsAndroid.requestMultiple([
         PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
         PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
@@ -55,8 +55,8 @@ export default function HomeScreen() {
 
     const state = await manager.state();
     if (state !== State.PoweredOn) {
-      await new Promise<void>((resolve) => {
-        const sub = manager.onStateChange((newState) => {
+      await new Promise<void>(resolve => {
+        const sub = manager.onStateChange(newState => {
           if (newState === State.PoweredOn) {
             sub.remove();
             resolve();
@@ -83,33 +83,41 @@ export default function HomeScreen() {
       await ensureBluetoothReady();
       setScanning(true);
 
-      manager.startDeviceScan(null, { allowDuplicates: true }, (error, device) => {
-        if (isCancelled) return;
-        if (error) {
-          console.error("Scan error:", error);
-          setScanning(false);
-          return;
-        }
+      manager.startDeviceScan(
+        null,
+        { allowDuplicates: true },
+        (error, device) => {
+          if (isCancelled) return;
+          if (error) {
+            console.error('Scan error:', error);
+            setScanning(false);
+            return;
+          }
 
-        if (!device?.name?.startsWith("CollarID")) return;
+          if (!device?.name?.startsWith('CollarID')) return;
 
-        const now = Date.now();
-        lastSeen[device.id] = now;
+          const now = Date.now();
+          lastSeen[device.id] = now;
 
-        setCollars((prev) => {
-          const existing = prev.find((c) => c.id === device.id);
-          if (existing) return prev;
-          return [
-            ...prev,
-            { id: device.id, name: device.name ?? "Unknown", connected: false },
-          ];
-        });
-      });
+          setCollars(prev => {
+            const existing = prev.find(c => c.id === device.id);
+            if (existing) return prev;
+            return [
+              ...prev,
+              {
+                id: device.id,
+                name: device.name ?? 'Unknown',
+                connected: false,
+              },
+            ];
+          });
+        },
+      );
 
       const interval = setInterval(() => {
         const now = Date.now();
-        setCollars((prev) =>
-          prev.filter((c) => c.connected || now - (lastSeen[c.id] ?? 0) < 5000)
+        setCollars(prev =>
+          prev.filter(c => c.connected || now - (lastSeen[c.id] ?? 0) < 5000),
         );
       }, 2000);
 
@@ -144,16 +152,35 @@ export default function HomeScreen() {
 
       await connected.discoverAllServicesAndCharacteristics();
 
+      const services = await connected.services();
+
+      for (const service of services) {
+        console.log(`🔹 Service ${service.uuid}`);
+
+        const characteristics = await connected.characteristicsForService(
+          service.uuid,
+        );
+
+        for (const c of characteristics) {
+          console.log(`   ▸ Char ${c.uuid}`, {
+            isReadable: c.isReadable,
+            isWritableWithResponse: c.isWritableWithResponse,
+            isWritableWithoutResponse: c.isWritableWithoutResponse,
+            isNotifiable: c.isNotifiable,
+            isIndicatable: c.isIndicatable,
+          });
+        }
+      }
       /* ---------- Read STATUS metadata ---------- */
       try {
         const ch = await connected.readCharacteristicForService(
           COLLAR_SERVICE_UUID,
-          STATUS_CHAR_UUID
+          STATUS_CHAR_UUID,
         );
 
         if (ch?.value) {
-          const bytes = Buffer.from(ch.value, "base64");
-          const decoded = PB.Packet.decode(bytes);
+          const bytes = Buffer.from(ch.value, 'base64');
+          const decoded = PB.BlePacket.decode(bytes);
 
           const sys = decoded.systemStatePacket;
 
@@ -171,15 +198,15 @@ export default function HomeScreen() {
           setCollars([updated]);
         }
       } catch (err) {
-        console.error("Metadata read error:", err);
+        console.error('Metadata read error:', err);
       }
 
-      navigation.navigate("SchedulesTab", {
-        screen: "Schedules",
+      navigation.navigate('SchedulesTab', {
+        screen: 'Schedules',
         params: { device: connected },
       });
     } catch (err) {
-      console.error("Connection failed:", err);
+      console.error('Connection failed:', err);
     }
   };
 
@@ -194,7 +221,7 @@ export default function HomeScreen() {
       setConnectedDevice(null);
       setCollars([]);
     } catch (err) {
-      console.error("Disconnect failed:", err);
+      console.error('Disconnect failed:', err);
     }
   };
 
@@ -206,7 +233,7 @@ export default function HomeScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>
-          {connectedDevice ? "CONNECTED COLLAR" : "NEARBY COLLARS"}
+          {connectedDevice ? 'CONNECTED COLLAR' : 'NEARBY COLLARS'}
         </Text>
       </View>
 
@@ -217,7 +244,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {displayList.map((collar) => (
+      {displayList.map(collar => (
         <CollarCard
           key={collar.id}
           name={collar.name}
@@ -242,9 +269,9 @@ export default function HomeScreen() {
 
 /* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#FFFFFF" },
+  container: { flex: 1, padding: 20, backgroundColor: '#FFFFFF' },
   header: { marginBottom: 15 },
-  title: { fontSize: 28, fontWeight: "700", color: "#111", letterSpacing: 0.5 },
-  center: { alignItems: "center", marginVertical: 24 },
-  subtext: { marginTop: 10, fontSize: 16, color: "#444", fontWeight: "400" },
+  title: { fontSize: 28, fontWeight: '700', color: '#111', letterSpacing: 0.5 },
+  center: { alignItems: 'center', marginVertical: 24 },
+  subtext: { marginTop: 10, fontSize: 16, color: '#444', fontWeight: '400' },
 });

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { readRadioState } from "../ble/bleManager";
-import * as PB from "../proto/message_pb.js";
+import * as PB from "../proto/collar_pb.js";
 
 type RadioConfigContextType = {
   radioConfig: PB.RadioConfigPacket | null;

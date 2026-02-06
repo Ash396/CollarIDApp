@@ -17,7 +17,6 @@ import {
   buildSchedulePacketFromAppState,
   sendConfig,
   connectToCollar,
-  buildDefaultRadioPacket,
   sendRadioConfig,
 } from '../ble/bleManager';
 import { estimateScheduleSolar } from '../utils/powerEstimator';
@@ -113,27 +112,18 @@ export default function SchedulesScreen() {
    * --------------------------------------------------------- */
   const handleSendToDevice = async () => {
     try {
-      if (!device) {
+      if (!initialDevice) {
         Alert.alert('No Device', 'You must connect to a collar first.');
         return;
       }
 
-      const schedulePacket = buildSchedulePacketFromAppState(draftSchedules);
-      const ack1 = await sendConfig(device, schedulePacket);
+      const packet = buildSchedulePacketFromAppState(draftSchedules);
+      const ack = await sendConfig(initialDevice, packet);
 
-      const radioPacket = buildDefaultRadioPacket();
-      const ack2 = await sendRadioConfig(device, radioPacket);
-
-      if (ack1 && ack2) {
-        Alert.alert(
-          '✅ Success',
-          'Schedule + Radio config sent and acknowledged!',
-        );
-      } else {
-        Alert.alert('⚠️ Sent', 'Sent to device but missing one/both ACKs.');
-      }
+      if (ack) Alert.alert('✅ Success', 'Schedule sent and acknowledged!');
+      else Alert.alert('⚠️ Sent', 'Sent to device but no ACK received.');
     } catch (err) {
-      Alert.alert('Error', 'Failed to send config.');
+      Alert.alert('Error', 'Failed to send schedule config.');
       console.error(err);
     }
   };
@@ -164,7 +154,8 @@ export default function SchedulesScreen() {
           s.microphone?.enabled ||
           s.accelerometer?.enabled ||
           s.magnetometer?.enabled ||
-          s.lorawan?.enabled
+          s.lorawan?.enabled ||
+          s.lora?.enabled
         );
 
         const solarEstimate = estimateScheduleSolar(s).totalSolarHours;
@@ -222,6 +213,11 @@ export default function SchedulesScreen() {
               {s.lorawan?.enabled && (
                 <Text style={styles.cardDetail}>
                   📡 LoRaWAN: every {s.lorawan.sendIntervalMin ?? '?'} min
+                </Text>
+              )}
+              {s.lora?.enabled && (
+                <Text style={styles.cardDetail}>
+                  📡 LoRa: every {s.lora.sendIntervalMin ?? '?'} min
                 </Text>
               )}
 

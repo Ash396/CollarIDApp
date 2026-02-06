@@ -1,7 +1,7 @@
-import React from "react";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import SchedulesScreen from "../screens/SchedulesScreen";
-import EditScheduleScreen from "../screens/EditScheduleScreen";
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import SchedulesScreen from '../screens/SchedulesScreen';
+import EditScheduleScreen from '../screens/EditScheduleScreen';
 
 /* -----------------------------------------------------
  * Shared Schedule Type
@@ -28,8 +28,12 @@ export type Schedule = {
     sensitivity?: number;
   };
   lorawan?: {
-  enabled: boolean;
-  sendIntervalMin?: number;
+    enabled: boolean;
+    sendIntervalMin?: number;
+  };
+  lora?: {
+    enabled: boolean;
+    sendIntervalMin?: number;
   };
   magnetometer?: {
     enabled: boolean;

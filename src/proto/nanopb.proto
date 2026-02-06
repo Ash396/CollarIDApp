@@ -1,0 +1,5 @@
+syntax = "proto2";
+package nanopb;
+
+// Dummy file for JS/TS protobuf generation.
+// Nanopb options are ignored by protobufjs.

@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from './src/screens/HomeScreen';
 import SchedulesScreen from './src/screens/SchedulesScreen';
 import PowerConsumptionScreen from './src/screens/PowerConsumptionScreen';
-import AccountScreen from './src/screens/AccountScreen';
+import RadioConfigScreen from './src/screens/RadioConfigScreen';
 import { enableScreens } from 'react-native-screens';
 import ScheduleNavigator from './src/navigation/ScheduleNavigator';
 import { SchedulesProvider } from './src/context/SchedulesContext';
@@ -38,8 +38,8 @@ export default function App() {
               component={ScheduleNavigator}
               options={{ title: 'Schedules' }}
             />
+            <Tab.Screen name="Radio Configuration" component={RadioConfigScreen}/>
             <Tab.Screen name="Power Consumption" component={PowerConsumptionScreen} />
-            <Tab.Screen name="Account" component={AccountScreen} />
           </Tab.Navigator>
         </NavigationContainer>
       </SchedulesProvider>
