@@ -7705,6 +7705,7 @@ $root.LoRaConfig = (function() {
      * @property {RadioCodingRate|null} [radioCodingRate] LoRaConfig radioCodingRate
      * @property {number|null} [txPowerDbm] LoRaConfig txPowerDbm
      * @property {number|null} [syncWord] LoRaConfig syncWord
+     * @property {number|null} [frequency] LoRaConfig frequency
      */
 
     /**
@@ -7763,6 +7764,14 @@ $root.LoRaConfig = (function() {
     LoRaConfig.prototype.syncWord = 0;
 
     /**
+     * LoRaConfig frequency.
+     * @member {number} frequency
+     * @memberof LoRaConfig
+     * @instance
+     */
+    LoRaConfig.prototype.frequency = 0;
+
+    /**
      * Creates a new LoRaConfig instance using the specified properties.
      * @function create
      * @memberof LoRaConfig
@@ -7796,6 +7805,8 @@ $root.LoRaConfig = (function() {
             writer.uint32(/* id 4, wireType 0 =*/32).int32(message.txPowerDbm);
         if (message.syncWord != null && Object.hasOwnProperty.call(message, "syncWord"))
             writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.syncWord);
+        if (message.frequency != null && Object.hasOwnProperty.call(message, "frequency"))
+            writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.frequency);
         return writer;
     };
 
@@ -7850,6 +7861,10 @@ $root.LoRaConfig = (function() {
                 }
             case 5: {
                     message.syncWord = reader.uint32();
+                    break;
+                }
+            case 6: {
+                    message.frequency = reader.uint32();
                     break;
                 }
             default:
@@ -7924,6 +7939,9 @@ $root.LoRaConfig = (function() {
         if (message.syncWord != null && message.hasOwnProperty("syncWord"))
             if (!$util.isInteger(message.syncWord))
                 return "syncWord: integer expected";
+        if (message.frequency != null && message.hasOwnProperty("frequency"))
+            if (!$util.isInteger(message.frequency))
+                return "frequency: integer expected";
         return null;
     };
 
@@ -8019,6 +8037,8 @@ $root.LoRaConfig = (function() {
             message.txPowerDbm = object.txPowerDbm | 0;
         if (object.syncWord != null)
             message.syncWord = object.syncWord >>> 0;
+        if (object.frequency != null)
+            message.frequency = object.frequency >>> 0;
         return message;
     };
 
@@ -8041,6 +8061,7 @@ $root.LoRaConfig = (function() {
             object.radioCodingRate = options.enums === String ? "cr_4_5" : 0;
             object.txPowerDbm = 0;
             object.syncWord = 0;
+            object.frequency = 0;
         }
         if (message.radioSpreadingFactor != null && message.hasOwnProperty("radioSpreadingFactor"))
             object.radioSpreadingFactor = options.enums === String ? $root.RadioSpreadingFactor[message.radioSpreadingFactor] === undefined ? message.radioSpreadingFactor : $root.RadioSpreadingFactor[message.radioSpreadingFactor] : message.radioSpreadingFactor;
@@ -8052,6 +8073,8 @@ $root.LoRaConfig = (function() {
             object.txPowerDbm = message.txPowerDbm;
         if (message.syncWord != null && message.hasOwnProperty("syncWord"))
             object.syncWord = message.syncWord;
+        if (message.frequency != null && message.hasOwnProperty("frequency"))
+            object.frequency = message.frequency;
         return object;
     };
 

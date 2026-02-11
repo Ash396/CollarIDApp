@@ -2623,6 +2623,9 @@ export class LoRaConfig implements ILoRaConfig {
     /** LoRaConfig syncWord. */
     public syncWord: number;
 
+    /** LoRaConfig frequency. */
+    public frequency: number;
+
     /**
      * Creates a new LoRaConfig instance using the specified properties.
      * @param [properties] Properties to set

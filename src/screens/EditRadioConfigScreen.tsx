@@ -1,6 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  View,
   Text,
   TextInput,
   TouchableOpacity,
@@ -8,22 +7,22 @@ import {
   ScrollView,
   Switch,
   Alert,
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+  View,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { useNavigation } from "@react-navigation/native";
+import * as PB from "../proto/collar_pb.js";
+import { useRadioConfig } from "../context/RadioConfigContext";
+import { hexByteToInt,hexToBytes, clampInt } from "../utils/protoUtils";
 
-/**
- * Dummy UI only (no schedules, no BLE, no protobuf).
- * Matches EditScheduleScreen styling and conditional behavior.
- */
 
-type RadioRegion = 'REGION_US915' | 'REGION_AU915' | 'REGION_EU868';
-type RadioAuth = 'AUTH_OTAA' | 'AUTH_ABP';
+type RadioRegion = "REGION_US915" | "REGION_AU915" | "REGION_EU868";
+type RadioAuth = "AUTH_OTAA" | "AUTH_ABP";
 
 const isHex = (s: string) => /^[0-9a-fA-F]*$/.test(s);
-const cleanHex = (s: string) => s.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+const cleanHex = (s: string) => s.replace(/[^0-9a-fA-F]/g, "").toUpperCase();
 
 function toUnixEpochSecondsFromLocal(dateStr: string, timeStr: string): number | undefined {
-  // dateStr: YYYY-MM-DD, timeStr: HH:MM (24h)
   if (!dateStr || !timeStr) return undefined;
   const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const t = timeStr.match(/^(\d{2}):(\d{2})$/);
@@ -35,15 +34,6 @@ function toUnixEpochSecondsFromLocal(dateStr: string, timeStr: string): number |
   const hour = Number(t[1]);
   const minute = Number(t[2]);
 
-  if (
-    !Number.isFinite(year) ||
-    !Number.isFinite(month) ||
-    !Number.isFinite(day) ||
-    !Number.isFinite(hour) ||
-    !Number.isFinite(minute)
-  ) {
-    return undefined;
-  }
   if (month < 1 || month > 12) return undefined;
   if (day < 1 || day > 31) return undefined;
   if (hour < 0 || hour > 23) return undefined;
@@ -54,62 +44,103 @@ function toUnixEpochSecondsFromLocal(dateStr: string, timeStr: string): number |
   return Number.isFinite(seconds) ? seconds : undefined;
 }
 
-export default function RadioConfigScreen() {
+export default function EditRadioConfigScreen() {
+  const navigation = useNavigation<any>();
+  const { deviceRadioConfig, draftRadioConfig, setDraftRadioConfig } = useRadioConfig();
+
+  const seedCfg = draftRadioConfig ?? deviceRadioConfig;
+
   /* ---------------- LoRaWAN ---------------- */
-  const [lorawanRegion, setLorawanRegion] = useState<RadioRegion>('REGION_US915');
-  const [lorawanAuth, setLorawanAuth] = useState<RadioAuth>('AUTH_OTAA');
+  const [lorawanRegion, setLorawanRegion] = useState<RadioRegion>("REGION_US915");
+  const [lorawanAuth, setLorawanAuth] = useState<RadioAuth>("AUTH_OTAA");
 
-  // OTAA credentials (hex strings)
-  const [devEui, setDevEui] = useState('');
-  const [joinEui, setJoinEui] = useState('');
-  const [appKey, setAppKey] = useState('');
-  const [nwkKey, setNwkKey] = useState('');
+  const [devEui, setDevEui] = useState("");
+  const [joinEui, setJoinEui] = useState("");
+  const [appKey, setAppKey] = useState("");
+  const [nwkKey, setNwkKey] = useState("");
 
-  // ABP credentials (hex strings)
-  const [devAddr, setDevAddr] = useState('');
-  const [nwkSKey, setNwkSKey] = useState('');
-  const [appSKey, setAppSKey] = useState('');
-  const [fNwkSIntKey, setFNwkSIntKey] = useState('');
-  const [sNwkSIntKey, setSNwkSIntKey] = useState('');
+  const [devAddr, setDevAddr] = useState("");
+  const [nwkSKey, setNwkSKey] = useState("");
+  const [appSKey, setAppSKey] = useState("");
+  const [fNwkSIntKey, setFNwkSIntKey] = useState("");
+  const [sNwkSIntKey, setSNwkSIntKey] = useState("");
 
   const [txOnlyOnNewGps, setTxOnlyOnNewGps] = useState(false);
-  const [lorawanTransmitInterval, setLorawanTransmitInterval] = useState(''); // min
-  const [lorawanTxPowerDbm, setLorawanTxPowerDbm] = useState(14); // 0..23
+  const [lorawanTransmitInterval, setLorawanTransmitInterval] = useState("");
+  const [lorawanTxPowerDbm, setLorawanTxPowerDbm] = useState(14);
 
   /* ---------------- LoRa ---------------- */
-  const [loraSF, setLoraSF] = useState<'SF7' | 'SF8' | 'SF9' | 'SF10' | 'SF11' | 'SF12'>('SF7');
-  const [loraBW, setLoraBW] = useState<'125' | '250' | '500'>('125'); // kHz
-  const [loraCR, setLoraCR] = useState<'4/5' | '4/6' | '4/7' | '4/8'>('4/5');
-  const [loraTxPowerDbm, setLoraTxPowerDbm] = useState(14); // 0..26
-  const [syncWordHex, setSyncWordHex] = useState(''); // 2 hex chars
+  const [loraSF, setLoraSF] = useState<"SF7" | "SF8" | "SF9" | "SF10" | "SF11" | "SF12">("SF7");
+  const [loraBW, setLoraBW] = useState<"125" | "250" | "500">("125");
+  const [loraCR, setLoraCR] = useState<"4/5" | "4/6" | "4/7" | "4/8">("4/5");
+  const [loraTxPowerDbm, setLoraTxPowerDbm] = useState(14);
+  const [syncWordHex, setSyncWordHex] = useState("");
+
+  // NEW FIELD
+  const [loraFrequencyMHz, setLoraFrequencyMHz] = useState("");
 
   /* ---------------- Lost Mode ---------------- */
   const [lostModeEnabled, setLostModeEnabled] = useState(false);
+  const [activationDate, setActivationDate] = useState("");
+  const [activationTime, setActivationTime] = useState("");
+  const [lostModeTransmitInterval, setLostModeTransmitInterval] = useState("");
+  const [lostModeTxPowerDbm, setLostModeTxPowerDbm] = useState(14);
 
-  // date/time entry (dummy -> will convert to epoch)
-  const [activationDate, setActivationDate] = useState(''); // YYYY-MM-DD
-  const [activationTime, setActivationTime] = useState(''); // HH:MM
-  const [lostModeTransmitInterval, setLostModeTransmitInterval] = useState(''); // min
-  const [lostModeTxPowerDbm, setLostModeTxPowerDbm] = useState(14); // 0..26
+  // Seed state from existing draft/device config
+  useEffect(() => {
+    if (!seedCfg) return;
+
+    const lorawan = (seedCfg as any).loRaWANConfig;
+    const lora = (seedCfg as any).loRaConfig;
+    const lostEnabled = Boolean((seedCfg as any).lostModeEnabled);
+    const lostCfg = (seedCfg as any).lostModeConfig;
+
+    if (lorawan) {
+      setLorawanRegion(
+        lorawan.region === 1 ? "REGION_AU915" : lorawan.region === 2 ? "REGION_EU868" : "REGION_US915"
+      );
+      setLorawanAuth(lorawan.auth === 1 ? "AUTH_ABP" : "AUTH_OTAA");
+      setTxOnlyOnNewGps(Boolean(lorawan.txOnlyOnNewGpsFix));
+      setLorawanTransmitInterval(String(lorawan.transmitIntervalMin ?? ""));
+      setLorawanTxPowerDbm(Number(lorawan.txPowerDbm ?? 14));
+
+      // Note: bytes -> hex display is optional; leave blank if you don't have a bytes->hex helper yet.
+      // If you want, I can give you a bytesToHex() helper for display.
+    }
+
+    if (lora) {
+      setLoraSF(["SF7", "SF8", "SF9", "SF10", "SF11", "SF12"][lora.radioSpreadingFactor ?? 0] as any);
+      setLoraBW(lora.radioBandwidth === 1 ? "250" : lora.radioBandwidth === 2 ? "500" : "125");
+      setLoraCR(["4/5", "4/6", "4/7", "4/8"][lora.radioCodingRate ?? 0] as any);
+      setLoraTxPowerDbm(Number(lora.txPowerDbm ?? 14));
+      setSyncWordHex(""); // leaving blank unless you add bytesToHex for syncWord (it's int in proto)
+      setLoraFrequencyMHz(String(lora.frequency ?? ""));
+    }
+
+    setLostModeEnabled(lostEnabled);
+    if (lostEnabled && lostCfg) {
+      // We can’t reliably convert epoch->local date/time without helper; leave user to re-enter for now
+      setLostModeTransmitInterval(String(lostCfg.transmitIntervalMin ?? ""));
+      setLostModeTxPowerDbm(Number(lostCfg.txPowerDbm ?? 14));
+    }
+  }, [seedCfg]);
 
   const activationEpochPreview = useMemo(() => {
-    const epoch = toUnixEpochSecondsFromLocal(activationDate, activationTime);
-    return epoch;
+    return toUnixEpochSecondsFromLocal(activationDate, activationTime);
   }, [activationDate, activationTime]);
 
-  /* ---------------- CARD HELPER (copied style) ---------------- */
   const renderCard = (
     title: string,
     children: React.ReactNode,
     enabled?: boolean,
-    onToggle?: (val: boolean) => void,
+    onToggle?: (val: boolean) => void
   ) => {
     const dim = enabled === false;
     return (
       <View style={[styles.card, dim && styles.cardDisabled]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{title}</Text>
-          {typeof enabled === 'boolean' && onToggle && (
+          {typeof enabled === "boolean" && onToggle && (
             <Switch value={enabled} onValueChange={onToggle} />
           )}
         </View>
@@ -118,10 +149,9 @@ export default function RadioConfigScreen() {
     );
   };
 
-  /* ---------------- Validation helpers ---------------- */
   const requireHexLen = (label: string, value: string, hexLen: number) => {
     if (value.length !== hexLen || !isHex(value)) {
-      Alert.alert('Invalid field', `${label} must be exactly ${hexLen} hex characters.`);
+      Alert.alert("Invalid field", `${label} must be exactly ${hexLen} hex characters.`);
       return false;
     }
     return true;
@@ -130,118 +160,161 @@ export default function RadioConfigScreen() {
   const requirePositiveNumber = (label: string, raw: string) => {
     const n = Number(raw);
     if (!raw.trim() || !Number.isFinite(n) || n <= 0) {
-      Alert.alert('Invalid value', `${label} must be a number greater than 0.`);
+      Alert.alert("Invalid value", `${label} must be a number greater than 0.`);
       return false;
     }
     return true;
   };
 
-  const handleSave = () => {
-    // Dummy save: validate + show summary
-
-    // LoRaWAN credentials
-    if (lorawanAuth === 'AUTH_OTAA') {
+  const buildPbRadioConfigPacketFromUI = (): PB.RadioConfigPacket => {
+    // Validate credentials
+    if (lorawanAuth === "AUTH_OTAA") {
       if (
-        !requireHexLen('devEui', devEui, 16) ||
-        !requireHexLen('joinEui', joinEui, 16) ||
-        !requireHexLen('appKey', appKey, 32) ||
-        !requireHexLen('nwkKey', nwkKey, 32)
+        !requireHexLen("devEui", devEui, 16) ||
+        !requireHexLen("joinEui", joinEui, 16) ||
+        !requireHexLen("appKey", appKey, 32) ||
+        !requireHexLen("nwkKey", nwkKey, 32)
       ) {
-        return;
+        throw new Error("Invalid OTAA fields");
       }
     } else {
       if (
-        !requireHexLen('devAddr', devAddr, 8) ||
-        !requireHexLen('nwkSKey', nwkSKey, 32) ||
-        !requireHexLen('appSKey', appSKey, 32) ||
-        !requireHexLen('fNwkSIntKey', fNwkSIntKey, 32) ||
-        !requireHexLen('sNwkSIntKey', sNwkSIntKey, 32)
+        !requireHexLen("devAddr", devAddr, 8) ||
+        !requireHexLen("nwkSKey", nwkSKey, 32) ||
+        !requireHexLen("appSKey", appSKey, 32) ||
+        !requireHexLen("fNwkSIntKey", fNwkSIntKey, 32) ||
+        !requireHexLen("sNwkSIntKey", sNwkSIntKey, 32)
       ) {
-        return;
+        throw new Error("Invalid ABP fields");
       }
     }
 
-    // LoRaWAN tx only on new GPS -> require interval if ON
     if (txOnlyOnNewGps) {
-      if (!requirePositiveNumber('LoRaWAN transmitInterval (min)', lorawanTransmitInterval)) return;
+      if (!requirePositiveNumber("LoRaWAN transmitInterval (min)", lorawanTransmitInterval)) {
+        throw new Error("Invalid LoRaWAN interval");
+      }
     }
 
-    // LoRa sync word: 2 hex chars -> integer 0..255 conceptually
+    // syncWord
     if (syncWordHex.trim()) {
       const v = syncWordHex.trim();
       if (v.length !== 2 || !isHex(v)) {
-        Alert.alert('Invalid value', 'syncWord must be exactly 2 hex characters (00–FF).');
-        return;
+        Alert.alert("Invalid value", "syncWord must be exactly 2 hex characters (00–FF).");
+        throw new Error("Invalid syncWord");
       }
     }
 
-    // Lost mode if enabled -> require fields
+    // frequency 400..999 MHz
+    const freq = Number(loraFrequencyMHz);
+    if (!loraFrequencyMHz.trim() || !Number.isFinite(freq) || !Number.isInteger(freq) || freq < 400 || freq > 999) {
+      Alert.alert("Invalid value", "LoRa frequency must be an integer from 400 to 999 (MHz).");
+      throw new Error("Invalid frequency");
+    }
+
+    // Lost mode validation
+    let activationEpoch = 0;
     if (lostModeEnabled) {
       const epoch = toUnixEpochSecondsFromLocal(activationDate, activationTime);
       if (epoch === undefined) {
-        Alert.alert('Invalid value', 'Activation date/time must be valid (YYYY-MM-DD and HH:MM).');
-        return;
+        Alert.alert("Invalid value", "Activation date/time must be valid (YYYY-MM-DD and HH:MM).");
+        throw new Error("Invalid lost mode activation time");
       }
-      if (!requirePositiveNumber('Lost Mode transmit interval (min)', lostModeTransmitInterval)) return;
+      activationEpoch = epoch;
+      if (!requirePositiveNumber("Lost Mode transmit interval (min)", lostModeTransmitInterval)) {
+        throw new Error("Invalid lost mode interval");
+      }
     }
 
-    const syncWordInt = syncWordHex.trim()
-      ? parseInt(syncWordHex.trim(), 16)
-      : undefined;
+    // Map strings to enum numbers (proto enum order)
+    const regionNum = lorawanRegion === "REGION_AU915" ? 1 : lorawanRegion === "REGION_EU868" ? 2 : 0;
+    const authNum = lorawanAuth === "AUTH_ABP" ? 1 : 0;
 
-    const summaryLines = [
-      `LoRaWAN region: ${lorawanRegion}`,
-      `LoRaWAN auth: ${lorawanAuth}`,
-      `txOnlyOnNewGpsFix: ${txOnlyOnNewGps ? 'ON' : 'OFF'}`,
-      `LoRaWAN txPowerDbm: ${lorawanTxPowerDbm}`,
-      `LoRa SF/BW/CR: ${loraSF} / ${loraBW}kHz / CR ${loraCR}`,
-      `LoRa txPowerDbm: ${loraTxPowerDbm}`,
-      `LoRa syncWord: ${syncWordHex.trim() ? `0x${syncWordHex.trim()} (${syncWordInt})` : '(empty)'}`,
-      `Lost Mode: ${lostModeEnabled ? 'ON' : 'OFF'}`,
-      ...(lostModeEnabled
-        ? [
-            `activationEpoch: ${activationEpochPreview}`,
-            `lost transmitIntervalMin: ${lostModeTransmitInterval}`,
-            `lost txPowerDbm: ${lostModeTxPowerDbm}`,
-          ]
-        : []),
-    ];
+    const sfNum = ({ SF7: 0, SF8: 1, SF9: 2, SF10: 3, SF11: 4, SF12: 5 } as const)[loraSF];
+    const bwNum = loraBW === "250" ? 1 : loraBW === "500" ? 2 : 0;
+    const crNum = ({ "4/5": 0, "4/6": 1, "4/7": 2, "4/8": 3 } as const)[loraCR];
 
-    Alert.alert('Saved (dummy)', summaryLines.join('\n'));
+    const loRaWANConfig = PB.LoRaWANConfig.create({
+      region: regionNum,
+      auth: authNum,
+      txOnlyOnNewGpsFix: Boolean(txOnlyOnNewGps),
+      transmitIntervalMin: txOnlyOnNewGps ? Math.max(1, Math.trunc(Number(lorawanTransmitInterval))) : 0,
+      txPowerDbm: clampInt(Number(lorawanTxPowerDbm), 0, 23),
+    });
+
+    // oneof credentials
+    if (authNum === 0) {
+      loRaWANConfig.otaa = PB.RadioOTAA.create({
+        devEui: hexToBytes(devEui, 8),
+        joinEui: hexToBytes(joinEui, 8),
+        appKey: hexToBytes(appKey, 16),
+        nwkKey: hexToBytes(nwkKey, 16),
+      });
+      (loRaWANConfig as any).abp = undefined;
+    } else {
+      loRaWANConfig.abp = PB.RadioABP.create({
+        devAddr: hexToBytes(devAddr, 4),
+        nwkSKey: hexToBytes(nwkSKey, 16),
+        appSKey: hexToBytes(appSKey, 16),
+        fNwkSIntKey: hexToBytes(fNwkSIntKey, 16),
+        sNwkSIntKey: hexToBytes(sNwkSIntKey, 16),
+      });
+      (loRaWANConfig as any).otaa = undefined;
+    }
+
+    const loRaConfig = PB.LoRaConfig.create({
+      radioSpreadingFactor: sfNum,
+      radioBandwidth: bwNum,
+      radioCodingRate: crNum,
+      txPowerDbm: clampInt(Number(loraTxPowerDbm), 0, 26),
+      syncWord: hexByteToInt(syncWordHex.trim() || "00"),
+      frequency: Math.trunc(freq),
+    });
+
+    const lostModeConfig = PB.LostMode_config.create({
+      activationEpoch: Math.trunc(activationEpoch),
+      transmitIntervalMin: lostModeEnabled ? Math.max(1, Math.trunc(Number(lostModeTransmitInterval))) : 1,
+      txPowerDbm: clampInt(Number(lostModeTxPowerDbm), 0, 26),
+    });
+
+    return PB.RadioConfigPacket.create({
+      loRaWANConfig,
+      loRaConfig,
+      lostModeEnabled: Boolean(lostModeEnabled),
+      lostModeConfig: lostModeConfig,
+    });
   };
 
-  /* ---------------- RENDER ---------------- */
+  const handleSave = () => {
+    try {
+      const pb = buildPbRadioConfigPacketFromUI();
+      setDraftRadioConfig(pb);
+      navigation.goBack();
+    } catch (e) {
+      // alerts already shown
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Radio Config</Text>
+      <Text style={styles.title}>Edit Radio Config</Text>
 
-      {/* ---------------- LoRaWAN ---------------- */}
       {renderCard(
-        '📡 LoRaWAN',
+        "📡 LoRaWAN",
         <>
           <Text style={styles.label}>Region</Text>
-          <Picker
-            selectedValue={lorawanRegion}
-            onValueChange={v => setLorawanRegion(v)}
-            itemStyle={{ color: '#111' }}
-          >
+          <Picker selectedValue={lorawanRegion} onValueChange={v => setLorawanRegion(v)} itemStyle={{ color: "#111" }}>
             <Picker.Item label="US915" value="REGION_US915" />
             <Picker.Item label="AU915" value="REGION_AU915" />
             <Picker.Item label="EU868" value="REGION_EU868" />
           </Picker>
 
           <Text style={styles.label}>Auth</Text>
-          <Picker
-            selectedValue={lorawanAuth}
-            onValueChange={v => setLorawanAuth(v)}
-            itemStyle={{ color: '#111' }}
-          >
+          <Picker selectedValue={lorawanAuth} onValueChange={v => setLorawanAuth(v)} itemStyle={{ color: "#111" }}>
             <Picker.Item label="OTAA" value="AUTH_OTAA" />
             <Picker.Item label="ABP" value="AUTH_ABP" />
           </Picker>
 
-          {/* Credentials */}
-          {lorawanAuth === 'AUTH_OTAA' ? (
+          {lorawanAuth === "AUTH_OTAA" ? (
             <>
               <Text style={styles.subHeader}>OTAA Credentials</Text>
 
@@ -341,11 +414,8 @@ export default function RadioConfigScreen() {
             </>
           )}
 
-          {/* txOnlyOnNewGps */}
           <View style={styles.row}>
-            <Text style={{ color: '#333', fontWeight: '500' }}>
-              Tx Only On New GPS Fix
-            </Text>
+            <Text style={{ color: "#333", fontWeight: "500" }}>Tx Only On New GPS Fix</Text>
             <Switch value={txOnlyOnNewGps} onValueChange={setTxOnlyOnNewGps} />
           </View>
 
@@ -364,47 +434,34 @@ export default function RadioConfigScreen() {
           <Picker
             selectedValue={lorawanTxPowerDbm}
             onValueChange={v => setLorawanTxPowerDbm(Number(v))}
-            itemStyle={{ color: '#111' }}
+            itemStyle={{ color: "#111" }}
           >
             {Array.from({ length: 24 }, (_, i) => i).map(p => (
               <Picker.Item key={p} label={`${p} dBm`} value={p} />
             ))}
           </Picker>
-        </>,
+        </>
       )}
 
-      {/* ---------------- LoRa ---------------- */}
       {renderCard(
-        '📻 LoRa',
+        "📻 LoRa",
         <>
           <Text style={styles.label}>Radio Spreading Factor</Text>
-          <Picker
-            selectedValue={loraSF}
-            onValueChange={v => setLoraSF(v)}
-            itemStyle={{ color: '#111' }}
-          >
-            {(['SF7', 'SF8', 'SF9', 'SF10', 'SF11', 'SF12'] as const).map(sf => (
+          <Picker selectedValue={loraSF} onValueChange={v => setLoraSF(v)} itemStyle={{ color: "#111" }}>
+            {(["SF7", "SF8", "SF9", "SF10", "SF11", "SF12"] as const).map(sf => (
               <Picker.Item key={sf} label={sf} value={sf} />
             ))}
           </Picker>
 
           <Text style={styles.label}>Radio Bandwidth (kHz)</Text>
-          <Picker
-            selectedValue={loraBW}
-            onValueChange={v => setLoraBW(v)}
-            itemStyle={{ color: '#111' }}
-          >
+          <Picker selectedValue={loraBW} onValueChange={v => setLoraBW(v)} itemStyle={{ color: "#111" }}>
             <Picker.Item label="125 kHz" value="125" />
             <Picker.Item label="250 kHz" value="250" />
             <Picker.Item label="500 kHz" value="500" />
           </Picker>
 
           <Text style={styles.label}>Radio Coding Rate</Text>
-          <Picker
-            selectedValue={loraCR}
-            onValueChange={v => setLoraCR(v)}
-            itemStyle={{ color: '#111' }}
-          >
+          <Picker selectedValue={loraCR} onValueChange={v => setLoraCR(v)} itemStyle={{ color: "#111" }}>
             <Picker.Item label="CR 4/5" value="4/5" />
             <Picker.Item label="CR 4/6" value="4/6" />
             <Picker.Item label="CR 4/7" value="4/7" />
@@ -415,7 +472,7 @@ export default function RadioConfigScreen() {
           <Picker
             selectedValue={loraTxPowerDbm}
             onValueChange={v => setLoraTxPowerDbm(Number(v))}
-            itemStyle={{ color: '#111' }}
+            itemStyle={{ color: "#111" }}
           >
             {Array.from({ length: 27 }, (_, i) => i).map(p => (
               <Picker.Item key={p} label={`${p} dBm`} value={p} />
@@ -431,18 +488,21 @@ export default function RadioConfigScreen() {
             placeholderTextColor="#999"
             autoCapitalize="characters"
           />
-          <Text style={styles.helper}>
-            Stored as byte (0–255). Preview:{' '}
-            {syncWordHex.trim().length === 2 && isHex(syncWordHex)
-              ? `0x${syncWordHex} = ${parseInt(syncWordHex, 16)}`
-              : '—'}
-          </Text>
-        </>,
+
+          <Text style={styles.label}>Frequency (MHz) [400–999]</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={loraFrequencyMHz}
+            onChangeText={t => setLoraFrequencyMHz(t.replace(/[^0-9]/g, "").slice(0, 3))}
+            placeholder="e.g. 915"
+            placeholderTextColor="#999"
+          />
+        </>
       )}
 
-      {/* ---------------- Lost Mode ---------------- */}
       {renderCard(
-        '🚨 Lost Mode',
+        "🚨 Lost Mode",
         <>
           {lostModeEnabled && (
             <>
@@ -465,8 +525,7 @@ export default function RadioConfigScreen() {
               />
 
               <Text style={styles.helper}>
-                Epoch preview:{' '}
-                {activationEpochPreview !== undefined ? activationEpochPreview : '—'}
+                Epoch preview: {activationEpochPreview !== undefined ? activationEpochPreview : "—"}
               </Text>
 
               <Text style={styles.label}>Transmit Interval (minutes)</Text>
@@ -483,7 +542,7 @@ export default function RadioConfigScreen() {
               <Picker
                 selectedValue={lostModeTxPowerDbm}
                 onValueChange={v => setLostModeTxPowerDbm(Number(v))}
-                itemStyle={{ color: '#111' }}
+                itemStyle={{ color: "#111" }}
               >
                 {Array.from({ length: 27 }, (_, i) => i).map(p => (
                   <Picker.Item key={p} label={`${p} dBm`} value={p} />
@@ -493,10 +552,9 @@ export default function RadioConfigScreen() {
           )}
         </>,
         lostModeEnabled,
-        setLostModeEnabled,
+        setLostModeEnabled
       )}
 
-      {/* SAVE */}
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveText}>SAVE</Text>
       </TouchableOpacity>
@@ -504,77 +562,74 @@ export default function RadioConfigScreen() {
   );
 }
 
-/* ---------------- STYLES (match EditScheduleScreen) ---------------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAFA', padding: 20 },
-  title: { fontSize: 30, fontWeight: '700', color: '#111', marginBottom: 20 },
+  container: { flex: 1, backgroundColor: "#FAFAFA", padding: 20 },
+  title: { fontSize: 30, fontWeight: "700", color: "#111", marginBottom: 20 },
 
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
   },
-  cardDisabled: { backgroundColor: '#EEE' },
+  cardDisabled: { backgroundColor: "#EEE" },
 
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: '#111' },
+  cardTitle: { fontSize: 18, fontWeight: "700", color: "#111" },
 
   subHeader: {
     marginTop: 10,
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111',
+    fontWeight: "700",
+    color: "#111",
   },
 
   helper: {
     marginTop: 6,
     fontSize: 13,
-    color: '#666',
+    color: "#666",
   },
 
   label: {
     fontSize: 15,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: "#333",
     marginTop: 10,
     marginBottom: 4,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#DDD',
+    borderColor: "#DDD",
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 10,
     fontSize: 15,
-    color: '#111',
+    color: "#111",
     marginBottom: 6,
   },
-  inputDisabled: {
-    backgroundColor: '#F2F2F2',
-  },
+  inputDisabled: { backgroundColor: "#F2F2F2" },
 
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginVertical: 6,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   saveButton: {
-    backgroundColor: '#FDC996',
+    backgroundColor: "#FDC996",
     paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
-  saveText: { color: '#FFF', fontWeight: '700', fontSize: 17 },
+  saveText: { color: "#FFF", fontWeight: "700", fontSize: 17 },
 });

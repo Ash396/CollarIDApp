@@ -1,39 +1,97 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { readRadioState } from "../ble/bleManager";
-import * as PB from "../proto/collar_pb.js";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  ReactNode,
+  useEffect,
+} from 'react';
+
+import type { Device } from 'react-native-ble-plx';
+import * as PB from '../proto/collar_pb.js';
+import { readRadioState, subscribeToRadioUpdates } from '../ble/bleManager';
 
 type RadioConfigContextType = {
-  radioConfig: PB.RadioConfigPacket | null;
-  setRadioConfig: (cfg: PB.RadioConfigPacket | null) => void;
-  loadRadioFromDevice: (device: any) => Promise<void>;
+  draftRadioConfig: PB.RadioConfigPacket | null;
+  deviceRadioConfig: PB.RadioConfigPacket | null;
+
+  setDraftRadioConfig: (cfg: PB.RadioConfigPacket | null) => void;
+
+  loadRadioFromDevice: (device: Device) => Promise<void>;
+  subscribeToRadioStateUpdates: (device: Device | null) => void;
 };
 
-const RadioConfigContext = createContext<RadioConfigContextType | undefined>(undefined);
+const RadioConfigContext = createContext<RadioConfigContextType | undefined>(
+  undefined,
+);
 
 export function RadioConfigProvider({ children }: { children: ReactNode }) {
-  const [radioConfig, setRadioConfig] = useState<PB.RadioConfigPacket | null>(null);
+  const [draftRadioConfig, setDraftRadioConfig] =
+    useState<PB.RadioConfigPacket | null>(null);
 
-  const loadRadioFromDevice = async (device: any) => {
+  const [deviceRadioConfig, setDeviceRadioConfig] =
+    useState<PB.RadioConfigPacket | null>(null);
+
+  const radioSubscriptionRef = useRef<any>(null);
+
+  /* ----------------------------------------------------------
+   * Initial Load from Collar
+   * ---------------------------------------------------------- */
+  const loadRadioFromDevice = async (device: Device) => {
     try {
-      console.log("📡 [Radio] Reading initial radio config…");
+      console.log('📡 [Radio] Reading initial radio state…');
       const decoded = await readRadioState(device);
       const raw = decoded?.radioConfigPacket ?? null;
 
       if (!raw) {
-        console.warn("⚠️ [Radio] No radio config found.");
-        setRadioConfig(null);
+        console.warn('⚠️ [Radio] No radio config found.');
+        setDeviceRadioConfig(null);
+        setDraftRadioConfig(null);
         return;
       }
 
-      console.log("📥 [Radio] Loaded radio config:", raw);
-      setRadioConfig(raw);
+      console.log('📥 [Radio] Loaded radio config:', raw);
+
+      setDeviceRadioConfig(raw);
+      setDraftRadioConfig(raw); // initial draft = collar truth
     } catch (err) {
-      console.error("❌ [Radio] Failed to load radio config:", err);
+      console.error('❌ [Radio] Failed to load radio config:', err);
     }
   };
 
+  /* ----------------------------------------------------------
+   * Live BLE Updates (overwrite both states)
+   * ---------------------------------------------------------- */
+  const subscribeToRadioStateUpdates = (device: Device | null) => {
+    radioSubscriptionRef.current?.remove();
+    if (!device) return;
+
+    radioSubscriptionRef.current = subscribeToRadioUpdates(device, pkt => {
+      if (pkt?.radioConfigPacket) {
+        console.log('🔔 [Radio] LIVE update:', pkt.radioConfigPacket);
+
+        setDeviceRadioConfig(pkt.radioConfigPacket);
+        setDraftRadioConfig(pkt.radioConfigPacket); // BLE truth overrides draft
+      }
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      radioSubscriptionRef.current?.remove();
+    };
+  }, []);
+
   return (
-    <RadioConfigContext.Provider value={{ radioConfig, setRadioConfig, loadRadioFromDevice }}>
+    <RadioConfigContext.Provider
+      value={{
+        draftRadioConfig,
+        deviceRadioConfig,
+        setDraftRadioConfig,
+        loadRadioFromDevice,
+        subscribeToRadioStateUpdates,
+      }}
+    >
       {children}
     </RadioConfigContext.Provider>
   );
@@ -41,6 +99,6 @@ export function RadioConfigProvider({ children }: { children: ReactNode }) {
 
 export function useRadioConfig() {
   const ctx = useContext(RadioConfigContext);
-  if (!ctx) throw new Error("useRadioConfig must be used within provider.");
+  if (!ctx) throw new Error('useRadioConfig must be used within provider.');
   return ctx;
 }
