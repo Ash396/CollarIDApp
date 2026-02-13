@@ -20,14 +20,13 @@ import {
   sendRadioConfig,
 } from '../ble/bleManager';
 import { estimateScheduleSolar } from '../utils/powerEstimator';
+import { useDevice } from '../context/DeviceContext';
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, 'Schedules'>;
 
 export default function SchedulesScreen() {
   const navigation = useNavigation<Nav>();
-  const route = useRoute<any>();
-  const { device: initialDevice } = route.params || {};
-  const [device, setDevice] = useState<Device | null>(initialDevice ?? null);
+  const { device } = useDevice();
   const { loadRadioFromDevice } = useRadioConfig();
 
   const {
@@ -38,61 +37,32 @@ export default function SchedulesScreen() {
   } = useSchedules();
 
   useEffect(() => {
-    if (!initialDevice) return;
+    if (!device) return;
 
-    (async () => {
-      let d: any = initialDevice;
-
-      if (!(await d.isConnected())) {
-        d = await connectToCollar(d);
-      }
-
-      if (!d) return;
-
-      setDevice(d);
-
-      console.log('🔔 Subscribing to live schedule updates…');
-      subscribeToScheduleUpdates(d);
-    })();
+    console.log('🔔 Subscribing to live schedule updates…');
+    subscribeToScheduleUpdates(device);
 
     return () => {
       console.log('🔕 Unsubscribing from schedule updates');
-      subscribeToScheduleUpdates(null); // removes previous subscription in context
+      subscribeToScheduleUpdates(null);
     };
-  }, [initialDevice]);
+  }, [device]);
 
   /* ------------------------------------------------------------------
    * Connect if needed + Load schedules once
    * ------------------------------------------------------------------ */
   useEffect(() => {
-    async function load() {
+    if (!device) return;
+
+    (async () => {
       try {
-        let d: any = device ?? initialDevice;
-
-        if (!d) {
-          console.warn('⚠️ No device passed to SchedulesScreen');
-          return;
-        }
-
-        // Ensure connected
-        if (!(await d.isConnected())) {
-          d = await connectToCollar(d);
-        }
-
-        if (!d) return;
-
-        setDevice(d);
-
-        // Load schedules + radio from BLE device
-        await loadSchedulesFromDevice(d);
-        await loadRadioFromDevice(d);
+        await loadSchedulesFromDevice(device);
+        await loadRadioFromDevice(device);
       } catch (err) {
         console.error('❌ Failed to load schedules/radio:', err);
       }
-    }
-
-    load();
-  }, [initialDevice]);
+    })();
+  }, [device]);
 
   /* ---------------------------------------------------------
    * Add New Schedule Locally
@@ -112,13 +82,13 @@ export default function SchedulesScreen() {
    * --------------------------------------------------------- */
   const handleSendToDevice = async () => {
     try {
-      if (!initialDevice) {
+      if (!device) {
         Alert.alert('No Device', 'You must connect to a collar first.');
         return;
       }
 
       const packet = buildSchedulePacketFromAppState(draftSchedules);
-      const ack = await sendConfig(initialDevice, packet);
+      const ack = await sendConfig(device, packet);
 
       if (ack) Alert.alert('✅ Success', 'Schedule sent and acknowledged!');
       else Alert.alert('⚠️ Sent', 'Sent to device but no ACK received.');
@@ -135,8 +105,7 @@ export default function SchedulesScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.header}>SCHEDULES</Text>
       <Text style={styles.sub}>
-        Configure sampling and time windows for{' '}
-        {device?.name ?? initialDevice?.name ?? 'Collar'}
+        Configure sampling and time windows for {device?.name ?? 'Collar'}
       </Text>
 
       {draftSchedules.length === 0 && (

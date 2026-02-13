@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { State } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import * as PB from '../proto/collar_pb.js';
+import { useDevice } from '../context/DeviceContext';
 
 import CollarCard from '../components/CollarCard';
 import {
@@ -36,6 +37,7 @@ interface Collar {
 export default function HomeScreen() {
   const [collars, setCollars] = useState<Collar[]>([]);
   const [scanning, setScanning] = useState(false);
+  const { setDevice } = useDevice();
   const [connectedDevice, setConnectedDevice] = useState<Collar | null>(null);
 
   const navigation = useNavigation<any>();
@@ -152,6 +154,7 @@ export default function HomeScreen() {
 
       await connected.discoverAllServicesAndCharacteristics();
 
+      setDevice(connected);
       const services = await connected.services();
 
       for (const service of services) {
@@ -201,10 +204,7 @@ export default function HomeScreen() {
         console.error('Metadata read error:', err);
       }
 
-      navigation.navigate('SchedulesTab', {
-        screen: 'Schedules',
-        params: { device: connected },
-      });
+      navigation.navigate('SchedulesTab');
     } catch (err) {
       console.error('Connection failed:', err);
     }
@@ -218,6 +218,7 @@ export default function HomeScreen() {
 
     try {
       await disconnectFromCollar(collar.device);
+      setDevice(null);
       setConnectedDevice(null);
       setCollars([]);
     } catch (err) {
