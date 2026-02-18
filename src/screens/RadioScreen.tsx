@@ -1,61 +1,46 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import type { Device } from 'react-native-ble-plx';
+import React, { useEffect, useMemo } from 'react';
 import {
-  View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
   Alert,
-  Platform,
+  View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import * as PB from '../proto/collar_pb.js';
 import {
-  connectToCollar,
   sendRadioConfig,
   buildBlePacketFromRadioConfig,
+  readRadioConfigFromDevice
 } from '../ble/bleManager';
 
 import { useRadioConfig } from '../context/RadioConfigContext';
 import { useDevice } from '../context/DeviceContext';
 import { bytesToHex } from '../utils/protoUtils';
 
+import { verifyWrite } from '../utils/verifyWrite';
+import { radioEqual } from '../utils/radioEquality';
+
+
 export default function RadioScreen() {
   const navigation = useNavigation<any>();
   const { device } = useDevice();
 
-  const {
-    deviceRadioConfig,
-    draftRadioConfig,
-    loadRadioFromDevice,
-    subscribeToRadioStateUpdates,
-  } = useRadioConfig();
+  const { deviceRadioConfig, draftRadioConfig, loadRadioFromDevice } =
+    useRadioConfig();
 
   useEffect(() => {
     if (!device) return;
 
     (async () => {
       try {
-        if (!(await device.isConnected())) {
-          const d = await connectToCollar(device);
-          if (!d) return;
-        }
-
         await loadRadioFromDevice(device);
-
-        console.log('🔔 Subscribing to live radio updates…');
-        subscribeToRadioStateUpdates(device);
       } catch (e) {
         console.error('❌ RadioScreen init failed:', e);
       }
     })();
-
-    return () => {
-      console.log('🔕 Unsubscribing from radio updates');
-      subscribeToRadioStateUpdates(null);
-    };
   }, [device]);
 
   const handleEdit = () => {
@@ -63,41 +48,59 @@ export default function RadioScreen() {
   };
 
   const handleSend = async () => {
-    try {
-      if (!device) {
-        Alert.alert('No Device', 'You must connect to a collar first.');
-        return;
-      }
-
-      if (!(await device.isConnected())) {
-        Alert.alert(
-          'Not connected',
-          'Your collar connection was lost. Reconnect from Home.',
-        );
-        return;
-      }
-
-      if (!draftRadioConfig) {
-        Alert.alert(
-          'Nothing to send',
-          'Tap EDIT, then SAVE to create a draft first.',
-        );
-        return;
-      }
-
-      const packet = buildBlePacketFromRadioConfig(draftRadioConfig);
-      const ack = await sendRadioConfig(device, packet);
-
-      if (ack) Alert.alert('✅ Success', 'Radio config sent and acknowledged!');
-      else Alert.alert('⚠️ Sent', 'Sent to device but no ACK received.');
-
-      if (ack) Alert.alert('✅ Success', 'Radio config sent and acknowledged!');
-      else Alert.alert('⚠️ Sent', 'Sent to device but no ACK received.');
-    } catch (e: any) {
-      console.error(e);
-      Alert.alert('Send failed', e?.message ?? 'Failed to send radio config.');
+  try {
+    if (!device) {
+      Alert.alert('No Device', 'You must connect to a collar first.');
+      return;
     }
-  };
+
+    if (!(await device.isConnected())) {
+      Alert.alert(
+        'Not connected',
+        'Your collar connection was lost. Reconnect from Home.',
+      );
+      return;
+    }
+
+    if (!draftRadioConfig) {
+      Alert.alert(
+        'Nothing to send',
+        'Tap EDIT, then SAVE to create a draft first.',
+      );
+      return;
+    }
+
+    const result = await verifyWrite({
+      draft: draftRadioConfig,
+      write: async () => {
+        const packet = buildBlePacketFromRadioConfig(draftRadioConfig);
+        await sendRadioConfig(device, packet); // write-only; throws on failure
+      },
+      read: async () => await readRadioConfigFromDevice(device),
+      equal: (draft, readback) => radioEqual(draft, readback),
+    });
+
+    if (result.ok) {
+      await loadRadioFromDevice(device); // update UI after verified
+      Alert.alert('✅ Success', 'Radio config verified on device!');
+    } else if (result.reason === 'mismatch') {
+      await loadRadioFromDevice(device);
+      Alert.alert(
+        '⚠️ Sent, but mismatch',
+        'Device radio config differs from what you sent (may be clamped).',
+      );
+    } else {
+      Alert.alert(
+        '⚠️ Sent, but not verified',
+        'Could not read radio config back from device.',
+      );
+    }
+  } catch (e: any) {
+    console.error(e);
+    Alert.alert('Send failed', e?.message ?? 'Failed to send radio config.');
+  }
+};
+
 
   const deviceSections = useMemo(
     () => formatRadioSections(deviceRadioConfig),

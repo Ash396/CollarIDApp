@@ -1,26 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import type { Device } from 'react-native-ble-plx';
+import React, { useEffect } from 'react';
 import {
-  View,
   Text,
+  View,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ScheduleStackParamList } from '../navigation/ScheduleNavigator';
 import { useSchedules } from '../context/SchedulesContext';
 import { useRadioConfig } from '../context/RadioConfigContext';
-import {
-  buildSchedulePacketFromAppState,
-  sendConfig,
-  connectToCollar,
-  sendRadioConfig,
-} from '../ble/bleManager';
+import { buildSchedulePacketFromAppState, sendConfig } from '../ble/bleManager';
 import { estimateScheduleSolar } from '../utils/powerEstimator';
 import { useDevice } from '../context/DeviceContext';
+import { verifyWrite } from '../utils/verifyWrite';
+import { schedulesEqual } from '../utils/scheduleEquality';
+import { readSchedulesFromDevice } from '../ble/bleManager';
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, 'Schedules'>;
 
@@ -29,24 +26,8 @@ export default function SchedulesScreen() {
   const { device } = useDevice();
   const { loadRadioFromDevice } = useRadioConfig();
 
-  const {
-    draftSchedules,
-    addSchedule,
-    loadSchedulesFromDevice,
-    subscribeToScheduleUpdates,
-  } = useSchedules();
-
-  useEffect(() => {
-    if (!device) return;
-
-    console.log('🔔 Subscribing to live schedule updates…');
-    subscribeToScheduleUpdates(device);
-
-    return () => {
-      console.log('🔕 Unsubscribing from schedule updates');
-      subscribeToScheduleUpdates(null);
-    };
-  }, [device]);
+  const { draftSchedules, addSchedule, loadSchedulesFromDevice } =
+    useSchedules();
 
   /* ------------------------------------------------------------------
    * Connect if needed + Load schedules once
@@ -87,11 +68,31 @@ export default function SchedulesScreen() {
         return;
       }
 
-      const packet = buildSchedulePacketFromAppState(draftSchedules);
-      const ack = await sendConfig(device, packet);
+      const result = await verifyWrite({
+        draft: draftSchedules,
+        write: async () => {
+          const packet = buildSchedulePacketFromAppState(draftSchedules);
+          await sendConfig(device, packet);
+        },
+        read: async () => await readSchedulesFromDevice(device),
+        equal: (draft, readback) => schedulesEqual(draft, readback),
+      });
 
-      if (ack) Alert.alert('✅ Success', 'Schedule sent and acknowledged!');
-      else Alert.alert('⚠️ Sent', 'Sent to device but no ACK received.');
+      if (result.ok) {
+        await loadSchedulesFromDevice(device);
+        Alert.alert('✅ Success', 'Schedules verified on device!');
+      } else if (result.reason === 'mismatch') {
+        await loadSchedulesFromDevice(device);
+        Alert.alert(
+          '⚠️ Sent, but mismatch',
+          'Device schedules differ from what you sent (may be clamped).',
+        );
+      } else {
+        Alert.alert(
+          '⚠️ Sent, but not verified',
+          'Could not read schedules back from device.',
+        );
+      }
     } catch (err) {
       Alert.alert('Error', 'Failed to send schedule config.');
       console.error(err);

@@ -1,7 +1,12 @@
 import { BleManager, Device, State } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import * as PB from '../proto/collar_pb.js';
-import { hexToBytes, hexByteToInt, clampInt, unixNow } from '../utils/protoUtils.ts';
+import {
+  hexToBytes,
+  hexByteToInt,
+  clampInt,
+  unixNow,
+} from '../utils/protoUtils.ts';
 
 export const manager = new BleManager();
 
@@ -136,6 +141,16 @@ export async function readRadioState(device: Device): Promise<DecodedPacket> {
   }
 }
 
+export async function readSchedulesFromDevice(device: Device) {
+  const decoded = await readInitialState(device);
+  return decoded?.scheduleConfigPacket?.schedules ?? null; // raw proto schedules array
+}
+
+export async function readRadioConfigFromDevice(device: Device) {
+  const decoded = await readRadioState(device);
+  return decoded?.radioConfigPacket ?? null; // PB.RadioConfigPacket | null
+}
+
 /* --------- STATUS notifications --------- */
 export function subscribeToStatus(
   device: Device,
@@ -146,6 +161,10 @@ export function subscribeToStatus(
     STATUS_CHAR_UUID,
     (error, characteristic) => {
       if (error) {
+        // ignore expected disconnect/cancel cases
+        if (error.message?.includes('disconnected')) return;
+        if (error.message?.includes('cancelled')) return;
+
         console.error('STATUS notify error:', error);
         return;
       }
@@ -159,60 +178,60 @@ export function subscribeToStatus(
 }
 
 /* --------- UPDATE notifications (Schedules + radio live updates) --------- */
-export function subscribeToUpdates(
-  device: Device,
-  callback: (data: DecodedPacket) => void,
-) {
-  const subscription = device.monitorCharacteristicForService(
-    COLLAR_SERVICE_UUID,
-    UPDATE_CHAR_UUID,
-    (error, characteristic) => {
-      if (error) {
-        // Ignore expected disconnect errors
-        if (error.message?.includes('disconnected')) return;
-        if (error.message?.includes('cancelled')) return;
+// export function subscribeToUpdates(
+//   device: Device,
+//   callback: (data: DecodedPacket) => void,
+// ) {
+//   const subscription = device.monitorCharacteristicForService(
+//     COLLAR_SERVICE_UUID,
+//     UPDATE_CHAR_UUID,
+//     (error, characteristic) => {
+//       if (error) {
+//         // Ignore expected disconnect errors
+//         if (error.message?.includes('disconnected')) return;
+//         if (error.message?.includes('cancelled')) return;
 
-        console.error('UPDATE notify error:', error);
-        return;
-      }
+//         console.error('UPDATE notify error:', error);
+//         return;
+//       }
 
-      if (!characteristic?.value) return;
+//       if (!characteristic?.value) return;
 
-      const bytes = Buffer.from(characteristic.value, 'base64');
-      const decoded = safeDecode(bytes);
+//       const bytes = Buffer.from(characteristic.value, 'base64');
+//       const decoded = safeDecode(bytes);
 
-      if (decoded) callback(decoded);
-    },
-  );
+//       if (decoded) callback(decoded);
+//     },
+//   );
 
-  return subscription;
-}
+//   return subscription;
+// }
 
-export function subscribeToRadioUpdates(
-  device: Device,
-  callback: (data: DecodedPacket) => void,
-) {
-  const subscription = device.monitorCharacteristicForService(
-    COLLAR_SERVICE_UUID,
-    RADIO_CHAR_UUID,
-    (error, characteristic) => {
-      if (error) {
-        if (error.message?.includes('disconnected')) return;
-        if (error.message?.includes('cancelled')) return;
-        console.error('RADIO notify error:', error);
-        return;
-      }
+// export function subscribeToRadioUpdates(
+//   device: Device,
+//   callback: (data: DecodedPacket) => void,
+// ) {
+//   const subscription = device.monitorCharacteristicForService(
+//     COLLAR_SERVICE_UUID,
+//     RADIO_CHAR_UUID,
+//     (error, characteristic) => {
+//       if (error) {
+//         if (error.message?.includes('disconnected')) return;
+//         if (error.message?.includes('cancelled')) return;
+//         console.error('RADIO notify error:', error);
+//         return;
+//       }
 
-      if (!characteristic?.value) return;
+//       if (!characteristic?.value) return;
 
-      const bytes = Buffer.from(characteristic.value, 'base64');
-      const decoded = safeDecode(bytes);
-      if (decoded) callback(decoded);
-    },
-  );
+//       const bytes = Buffer.from(characteristic.value, 'base64');
+//       const decoded = safeDecode(bytes);
+//       if (decoded) callback(decoded);
+//     },
+//   );
 
-  return subscription;
-}
+//   return subscription;
+// }
 
 /* -------------------------------------------------------------------------- */
 /*                   Build Schedule Packet to Send to Device                  */
@@ -334,179 +353,40 @@ export function buildBlePacketFromRadioConfig(
   });
 }
 
-
-//TODO: deprecated, remove
-// export function buildRadioPacketFromAppState(
-//   radio: RadioConfigAppState,
-// ): PB.BlePacket {
-//   const auth = Number(radio.lorawan.auth ?? 0); // 0=OTAA, 1=ABP per proto
-
-//   const loRaWAN_config = PB.LoRaWANConfig.create({
-//     region: Number(radio.lorawan.region ?? 0),
-//     auth,
-
-//     txOnlyOnNewGpsFix: Boolean(radio.lorawan.txOnlyOnNewGpsFix ?? false),
-//     transmitIntervalMin: Boolean(radio.lorawan.txOnlyOnNewGpsFix)
-//       ? Math.max(1, Math.trunc(Number(radio.lorawan.transmitIntervalMin ?? 0)))
-//       : 0,
-
-//     txPowerDbm: clampInt(Number(radio.lorawan.txPowerDbm ?? 0), 0, 23),
-//     // oneof credentials set below
-//   });
-
-//   // oneof: otaa vs abp
-//   if (auth === 0) {
-//     const otaa = radio.lorawan.otaa;
-//     if (!otaa) throw new Error('Missing OTAA credentials');
-
-//     loRaWAN_config.otaa = PB.RadioOTAA.create({
-//       devEui: hexToBytes(otaa.devEuiHex, 8),
-//       joinEui: hexToBytes(otaa.joinEuiHex, 8),
-//       appKey: hexToBytes(otaa.appKeyHex, 16),
-//       nwkKey: hexToBytes(otaa.nwkKeyHex, 16),
-//     });
-
-//     // ensure the other side of oneof isn't set
-//     (loRaWAN_config as any).abp = undefined;
-//   } else {
-//     const abp = radio.lorawan.abp;
-//     if (!abp) throw new Error('Missing ABP credentials');
-
-//     loRaWAN_config.abp = PB.RadioABP.create({
-//       devAddr: hexToBytes(abp.devAddrHex, 4),
-//       nwkSKey: hexToBytes(abp.nwkSKeyHex, 16),
-//       appSKey: hexToBytes(abp.appSKeyHex, 16),
-//       fNwkSIntKey: hexToBytes(abp.fNwkSIntKeyHex, 16),
-//       sNwkSIntKey: hexToBytes(abp.sNwkSIntKeyHex, 16),
-//     });
-
-//     (loRaWAN_config as any).otaa = undefined;
-//   }
-
-//   const loRa_config = PB.LoRaConfig.create({
-//     radioSpreadingFactor: Number(radio.lora.radioSpreadingFactor ?? 0),
-//     radioBandwidth: Number(radio.lora.radioBandwidth ?? 0),
-//     radioCodingRate: Number(radio.lora.radioCodingRate ?? 0),
-//     txPowerDbm: clampInt(Number(radio.lora.txPowerDbm ?? 0), 0, 26),
-//     syncWord: hexByteToInt(radio.lora.syncWordHex ?? '00'), // uint32, but should be 0..255
-//     frequency: clampInt(Number(radio.lora.frequencyMHz ?? 0), 400, 999),
-//   });
-
-//   const lostEnabled = Boolean(radio.lostMode.enabled ?? false);
-
-//   const lostMode_config = PB.LostMode_config.create({
-//     activationEpoch: Math.trunc(Number(radio.lostMode.activationEpoch ?? 0)),
-//     transmitIntervalMin: Math.max(
-//       1,
-//       Math.trunc(Number(radio.lostMode.transmitIntervalMin ?? 1)),
-//     ),
-//     txPowerDbm: clampInt(Number(radio.lostMode.txPowerDbm ?? 0), 0, 26),
-//   });
-
-//   return PB.BlePacket.create({
-//     header: PB.PacketHeader.create({
-//       systemUid: 1,
-//       msFromStart: 0,
-//       epoch: unixNow(), // or Math.floor(Date.now()/1000)
-//       packetIndex: 0,
-//     }),
-//     radioConfigPacket: PB.RadioConfigPacket.create({
-//       loRaWANConfig: loRaWAN_config,
-//       loRaConfig: loRa_config,
-//       lostModeEnabled: lostEnabled,
-//       lostModeConfig: lostMode_config,
-//     }),
-//   });
-// }
-
 /* -------------------------------------------------------------------------- */
 /*                              Send Config                                    */
 /* -------------------------------------------------------------------------- */
 
 export async function sendConfig(device: Device, packet: PB.BlePacket) {
-  try {
-    console.log('📤 Sending schedule packet…');
+  console.log('📤 Sending schedule packet…');
 
-    const encoded = PB.BlePacket.encode(packet).finish();
-    const base64 = Buffer.from(encoded).toString('base64');
+  const encoded = PB.BlePacket.encode(packet).finish();
+  const base64 = Buffer.from(encoded).toString('base64');
 
-    const written = await device.writeCharacteristicWithResponseForService(
-      COLLAR_SERVICE_UUID,
-      UPDATE_CHAR_UUID,
-      base64,
-    );
+  await device.writeCharacteristicWithResponseForService(
+    COLLAR_SERVICE_UUID,
+    UPDATE_CHAR_UUID,
+    base64,
+  );
 
-    console.log('✅ Write complete:', written);
-
-    // Wait for ACK (STATUS characteristic)
-    console.log('⏳ Waiting for ACK from STATUS…');
-    return new Promise<boolean>(resolve => {
-      let gotAck = false;
-
-      const sub = subscribeToStatus(device, pkt => {
-        if (pkt?.systemStatePacket) {
-          console.log('📩 ACK received:', pkt.systemStatePacket);
-          gotAck = true;
-          sub.remove();
-          resolve(true);
-        }
-      });
-
-      setTimeout(() => {
-        if (!gotAck) {
-          console.warn('⚠️ ACK timeout');
-          sub.remove();
-          resolve(false);
-        }
-      }, 6000);
-    });
-  } catch (err) {
-    console.error('❌ sendConfig failed:', err);
-    throw err;
-  }
+  console.log('✅ Write complete');
+  return true;
 }
 
 export async function sendRadioConfig(device: Device, packet: PB.BlePacket) {
-  try {
-    console.log('📤 Sending radio packet…');
+  console.log('📤 Sending radio packet…');
 
-    const encoded = PB.BlePacket.encode(packet).finish();
-    const base64 = Buffer.from(encoded).toString('base64');
+  const encoded = PB.BlePacket.encode(packet).finish();
+  const base64 = Buffer.from(encoded).toString('base64');
 
-    const written = await device.writeCharacteristicWithResponseForService(
-      COLLAR_SERVICE_UUID,
-      RADIO_CHAR_UUID,
-      base64,
-    );
+  await device.writeCharacteristicWithResponseForService(
+    COLLAR_SERVICE_UUID,
+    RADIO_CHAR_UUID,
+    base64,
+  );
 
-    console.log('✅ Radio write complete:', written);
-
-    // Wait for ACK (STATUS characteristic)
-    console.log('⏳ Waiting for ACK from STATUS…');
-    return new Promise<boolean>(resolve => {
-      let gotAck = false;
-
-      const sub = subscribeToStatus(device, pkt => {
-        if (pkt?.systemStatePacket) {
-          console.log('📩 ACK received:', pkt.systemStatePacket);
-          gotAck = true;
-          sub.remove();
-          resolve(true);
-        }
-      });
-
-      setTimeout(() => {
-        if (!gotAck) {
-          console.warn('⚠️ ACK timeout (radio)');
-          sub.remove();
-          resolve(false);
-        }
-      }, 6000);
-    });
-  } catch (err) {
-    console.error('❌ sendRadioConfig failed:', err);
-    throw err;
-  }
+  console.log('✅ Radio write complete');
+  return true;
 }
 
 /* -------------------------------------------------------------------------- */

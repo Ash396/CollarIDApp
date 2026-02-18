@@ -155,6 +155,32 @@ export default function HomeScreen() {
       await connected.discoverAllServicesAndCharacteristics();
 
       setDevice(connected);
+
+      console.log('🟣 after discover, about to subscribe to STATUS');
+
+      const sub = connected.monitorCharacteristicForService(
+        COLLAR_SERVICE_UUID,
+        STATUS_CHAR_UUID,
+        (error, characteristic) => {
+          console.log('🟡 STATUS callback fired', {
+            hasError: !!error,
+            hasValue: !!characteristic?.value,
+          });
+
+          if (error) {
+            console.error('🔥 STATUS monitor error:', error);
+            return;
+          }
+          if (!characteristic?.value) return;
+
+          console.log('✅ STATUS notify b64:', characteristic.value);
+          const bytes = Buffer.from(characteristic.value, 'base64');
+          console.log('✅ STATUS bytes len:', bytes.length);
+        },
+      );
+
+      console.log('🟢 STATUS monitor created:', !!sub);
+
       const services = await connected.services();
 
       for (const service of services) {

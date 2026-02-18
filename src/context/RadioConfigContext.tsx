@@ -1,15 +1,7 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useRef,
-  ReactNode,
-  useEffect,
-} from 'react';
-
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type { Device } from 'react-native-ble-plx';
 import * as PB from '../proto/collar_pb.js';
-import { readRadioState, subscribeToRadioUpdates } from '../ble/bleManager';
+import { readRadioState } from '../ble/bleManager';
 
 type RadioConfigContextType = {
   draftRadioConfig: PB.RadioConfigPacket | null;
@@ -18,7 +10,6 @@ type RadioConfigContextType = {
   setDraftRadioConfig: (cfg: PB.RadioConfigPacket | null) => void;
 
   loadRadioFromDevice: (device: Device) => Promise<void>;
-  subscribeToRadioStateUpdates: (device: Device | null) => void;
 };
 
 const RadioConfigContext = createContext<RadioConfigContextType | undefined>(
@@ -32,14 +23,12 @@ export function RadioConfigProvider({ children }: { children: ReactNode }) {
   const [deviceRadioConfig, setDeviceRadioConfig] =
     useState<PB.RadioConfigPacket | null>(null);
 
-  const radioSubscriptionRef = useRef<any>(null);
-
   /* ----------------------------------------------------------
-   * Initial Load from Collar
+   * Load from Collar (source of truth)
    * ---------------------------------------------------------- */
   const loadRadioFromDevice = async (device: Device) => {
     try {
-      console.log('📡 [Radio] Reading initial radio state…');
+      console.log('📡 [Radio] Reading radio state…');
       const decoded = await readRadioState(device);
       const raw = decoded?.radioConfigPacket ?? null;
 
@@ -53,34 +42,11 @@ export function RadioConfigProvider({ children }: { children: ReactNode }) {
       console.log('📥 [Radio] Loaded radio config:', raw);
 
       setDeviceRadioConfig(raw);
-      setDraftRadioConfig(raw); // initial draft = collar truth
+      setDraftRadioConfig(raw); // reset draft to device truth on load
     } catch (err) {
       console.error('❌ [Radio] Failed to load radio config:', err);
     }
   };
-
-  /* ----------------------------------------------------------
-   * Live BLE Updates (overwrite both states)
-   * ---------------------------------------------------------- */
-  const subscribeToRadioStateUpdates = (device: Device | null) => {
-    radioSubscriptionRef.current?.remove();
-    if (!device) return;
-
-    radioSubscriptionRef.current = subscribeToRadioUpdates(device, pkt => {
-      if (pkt?.radioConfigPacket) {
-        console.log('🔔 [Radio] LIVE update:', pkt.radioConfigPacket);
-
-        setDeviceRadioConfig(pkt.radioConfigPacket);
-        setDraftRadioConfig(pkt.radioConfigPacket); // BLE truth overrides draft
-      }
-    });
-  };
-
-  useEffect(() => {
-    return () => {
-      radioSubscriptionRef.current?.remove();
-    };
-  }, []);
 
   return (
     <RadioConfigContext.Provider
@@ -89,7 +55,6 @@ export function RadioConfigProvider({ children }: { children: ReactNode }) {
         deviceRadioConfig,
         setDraftRadioConfig,
         loadRadioFromDevice,
-        subscribeToRadioStateUpdates,
       }}
     >
       {children}
