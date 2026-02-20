@@ -13,7 +13,7 @@ import * as PB from '../proto/collar_pb.js';
 import {
   sendRadioConfig,
   buildBlePacketFromRadioConfig,
-  readRadioConfigFromDevice
+  readRadioConfigFromDevice,
 } from '../ble/bleManager';
 
 import { useRadioConfig } from '../context/RadioConfigContext';
@@ -22,7 +22,6 @@ import { bytesToHex } from '../utils/protoUtils';
 
 import { verifyWrite } from '../utils/verifyWrite';
 import { radioEqual } from '../utils/radioEquality';
-
 
 export default function RadioScreen() {
   const navigation = useNavigation<any>();
@@ -48,59 +47,58 @@ export default function RadioScreen() {
   };
 
   const handleSend = async () => {
-  try {
-    if (!device) {
-      Alert.alert('No Device', 'You must connect to a collar first.');
-      return;
+    try {
+      if (!device) {
+        Alert.alert('No Device', 'You must connect to a collar first.');
+        return;
+      }
+
+      if (!(await device.isConnected())) {
+        Alert.alert(
+          'Not connected',
+          'Your collar connection was lost. Reconnect from Home.',
+        );
+        return;
+      }
+
+      if (!draftRadioConfig) {
+        Alert.alert(
+          'Nothing to send',
+          'Tap EDIT, then SAVE to create a draft first.',
+        );
+        return;
+      }
+
+      const result = await verifyWrite({
+        draft: draftRadioConfig,
+        write: async () => {
+          const packet = buildBlePacketFromRadioConfig(draftRadioConfig);
+          await sendRadioConfig(device, packet); // write-only; throws on failure
+        },
+        read: async () => await readRadioConfigFromDevice(device),
+        equal: (draft, readback) => radioEqual(draft, readback),
+      });
+
+      if (result.ok) {
+        await loadRadioFromDevice(device); // update UI after verified
+        Alert.alert('✅ Success', 'Radio config verified on device!');
+      } else if (result.reason === 'mismatch') {
+        await loadRadioFromDevice(device);
+        Alert.alert(
+          '⚠️ Sent, but mismatch',
+          'Device radio config differs from what you sent (may be clamped).',
+        );
+      } else {
+        Alert.alert(
+          '⚠️ Sent, but not verified',
+          'Could not read radio config back from device.',
+        );
+      }
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert('Send failed', e?.message ?? 'Failed to send radio config.');
     }
-
-    if (!(await device.isConnected())) {
-      Alert.alert(
-        'Not connected',
-        'Your collar connection was lost. Reconnect from Home.',
-      );
-      return;
-    }
-
-    if (!draftRadioConfig) {
-      Alert.alert(
-        'Nothing to send',
-        'Tap EDIT, then SAVE to create a draft first.',
-      );
-      return;
-    }
-
-    const result = await verifyWrite({
-      draft: draftRadioConfig,
-      write: async () => {
-        const packet = buildBlePacketFromRadioConfig(draftRadioConfig);
-        await sendRadioConfig(device, packet); // write-only; throws on failure
-      },
-      read: async () => await readRadioConfigFromDevice(device),
-      equal: (draft, readback) => radioEqual(draft, readback),
-    });
-
-    if (result.ok) {
-      await loadRadioFromDevice(device); // update UI after verified
-      Alert.alert('✅ Success', 'Radio config verified on device!');
-    } else if (result.reason === 'mismatch') {
-      await loadRadioFromDevice(device);
-      Alert.alert(
-        '⚠️ Sent, but mismatch',
-        'Device radio config differs from what you sent (may be clamped).',
-      );
-    } else {
-      Alert.alert(
-        '⚠️ Sent, but not verified',
-        'Could not read radio config back from device.',
-      );
-    }
-  } catch (e: any) {
-    console.error(e);
-    Alert.alert('Send failed', e?.message ?? 'Failed to send radio config.');
-  }
-};
-
+  };
 
   const deviceSections = useMemo(
     () => formatRadioSections(deviceRadioConfig),
@@ -215,49 +213,61 @@ function formatRadioSections(cfg: PB.RadioConfigPacket | null): {
 
   // ---------------- LoRaWAN section ----------------
   const lorawanLines: string[] = [];
-  lorawanLines.push(`Region: ${regionLabel(lorawan?.region ?? 0)}`);
-  lorawanLines.push(`Auth: ${authLabel(lorawan?.auth ?? 0)}`);
-  lorawanLines.push(
-    `Tx only on new GPS fix: ${lorawan?.txOnlyOnNewGpsFix ? 'ON' : 'OFF'}`,
-  );
-  lorawanLines.push(
-    `Transmit interval (min): ${lorawan?.transmitIntervalMin ?? 0}`,
-  );
-  lorawanLines.push(`TX power (dBm): ${lorawan?.txPowerDbm ?? 0}`);
+  const lorawanEnabled = lorawan != null;
 
-  const otaa = lorawan?.otaa;
-  const abp = lorawan?.abp;
+  lorawanLines.push(`Enabled: ${lorawanEnabled ? 'ON' : 'OFF'}`);
 
-  if (lorawan?.auth === 0 && otaa) {
-    lorawanLines.push('');
-    lorawanLines.push('OTAA credentials');
-    lorawanLines.push(`devEui:  ${bytesToHex(otaa.devEui)}`);
-    lorawanLines.push(`joinEui: ${bytesToHex(otaa.joinEui)}`);
-    lorawanLines.push(`appKey:  ${bytesToHex(otaa.appKey)}`);
-    lorawanLines.push(`nwkKey:  ${bytesToHex(otaa.nwkKey)}`);
-  } else if (lorawan?.auth === 1 && abp) {
-    lorawanLines.push('');
-    lorawanLines.push('ABP credentials');
-    lorawanLines.push(`devAddr:     ${bytesToHex(abp.devAddr)}`);
-    lorawanLines.push(`nwkSKey:     ${bytesToHex(abp.nwkSKey)}`);
-    lorawanLines.push(`appSKey:     ${bytesToHex(abp.appSKey)}`);
-    lorawanLines.push(`fNwkSIntKey: ${bytesToHex(abp.fNwkSIntKey)}`);
-    lorawanLines.push(`sNwkSIntKey: ${bytesToHex(abp.sNwkSIntKey)}`);
-  } else {
-    lorawanLines.push('');
-    lorawanLines.push('Credentials: (not set)');
+  if (lorawanEnabled) {
+    lorawanLines.push(`Region: ${regionLabel(lorawan.region ?? 0)}`);
+    lorawanLines.push(`Auth: ${authLabel(lorawan.auth ?? 0)}`);
+    lorawanLines.push(
+      `Tx only on new GPS fix: ${lorawan.txOnlyOnNewGpsFix ? 'ON' : 'OFF'}`,
+    );
+    lorawanLines.push(
+      `Transmit interval (min): ${lorawan.transmitIntervalMin ?? 0}`,
+    );
+    lorawanLines.push(`TX power (dBm): ${lorawan.txPowerDbm ?? 0}`);
+
+    const otaa = lorawan.otaa;
+    const abp = lorawan.abp;
+
+    if (lorawan.auth === 0 && otaa) {
+      lorawanLines.push('');
+      lorawanLines.push('OTAA credentials');
+      lorawanLines.push(`devEui:  ${bytesToHex(otaa.devEui)}`);
+      lorawanLines.push(`joinEui: ${bytesToHex(otaa.joinEui)}`);
+      lorawanLines.push(`appKey:  ${bytesToHex(otaa.appKey)}`);
+      lorawanLines.push(`nwkKey:  ${bytesToHex(otaa.nwkKey)}`);
+    } else if (lorawan.auth === 1 && abp) {
+      lorawanLines.push('');
+      lorawanLines.push('ABP credentials');
+      lorawanLines.push(`devAddr:     ${bytesToHex(abp.devAddr)}`);
+      lorawanLines.push(`nwkSKey:     ${bytesToHex(abp.nwkSKey)}`);
+      lorawanLines.push(`appSKey:     ${bytesToHex(abp.appSKey)}`);
+      lorawanLines.push(`fNwkSIntKey: ${bytesToHex(abp.fNwkSIntKey)}`);
+      lorawanLines.push(`sNwkSIntKey: ${bytesToHex(abp.sNwkSIntKey)}`);
+    } else {
+      lorawanLines.push('');
+      lorawanLines.push('Credentials: (not set)');
+    }
   }
 
   // ---------------- LoRa section ----------------
   const loraLines: string[] = [];
-  loraLines.push(
-    `Spreading factor: ${sfLabel(lora?.radioSpreadingFactor ?? 0)}`,
-  );
-  loraLines.push(`Bandwidth: ${bwLabel(lora?.radioBandwidth ?? 0)}`);
-  loraLines.push(`Coding rate: ${crLabel(lora?.radioCodingRate ?? 0)}`);
-  loraLines.push(`TX power (dBm): ${lora?.txPowerDbm ?? 0}`);
-  loraLines.push(`Sync word: 0x${pad2(Number(lora?.syncWord ?? 0))}`);
-  loraLines.push(`Frequency (MHz): ${lora?.frequency ?? 0}`);
+  const loraEnabled = lora != null;
+
+  loraLines.push(`Enabled: ${loraEnabled ? 'ON' : 'OFF'}`);
+
+  if (loraEnabled) {
+    loraLines.push(
+      `Spreading factor: ${sfLabel(lora.radioSpreadingFactor ?? 0)}`,
+    );
+    loraLines.push(`Bandwidth: ${bwLabel(lora.radioBandwidth ?? 0)}`);
+    loraLines.push(`Coding rate: ${crLabel(lora.radioCodingRate ?? 0)}`);
+    loraLines.push(`TX power (dBm): ${lora.txPowerDbm ?? 0}`);
+    loraLines.push(`Sync word: 0x${pad2(Number(lora.syncWord ?? 0))}`);
+    loraLines.push(`Frequency (MHz): ${lora.frequency ?? 0}`);
+  }
 
   // ---------------- Lost section ----------------
   const lostLines: string[] = [];
