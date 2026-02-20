@@ -83,61 +83,72 @@ export default function HomeScreen() {
 
     let isCancelled = false;
     const lastSeen = lastSeenRef.current;
+    let lastAdvAt = Date.now();
+
+    let interval: any = null;
+    let watchdog: any = null;
+
+    const onScanResult = (error: any, device: any) => {
+      if (isCancelled) return;
+
+      if (error) {
+        console.error('Scan error:', error);
+        return;
+      }
+
+      if (!device?.name?.startsWith('CollarID')) return;
+
+      const now = Date.now();
+      lastAdvAt = now;
+      lastSeen[device.id] = now;
+
+      setCollars(prev => {
+        const existing = prev.find(c => c.id === device.id);
+        if (existing) return prev;
+        return [
+          ...prev,
+          { id: device.id, name: device.name ?? 'Unknown', connected: false },
+        ];
+      });
+    };
 
     const startScan = async () => {
       await ensureBluetoothReady();
+      if (isCancelled) return;
+
       setScanning(true);
+      manager.startDeviceScan(null, { allowDuplicates: true }, onScanResult);
 
-      manager.startDeviceScan(
-        null,
-        { allowDuplicates: true },
-        (error, device) => {
-          if (isCancelled) return;
-          if (error) {
-            console.error('Scan error:', error);
-            setScanning(false);
-            return;
-          }
-
-          if (!device?.name?.startsWith('CollarID')) return;
-
-          const now = Date.now();
-          lastSeen[device.id] = now;
-
-          setCollars(prev => {
-            const existing = prev.find(c => c.id === device.id);
-            if (existing) return prev;
-            return [
-              ...prev,
-              {
-                id: device.id,
-                name: device.name ?? 'Unknown',
-                connected: false,
-              },
-            ];
-          });
-        },
-      );
-
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         const now = Date.now();
         setCollars(prev =>
-          prev.filter(c => c.connected || now - (lastSeen[c.id] ?? 0) < 5000),
+          prev.filter(c => c.connected || now - (lastSeen[c.id] ?? 0) < 20000),
         );
       }, 2000);
 
-      return () => {
-        isCancelled = true;
-        clearInterval(interval);
-        manager.stopDeviceScan();
-        setScanning(false);
-      };
+      watchdog = setInterval(() => {
+        if (isCancelled) return;
+
+        const now = Date.now();
+        if (now - lastAdvAt > 10000) {
+          console.log('🛠️ Scan watchdog: restarting scan');
+          manager.stopDeviceScan();
+          lastAdvAt = now;
+          manager.startDeviceScan(
+            null,
+            { allowDuplicates: true },
+            onScanResult,
+          );
+        }
+      }, 3000);
     };
 
     startScan();
 
     return () => {
       isCancelled = true;
+      if (interval) clearInterval(interval);
+      if (watchdog) clearInterval(watchdog);
       manager.stopDeviceScan();
       setScanning(false);
     };
