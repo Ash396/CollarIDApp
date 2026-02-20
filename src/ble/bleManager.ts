@@ -399,5 +399,6 @@ export async function disconnectFromCollar(device: Device) {
     console.log('🔌 Disconnected');
   } catch (err) {
     console.error('❌ Failed to disconnect:', err);
+    throw err;
   }
 }

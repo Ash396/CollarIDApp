@@ -43,6 +43,9 @@ export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const lastSeenRef = useRef<Record<string, number>>({});
 
+  const statusSubRef = useRef<{ remove: () => void } | null>(null);
+  const disconnectSubRef = useRef<{ remove: () => void } | null>(null);
+
   /* ----------------------------------------------------------
    * Ensure Bluetooth ON
    * ---------------------------------------------------------- */
@@ -140,6 +143,15 @@ export default function HomeScreen() {
     };
   }, [connectedDevice]);
 
+  useEffect(() => {
+    return () => {
+      statusSubRef.current?.remove();
+      statusSubRef.current = null;
+      disconnectSubRef.current?.remove();
+      disconnectSubRef.current = null;
+    };
+  }, []);
+
   /* ----------------------------------------------------------
    * Connect
    * ---------------------------------------------------------- */
@@ -154,11 +166,34 @@ export default function HomeScreen() {
 
       await connected.discoverAllServicesAndCharacteristics();
 
+      // cleanup old listeners if any
+      statusSubRef.current?.remove();
+      statusSubRef.current = null;
+      disconnectSubRef.current?.remove();
+      disconnectSubRef.current = null;
+
+      // If collar disconnects unexpectedly, reset app state and go Home tab
+      disconnectSubRef.current = manager.onDeviceDisconnected(
+        connected.id,
+        (error, _device) => {
+          console.log('🔌 Disconnected:', error?.message);
+
+          statusSubRef.current?.remove();
+          statusSubRef.current = null;
+
+          setDevice(null);
+          setConnectedDevice(null);
+          setCollars([]);
+
+          navigation.getParent()?.navigate('Home');
+        },
+      );
+
       setDevice(connected);
 
       console.log('🟣 after discover, about to subscribe to STATUS');
 
-      const sub = connected.monitorCharacteristicForService(
+      statusSubRef.current = connected.monitorCharacteristicForService(
         COLLAR_SERVICE_UUID,
         STATUS_CHAR_UUID,
         (error, characteristic) => {
@@ -168,6 +203,14 @@ export default function HomeScreen() {
           });
 
           if (error) {
+            const msg = String((error as any)?.message ?? '');
+            if (
+              msg.includes('was disconnected') ||
+              msg.includes('cancelled') ||
+              msg.includes('canceled')
+            ) {
+              return; // expected on disconnect
+            }
             console.error('🔥 STATUS monitor error:', error);
             return;
           }
@@ -179,7 +222,7 @@ export default function HomeScreen() {
         },
       );
 
-      console.log('🟢 STATUS monitor created:', !!sub);
+      console.log('🟢 STATUS monitor created:', !!statusSubRef.current);
 
       const services = await connected.services();
 
@@ -243,6 +286,10 @@ export default function HomeScreen() {
     if (!collar.device) return;
 
     try {
+      statusSubRef.current?.remove();
+      statusSubRef.current = null;
+      disconnectSubRef.current?.remove();
+      disconnectSubRef.current = null;
       await disconnectFromCollar(collar.device);
       setDevice(null);
       setConnectedDevice(null);
