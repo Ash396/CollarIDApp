@@ -41,8 +41,15 @@ export function RadioConfigProvider({ children }: { children: ReactNode }) {
 
       console.log('📥 [Radio] Loaded radio config:', raw);
 
-      setDeviceRadioConfig(raw);
-      setDraftRadioConfig(raw); // reset draft to device truth on load
+      const deviceCopy = PB.RadioConfigPacket.fromObject(
+        PB.RadioConfigPacket.toObject(raw, { defaults: true }),
+      );
+      const draftCopy = PB.RadioConfigPacket.fromObject(
+        PB.RadioConfigPacket.toObject(raw, { defaults: true }),
+      );
+
+      setDeviceRadioConfig(deviceCopy);
+      setDraftRadioConfig(prev => prev ?? draftCopy);
     } catch (err) {
       console.error('❌ [Radio] Failed to load radio config:', err);
     }

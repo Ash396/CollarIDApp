@@ -264,7 +264,8 @@ export default function HomeScreen() {
         if (ch?.value) {
           const bytes = Buffer.from(ch.value, 'base64');
           const decoded = PB.BlePacket.decode(bytes);
-
+          console.log('has systemStatePacket?', !!decoded.systemStatePacket);
+          console.log('systemStatePacket:', decoded.systemStatePacket);
           const sys = decoded.systemStatePacket;
 
           const updated = {

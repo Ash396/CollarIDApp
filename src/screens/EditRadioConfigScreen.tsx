@@ -13,7 +13,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import * as PB from '../proto/collar_pb.js';
 import { useRadioConfig } from '../context/RadioConfigContext';
-import { hexByteToInt, hexToBytes, clampInt } from '../utils/protoUtils';
+import { hexByteToInt, hexToBytes, clampInt, bytesToHex } from '../utils/protoUtils';
 
 type RadioRegion = 'REGION_US915' | 'REGION_AU915' | 'REGION_EU868';
 type RadioAuth = 'AUTH_OTAA' | 'AUTH_ABP';
@@ -72,7 +72,7 @@ export default function EditRadioConfigScreen() {
   const [txOnlyOnNewGps, setTxOnlyOnNewGps] = useState(false);
   const [lorawanTransmitInterval, setLorawanTransmitInterval] = useState('');
   const [lorawanTxPowerDbm, setLorawanTxPowerDbm] = useState(14);
-  const [lorawanExpanded, setLorawanExpanded] = useState(true);
+  const [lorawanEnabled, setLorawanEnabled] = useState(true);
 
   /* ---------------- LoRa ---------------- */
   const [loraSF, setLoraSF] = useState<
@@ -85,7 +85,7 @@ export default function EditRadioConfigScreen() {
 
   const [loraFrequencyMHz, setLoraFrequencyMHz] = useState('');
 
-  const [loraExpanded, setLoraExpanded] = useState(true);
+  const [loraEnabled, setLoraEnabled] = useState(true);
 
   /* ---------------- Lost Mode ---------------- */
   const [lostModeEnabled, setLostModeEnabled] = useState(false);
@@ -103,8 +103,30 @@ export default function EditRadioConfigScreen() {
     const lostEnabled = Boolean((seedCfg as any).lostModeEnabled);
     const lostCfg = (seedCfg as any).lostModeConfig;
 
-    setLorawanExpanded(lorawan != null);
-    setLoraExpanded(lora != null);
+    setLorawanEnabled(lorawan != null);
+    if (!lorawan) {
+      setDevEui('');
+      setJoinEui('');
+      setAppKey('');
+      setNwkKey('');
+      setDevAddr('');
+      setNwkSKey('');
+      setAppSKey('');
+      setFNwkSIntKey('');
+      setSNwkSIntKey('');
+      setTxOnlyOnNewGps(false);
+      setLorawanTransmitInterval('');
+      setLorawanTxPowerDbm(14);
+    }
+    setLoraEnabled(lora != null);
+    if (!lora) {
+      setSyncWordHex('');
+      setLoraFrequencyMHz('');
+      setLoraTxPowerDbm(14);
+      setLoraSF('SF7');
+      setLoraBW('125');
+      setLoraCR('4/5');
+    }
 
     if (lorawan) {
       setLorawanRegion(
@@ -118,6 +140,47 @@ export default function EditRadioConfigScreen() {
       setTxOnlyOnNewGps(Boolean(lorawan.txOnlyOnNewGpsFix));
       setLorawanTransmitInterval(String(lorawan.transmitIntervalMin ?? ''));
       setLorawanTxPowerDbm(Number(lorawan.txPowerDbm ?? 14));
+
+      // Seed credential TextInputs from bytes -> hex
+      const otaa = lorawan.otaa;
+      const abp = lorawan.abp;
+
+      if ((lorawan.auth ?? 0) === 0 && otaa) {
+        setDevEui(bytesToHex(otaa.devEui));
+        setJoinEui(bytesToHex(otaa.joinEui));
+        setAppKey(bytesToHex(otaa.appKey));
+        setNwkKey(bytesToHex(otaa.nwkKey));
+
+        // Clear ABP fields to avoid stale UI
+        setDevAddr('');
+        setNwkSKey('');
+        setAppSKey('');
+        setFNwkSIntKey('');
+        setSNwkSIntKey('');
+      } else if ((lorawan.auth ?? 0) === 1 && abp) {
+        setDevAddr(bytesToHex(abp.devAddr));
+        setNwkSKey(bytesToHex(abp.nwkSKey));
+        setAppSKey(bytesToHex(abp.appSKey));
+        setFNwkSIntKey(bytesToHex(abp.fNwkSIntKey));
+        setSNwkSIntKey(bytesToHex(abp.sNwkSIntKey));
+
+        // Clear OTAA fields
+        setDevEui('');
+        setJoinEui('');
+        setAppKey('');
+        setNwkKey('');
+      } else {
+        // No credentials present
+        setDevEui('');
+        setJoinEui('');
+        setAppKey('');
+        setNwkKey('');
+        setDevAddr('');
+        setNwkSKey('');
+        setAppSKey('');
+        setFNwkSIntKey('');
+        setSNwkSIntKey('');
+      }
     }
 
     if (lora) {
@@ -135,7 +198,8 @@ export default function EditRadioConfigScreen() {
       );
       setLoraCR(['4/5', '4/6', '4/7', '4/8'][lora.radioCodingRate ?? 0] as any);
       setLoraTxPowerDbm(Number(lora.txPowerDbm ?? 14));
-      setSyncWordHex(''); // leaving blank unless you add bytesToHex for syncWord (it's int in proto)
+      const sw = Number(lora.syncWord ?? 0);
+      setSyncWordHex(sw.toString(16).padStart(2, '0').toUpperCase());
       setLoraFrequencyMHz(String(lora.frequency ?? ''));
     }
 
@@ -192,12 +256,11 @@ export default function EditRadioConfigScreen() {
   };
 
   const buildPbRadioConfigPacketFromUI = (): PB.RadioConfigPacket => {
-    // Only build these if the section is expanded; otherwise keep null.
-    let loRaWANConfig: PB.LoRaWANConfig | null = null;
-    let loRaConfig: PB.LoRaConfig | null = null;
+    let loRaWANConfig: PB.LoRaWANConfig | undefined;
+    let loRaConfig: PB.LoRaConfig | undefined;
 
-    /* ---------------- LoRaWAN (only if expanded) ---------------- */
-    if (lorawanExpanded) {
+    /* ---------------- LoRaWAN ---------------- */
+    if (lorawanEnabled) {
       // Validate credentials
       if (lorawanAuth === 'AUTH_OTAA') {
         if (
@@ -271,8 +334,8 @@ export default function EditRadioConfigScreen() {
       }
     }
 
-    /* ---------------- LoRa (only if expanded) ---------------- */
-    if (loraExpanded) {
+    /* ---------------- LoRa ---------------- */
+    if (loraEnabled) {
       // syncWord
       if (syncWordHex.trim()) {
         const v = syncWordHex.trim();
@@ -349,13 +412,15 @@ export default function EditRadioConfigScreen() {
       txPowerDbm: clampInt(Number(lostModeTxPowerDbm), 0, 26),
     });
 
-    // Mentor requirement: collapsed => set corresponding fields to null
-    return PB.RadioConfigPacket.create({
-      loRaWANConfig: lorawanExpanded ? loRaWANConfig : null,
-      loRaConfig: loraExpanded ? loRaConfig : null,
+    const obj: any = {
       lostModeEnabled: Boolean(lostModeEnabled),
       lostModeConfig,
-    });
+    };
+
+    if (lorawanEnabled && loRaWANConfig) obj.loRaWANConfig = loRaWANConfig;
+    if (loraEnabled && loRaConfig) obj.loRaConfig = loRaConfig;
+
+    return PB.RadioConfigPacket.create(obj);
   };
 
   const handleSave = () => {
@@ -375,7 +440,7 @@ export default function EditRadioConfigScreen() {
       {renderCard(
         '📡 LoRaWAN',
         <>
-          {lorawanExpanded && (
+          {lorawanEnabled && (
             <>
               <Text style={styles.label}>Region</Text>
               <Picker
@@ -532,14 +597,14 @@ export default function EditRadioConfigScreen() {
             </>
           )}
         </>,
-        lorawanExpanded,
-        setLorawanExpanded,
+        lorawanEnabled,
+        setLorawanEnabled,
       )}
 
       {renderCard(
         '📻 LoRa',
         <>
-          {loraExpanded && (
+          {loraEnabled && (
             <>
               <Text style={styles.label}>Radio Spreading Factor</Text>
               <Picker
@@ -612,8 +677,8 @@ export default function EditRadioConfigScreen() {
             </>
           )}
         </>,
-        loraExpanded,
-        setLoraExpanded,
+        loraEnabled,
+        setLoraEnabled,
       )}
 
       {renderCard(

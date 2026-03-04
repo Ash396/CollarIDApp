@@ -2821,6 +2821,12 @@ export class RadioConfigPacket implements IRadioConfigPacket {
     /** RadioConfigPacket lostModeConfig. */
     public lostModeConfig?: (ILostMode_config|null);
 
+    /** RadioConfigPacket _loRaWANConfig. */
+    public _loRaWANConfig?: "loRaWANConfig";
+
+    /** RadioConfigPacket _loRaConfig. */
+    public _loRaConfig?: "loRaConfig";
+
     /**
      * Creates a new RadioConfigPacket instance using the specified properties.
      * @param [properties] Properties to set
@@ -3332,8 +3338,14 @@ export class ScheduleConfigPacket implements IScheduleConfigPacket {
      */
     constructor(properties?: IScheduleConfigPacket);
 
+    /** ScheduleConfigPacket engaged. */
+    public engaged: boolean;
+
     /** ScheduleConfigPacket schedules. */
     public schedules: IScheduleConfig[];
+
+    /** ScheduleConfigPacket specialMode. */
+    public specialMode: number;
 
     /**
      * Creates a new ScheduleConfigPacket instance using the specified properties.

@@ -8418,6 +8418,31 @@ $root.RadioConfigPacket = (function() {
      */
     RadioConfigPacket.prototype.lostModeConfig = null;
 
+    // OneOf field names bound to virtual getters and setters
+    var $oneOfFields;
+
+    /**
+     * RadioConfigPacket _loRaWANConfig.
+     * @member {"loRaWANConfig"|undefined} _loRaWANConfig
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    Object.defineProperty(RadioConfigPacket.prototype, "_loRaWANConfig", {
+        get: $util.oneOfGetter($oneOfFields = ["loRaWANConfig"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * RadioConfigPacket _loRaConfig.
+     * @member {"loRaConfig"|undefined} _loRaConfig
+     * @memberof RadioConfigPacket
+     * @instance
+     */
+    Object.defineProperty(RadioConfigPacket.prototype, "_loRaConfig", {
+        get: $util.oneOfGetter($oneOfFields = ["loRaConfig"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
     /**
      * Creates a new RadioConfigPacket instance using the specified properties.
      * @function create
@@ -8537,15 +8562,22 @@ $root.RadioConfigPacket = (function() {
     RadioConfigPacket.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
+        var properties = {};
         if (message.loRaWANConfig != null && message.hasOwnProperty("loRaWANConfig")) {
-            var error = $root.LoRaWANConfig.verify(message.loRaWANConfig);
-            if (error)
-                return "loRaWANConfig." + error;
+            properties._loRaWANConfig = 1;
+            {
+                var error = $root.LoRaWANConfig.verify(message.loRaWANConfig);
+                if (error)
+                    return "loRaWANConfig." + error;
+            }
         }
         if (message.loRaConfig != null && message.hasOwnProperty("loRaConfig")) {
-            var error = $root.LoRaConfig.verify(message.loRaConfig);
-            if (error)
-                return "loRaConfig." + error;
+            properties._loRaConfig = 1;
+            {
+                var error = $root.LoRaConfig.verify(message.loRaConfig);
+                if (error)
+                    return "loRaConfig." + error;
+            }
         }
         if (message.lostModeEnabled != null && message.hasOwnProperty("lostModeEnabled"))
             if (typeof message.lostModeEnabled !== "boolean")
@@ -8604,15 +8636,19 @@ $root.RadioConfigPacket = (function() {
             options = {};
         var object = {};
         if (options.defaults) {
-            object.loRaWANConfig = null;
-            object.loRaConfig = null;
             object.lostModeEnabled = false;
             object.lostModeConfig = null;
         }
-        if (message.loRaWANConfig != null && message.hasOwnProperty("loRaWANConfig"))
+        if (message.loRaWANConfig != null && message.hasOwnProperty("loRaWANConfig")) {
             object.loRaWANConfig = $root.LoRaWANConfig.toObject(message.loRaWANConfig, options);
-        if (message.loRaConfig != null && message.hasOwnProperty("loRaConfig"))
+            if (options.oneofs)
+                object._loRaWANConfig = "loRaWANConfig";
+        }
+        if (message.loRaConfig != null && message.hasOwnProperty("loRaConfig")) {
             object.loRaConfig = $root.LoRaConfig.toObject(message.loRaConfig, options);
+            if (options.oneofs)
+                object._loRaConfig = "loRaConfig";
+        }
         if (message.lostModeEnabled != null && message.hasOwnProperty("lostModeEnabled"))
             object.lostModeEnabled = message.lostModeEnabled;
         if (message.lostModeConfig != null && message.hasOwnProperty("lostModeConfig"))
@@ -9983,7 +10019,9 @@ $root.ScheduleConfigPacket = (function() {
      * Properties of a ScheduleConfigPacket.
      * @exports IScheduleConfigPacket
      * @interface IScheduleConfigPacket
+     * @property {boolean|null} [engaged] ScheduleConfigPacket engaged
      * @property {Array.<IScheduleConfig>|null} [schedules] ScheduleConfigPacket schedules
+     * @property {number|null} [specialMode] ScheduleConfigPacket specialMode
      */
 
     /**
@@ -10003,12 +10041,28 @@ $root.ScheduleConfigPacket = (function() {
     }
 
     /**
+     * ScheduleConfigPacket engaged.
+     * @member {boolean} engaged
+     * @memberof ScheduleConfigPacket
+     * @instance
+     */
+    ScheduleConfigPacket.prototype.engaged = false;
+
+    /**
      * ScheduleConfigPacket schedules.
      * @member {Array.<IScheduleConfig>} schedules
      * @memberof ScheduleConfigPacket
      * @instance
      */
     ScheduleConfigPacket.prototype.schedules = $util.emptyArray;
+
+    /**
+     * ScheduleConfigPacket specialMode.
+     * @member {number} specialMode
+     * @memberof ScheduleConfigPacket
+     * @instance
+     */
+    ScheduleConfigPacket.prototype.specialMode = 0;
 
     /**
      * Creates a new ScheduleConfigPacket instance using the specified properties.
@@ -10034,9 +10088,13 @@ $root.ScheduleConfigPacket = (function() {
     ScheduleConfigPacket.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
+        if (message.engaged != null && Object.hasOwnProperty.call(message, "engaged"))
+            writer.uint32(/* id 1, wireType 0 =*/8).bool(message.engaged);
         if (message.schedules != null && message.schedules.length)
             for (var i = 0; i < message.schedules.length; ++i)
-                $root.ScheduleConfig.encode(message.schedules[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                $root.ScheduleConfig.encode(message.schedules[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+        if (message.specialMode != null && Object.hasOwnProperty.call(message, "specialMode"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.specialMode);
         return writer;
     };
 
@@ -10074,9 +10132,17 @@ $root.ScheduleConfigPacket = (function() {
                 break;
             switch (tag >>> 3) {
             case 1: {
+                    message.engaged = reader.bool();
+                    break;
+                }
+            case 2: {
                     if (!(message.schedules && message.schedules.length))
                         message.schedules = [];
                     message.schedules.push($root.ScheduleConfig.decode(reader, reader.uint32()));
+                    break;
+                }
+            case 3: {
+                    message.specialMode = reader.uint32();
                     break;
                 }
             default:
@@ -10114,6 +10180,9 @@ $root.ScheduleConfigPacket = (function() {
     ScheduleConfigPacket.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
+        if (message.engaged != null && message.hasOwnProperty("engaged"))
+            if (typeof message.engaged !== "boolean")
+                return "engaged: boolean expected";
         if (message.schedules != null && message.hasOwnProperty("schedules")) {
             if (!Array.isArray(message.schedules))
                 return "schedules: array expected";
@@ -10123,6 +10192,9 @@ $root.ScheduleConfigPacket = (function() {
                     return "schedules." + error;
             }
         }
+        if (message.specialMode != null && message.hasOwnProperty("specialMode"))
+            if (!$util.isInteger(message.specialMode))
+                return "specialMode: integer expected";
         return null;
     };
 
@@ -10138,6 +10210,8 @@ $root.ScheduleConfigPacket = (function() {
         if (object instanceof $root.ScheduleConfigPacket)
             return object;
         var message = new $root.ScheduleConfigPacket();
+        if (object.engaged != null)
+            message.engaged = Boolean(object.engaged);
         if (object.schedules) {
             if (!Array.isArray(object.schedules))
                 throw TypeError(".ScheduleConfigPacket.schedules: array expected");
@@ -10148,6 +10222,8 @@ $root.ScheduleConfigPacket = (function() {
                 message.schedules[i] = $root.ScheduleConfig.fromObject(object.schedules[i]);
             }
         }
+        if (object.specialMode != null)
+            message.specialMode = object.specialMode >>> 0;
         return message;
     };
 
@@ -10166,11 +10242,19 @@ $root.ScheduleConfigPacket = (function() {
         var object = {};
         if (options.arrays || options.defaults)
             object.schedules = [];
+        if (options.defaults) {
+            object.engaged = false;
+            object.specialMode = 0;
+        }
+        if (message.engaged != null && message.hasOwnProperty("engaged"))
+            object.engaged = message.engaged;
         if (message.schedules && message.schedules.length) {
             object.schedules = [];
             for (var j = 0; j < message.schedules.length; ++j)
                 object.schedules[j] = $root.ScheduleConfig.toObject(message.schedules[j], options);
         }
+        if (message.specialMode != null && message.hasOwnProperty("specialMode"))
+            object.specialMode = message.specialMode;
         return object;
     };
 
