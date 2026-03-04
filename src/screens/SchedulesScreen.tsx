@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Switch,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -26,11 +27,19 @@ export default function SchedulesScreen() {
   const { device } = useDevice();
   const { loadRadioFromDevice } = useRadioConfig();
 
-  const { draftSchedules, addSchedule, loadSchedulesFromDevice } =
-    useSchedules();
+  const {
+    draftSchedules,
+    addSchedule,
+    loadSchedulesFromDevice,
+    draftEngaged,
+    collarEngaged,
+    setDraftEngaged,
+  } = useSchedules();
+
+  const effectiveDraftEngaged = draftEngaged ?? collarEngaged ?? false;
 
   /* ------------------------------------------------------------------
-   * Connect if needed + Load schedules once
+   * Load schedules + radio when device changes
    * ------------------------------------------------------------------ */
   useEffect(() => {
     if (!device) return;
@@ -43,7 +52,7 @@ export default function SchedulesScreen() {
         console.error('❌ Failed to load schedules/radio:', err);
       }
     })();
-  }, [device]);
+  }, [device, loadSchedulesFromDevice, loadRadioFromDevice]);
 
   /* ---------------------------------------------------------
    * Add New Schedule Locally
@@ -59,7 +68,7 @@ export default function SchedulesScreen() {
   };
 
   /* ---------------------------------------------------------
-   * Send Updated Schedule Packet to the Device
+   * Send Updated Schedule Packet (includes engaged)
    * --------------------------------------------------------- */
   const handleSendToDevice = async () => {
     try {
@@ -69,13 +78,25 @@ export default function SchedulesScreen() {
       }
 
       const result = await verifyWrite({
-        draft: draftSchedules,
+        draft: { schedules: draftSchedules, engaged: effectiveDraftEngaged },
+
         write: async () => {
-          const packet = buildSchedulePacketFromAppState(draftSchedules);
+          const packet = buildSchedulePacketFromAppState(
+            draftSchedules,
+            effectiveDraftEngaged,
+          );
           await sendConfig(device, packet);
         },
+
         read: async () => await readSchedulesFromDevice(device),
-        equal: (draft, readback) => schedulesEqual(draft, readback),
+
+        equal: (draft, readback) => {
+          if (!readback) return false;
+          return (
+            schedulesEqual(draft.schedules, readback.schedules) &&
+            draft.engaged === Boolean(readback.engaged)
+          );
+        },
       });
 
       if (result.ok) {
@@ -85,12 +106,12 @@ export default function SchedulesScreen() {
         await loadSchedulesFromDevice(device);
         Alert.alert(
           '⚠️ Sent, but mismatch',
-          'Device schedules differ from what you sent (may be clamped).',
+          'Device schedule packet differs from what you sent (may be clamped).',
         );
       } else {
         Alert.alert(
           '⚠️ Sent, but not verified',
-          'Could not read schedules back from device.',
+          'Could not read schedule config back from device.',
         );
       }
     } catch (err) {
@@ -108,6 +129,21 @@ export default function SchedulesScreen() {
       <Text style={styles.sub}>
         Configure sampling and time windows for {device?.name ?? 'Collar'}
       </Text>
+
+      {/* Engaged toggle */}
+      <View style={styles.engagedRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.engagedTitle}>System engaged</Text>
+          <Text style={styles.engagedSub}>
+            Device: {collarEngaged === null ? '—' : collarEngaged ? 'ON' : 'OFF'} • Draft:{' '}
+            {draftEngaged === null ? '—' : draftEngaged ? 'ON' : 'OFF'}
+          </Text>
+        </View>
+        <Switch
+          value={effectiveDraftEngaged}
+          onValueChange={v => setDraftEngaged(v)}
+        />
+      </View>
 
       {draftSchedules.length === 0 && (
         <Text style={{ color: '#777', marginBottom: 20 }}>
@@ -235,6 +271,20 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginBottom: 20,
   },
+
+  engagedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  engagedTitle: { fontSize: 16, fontWeight: '700', color: '#111' },
+  engagedSub: { marginTop: 2, fontSize: 13, color: '#666' },
+
   card: {
     backgroundColor: '#FAFAFA',
     padding: 18,

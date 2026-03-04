@@ -143,7 +143,8 @@ export async function readRadioState(device: Device): Promise<DecodedPacket> {
 
 export async function readSchedulesFromDevice(device: Device) {
   const decoded = await readInitialState(device);
-  return decoded?.scheduleConfigPacket?.schedules ?? null; // raw proto schedules array
+  const pkt = decoded?.scheduleConfigPacket ?? null;
+  return pkt ? { schedules: pkt.schedules ?? [], engaged: Boolean(pkt.engaged) } : null;
 }
 
 export async function readRadioConfigFromDevice(device: Device) {
@@ -239,6 +240,7 @@ export function subscribeToStatus(
 
 export function buildSchedulePacketFromAppState(
   appSchedules: any[],
+  appEngaged: boolean,
 ): PB.BlePacket {
   const schedules = appSchedules.map(s =>
     PB.ScheduleConfig.create({
@@ -292,7 +294,10 @@ export function buildSchedulePacketFromAppState(
       epoch: Math.floor(Date.now() / 1000),
       packetIndex: 0,
     }),
-    scheduleConfigPacket: PB.ScheduleConfigPacket.create({ schedules }),
+    scheduleConfigPacket: PB.ScheduleConfigPacket.create({
+      engaged: Boolean(appEngaged),
+      schedules,
+    }),
   });
 }
 

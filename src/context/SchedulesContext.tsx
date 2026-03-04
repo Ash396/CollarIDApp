@@ -6,12 +6,18 @@ import React, {
 } from 'react';
 
 import type { Schedule } from '../navigation/ScheduleNavigator';
-import { readInitialState } from '../ble/bleManager';
+import { readSchedulesFromDevice } from '../ble/bleManager';
 import { mapProtoSchedule } from '../utils/mapProtoSchedule';
 
 type SchedulesContextType = {
   draftSchedules: Schedule[];
   collarSchedules: Schedule[];
+
+  // engaged flag (system on/off)
+  draftEngaged: boolean | null;
+  collarEngaged: boolean | null;
+  setDraftEngaged: (v: boolean | null) => void;
+
   loadSchedulesFromDevice: (device: any) => Promise<void>;
 
   // draft mutators
@@ -28,27 +34,34 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
   const [draftSchedules, setDraftSchedules] = useState<Schedule[]>([]);
   const [collarSchedules, setCollarSchedules] = useState<Schedule[]>([]);
 
+  const [draftEngaged, setDraftEngaged] = useState<boolean | null>(null);
+  const [collarEngaged, setCollarEngaged] = useState<boolean | null>(null);
+
   /* ----------------------------------------------------------
    * Load from Collar (source of truth)
    * ---------------------------------------------------------- */
   const loadSchedulesFromDevice = async (device: any) => {
     try {
       console.log('📡 [Schedules] Reading schedule state…');
-      const decoded = await readInitialState(device);
-      const raw = decoded?.scheduleConfigPacket?.schedules;
 
-      if (!raw) {
-        console.warn('⚠️ No schedules found.');
+      const res = await readSchedulesFromDevice(device);
+      if (!res) {
+        console.warn('⚠️ No schedule packet found.');
         setDraftSchedules([]);
         setCollarSchedules([]);
+        setCollarEngaged(false);
+        setDraftEngaged(null);
         return;
       }
 
-      const mapped = raw.map(mapProtoSchedule);
+      const mapped = (res.schedules ?? []).map(mapProtoSchedule);
       console.log('📥 [Schedules] Loaded schedules:', mapped);
 
       setCollarSchedules(mapped);
-      setDraftSchedules(mapped); // reset draft to device truth on load
+      setDraftSchedules(mapped); // reset draft to device truth on load (same behavior as before)
+
+      setCollarEngaged(Boolean(res.engaged));
+      setDraftEngaged(Boolean(res.engaged)); // reset draft engaged to device truth on load
     } catch (err) {
       console.error('❌ Failed to load schedules:', err);
     }
@@ -76,6 +89,9 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
       value={{
         draftSchedules,
         collarSchedules,
+        draftEngaged,
+        collarEngaged,
+        setDraftEngaged,
         loadSchedulesFromDevice,
         updateSchedule,
         deleteSchedule,
