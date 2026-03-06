@@ -1,9 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-} from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 import type { Schedule } from '../navigation/ScheduleNavigator';
 import { readSchedulesFromDevice } from '../ble/bleManager';
@@ -14,8 +9,8 @@ type SchedulesContextType = {
   collarSchedules: Schedule[];
 
   // engaged flag (system on/off)
-  draftEngaged: boolean | null;
-  collarEngaged: boolean | null;
+  draftEngaged: boolean | null;   // user's draft intent (null = not set yet)
+  collarEngaged: boolean | null;  // device truth (null = unknown/not loaded)
   setDraftEngaged: (v: boolean | null) => void;
 
   loadSchedulesFromDevice: (device: any) => Promise<void>;
@@ -46,24 +41,28 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
 
       const res = await readSchedulesFromDevice(device);
       if (!res) {
-        console.warn('⚠️ No schedule packet found.');
-        setDraftSchedules([]);
+        console.warn('⚠️ No schedule packet found (or not readable).');
         setCollarSchedules([]);
-        setCollarEngaged(false);
-        setDraftEngaged(null);
+        setCollarEngaged(null);
         return;
       }
 
       const mapped = (res.schedules ?? []).map(mapProtoSchedule);
+      const engaged = Boolean(res.engaged);
+
       console.log('📥 [Schedules] Loaded schedules:', mapped);
 
+      // Device truth always updates
       setCollarSchedules(mapped);
-      setDraftSchedules(mapped); // reset draft to device truth on load (same behavior as before)
+      setCollarEngaged(engaged);
 
-      setCollarEngaged(Boolean(res.engaged));
-      setDraftEngaged(Boolean(res.engaged)); // reset draft engaged to device truth on load
+      // Draft only seeds if user hasn't edited yet
+      setDraftSchedules(prev => (prev.length ? prev : mapped));
+      setDraftEngaged(prev => (prev === null ? engaged : prev));
     } catch (err) {
       console.error('❌ Failed to load schedules:', err);
+      // On errors, do NOT wipe draft; just mark device truth unknown
+      setCollarEngaged(null);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Text,
   View,
@@ -36,13 +36,18 @@ export default function SchedulesScreen() {
     setDraftEngaged,
   } = useSchedules();
 
+  // Switch always needs a boolean
   const effectiveDraftEngaged = draftEngaged ?? collarEngaged ?? false;
 
-  /* ------------------------------------------------------------------
-   * Load schedules + radio when device changes
-   * ------------------------------------------------------------------ */
+  // Prevent re-loading from device repeatedly due to device object identity changes
+  const lastLoadedId = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!device) return;
+    const id = device?.id;
+    if (!id || !device) return;
+
+    if (lastLoadedId.current === id) return;
+    lastLoadedId.current = id;
 
     (async () => {
       try {
@@ -52,11 +57,8 @@ export default function SchedulesScreen() {
         console.error('❌ Failed to load schedules/radio:', err);
       }
     })();
-  }, [device, loadSchedulesFromDevice, loadRadioFromDevice]);
+  }, [device?.id, loadSchedulesFromDevice, loadRadioFromDevice]);
 
-  /* ---------------------------------------------------------
-   * Add New Schedule Locally
-   * --------------------------------------------------------- */
   const handleAddSchedule = () => {
     const newSchedule = {
       id: Date.now().toString(),
@@ -67,9 +69,6 @@ export default function SchedulesScreen() {
     addSchedule(newSchedule);
   };
 
-  /* ---------------------------------------------------------
-   * Send Updated Schedule Packet (includes engaged)
-   * --------------------------------------------------------- */
   const handleSendToDevice = async () => {
     try {
       if (!device) {
@@ -120,9 +119,6 @@ export default function SchedulesScreen() {
     }
   };
 
-  /* ---------------------------------------------------------
-   * RENDER
-   * --------------------------------------------------------- */
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>SCHEDULES</Text>
@@ -130,12 +126,12 @@ export default function SchedulesScreen() {
         Configure sampling and time windows for {device?.name ?? 'Collar'}
       </Text>
 
-      {/* Engaged toggle */}
       <View style={styles.engagedRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.engagedTitle}>System engaged</Text>
           <Text style={styles.engagedSub}>
-            Device: {collarEngaged === null ? '—' : collarEngaged ? 'ON' : 'OFF'} • Draft:{' '}
+            Device:{' '}
+            {collarEngaged === null ? '—' : collarEngaged ? 'ON' : 'OFF'} • Draft:{' '}
             {draftEngaged === null ? '—' : draftEngaged ? 'ON' : 'OFF'}
           </Text>
         </View>
@@ -229,8 +225,7 @@ export default function SchedulesScreen() {
 
               {s.magnetometer?.enabled && (
                 <Text style={styles.cardDetail}>
-                  🧲 Magnetometer: every {s.magnetometer.sampleIntervalS ?? '?'}{' '}
-                  s
+                  🧲 Magnetometer: every {s.magnetometer.sampleIntervalS ?? '?'} s
                 </Text>
               )}
 
@@ -255,7 +250,6 @@ export default function SchedulesScreen() {
   );
 }
 
-/* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#FFFFFF' },
   header: {

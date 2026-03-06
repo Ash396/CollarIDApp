@@ -10,6 +10,7 @@ interface CollarCardProps {
   lastUpdate?: string;
   onConnect: () => void;
   onDisconnect: () => void;
+  onEnterDfu?: () => void;
 }
 
 export default function CollarCard({
@@ -21,10 +22,11 @@ export default function CollarCard({
   lastUpdate,
   onConnect,
   onDisconnect,
+  onEnterDfu,
 }: CollarCardProps) {
-  const formatSD = (bytes?: number) => {
-    if (!bytes) return "—";
-    return (bytes / 1_000_000_000).toFixed(1) + " GB";
+  const formatSD = (mb?: number | null) => {
+    if (mb == null) return "—";
+    return (mb / 1000).toFixed(2) + " GB";
   };
 
   return (
@@ -49,17 +51,30 @@ export default function CollarCard({
         <Text style={styles.meta}>Last seen: {lastUpdate}</Text>
       )}
 
-      <TouchableOpacity
-        style={[
-          styles.button,
-          { backgroundColor: connected ? "#b22222" : "#f8b26a" },
-        ]}
-        onPress={connected ? onDisconnect : onConnect}
-      >
-        <Text style={styles.buttonText}>
-          {connected ? "Disconnect" : "Connect"}
-        </Text>
-      </TouchableOpacity>
+      {connected ? (
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.button, styles.disconnectButton]}
+            onPress={onDisconnect}
+          >
+            <Text style={styles.buttonText}>Disconnect</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.dfuButton]}
+            onPress={onEnterDfu}
+          >
+            <Text style={styles.buttonText}>DFU</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={[styles.button, styles.connectButton]}
+          onPress={onConnect}
+        >
+          <Text style={styles.buttonText}>Connect</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -102,12 +117,30 @@ const styles = StyleSheet.create({
     color: "#444",
     marginTop: 2,
   },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
   button: {
-    alignSelf: "center",
-    marginTop: 15,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 15,
+  },
+  connectButton: {
+    alignSelf: "center",
+    backgroundColor: "#f8b26a",
+  },
+  disconnectButton: {
+    flex: 1,
+    backgroundColor: "#b22222",
+  },
+  dfuButton: {
+    backgroundColor: "#f8b26a",
+    paddingHorizontal: 16,
   },
   buttonText: {
     color: "#fff",

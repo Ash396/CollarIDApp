@@ -46,6 +46,26 @@ function toUnixEpochSecondsFromLocal(
   return Number.isFinite(seconds) ? seconds : undefined;
 }
 
+function fromUnixEpochSecondsToLocalStrings(epoch: number): {
+  date: string;
+  time: string;
+} | undefined {
+  if (!Number.isFinite(epoch) || epoch <= 0) return undefined;
+
+  const d = new Date(epoch * 1000);
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minute = String(d.getMinutes()).padStart(2, '0');
+
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hour}:${minute}`,
+  };
+}
+
 export default function EditRadioConfigScreen() {
   const navigation = useNavigation<any>();
   const { deviceRadioConfig, draftRadioConfig, setDraftRadioConfig } =
@@ -205,9 +225,18 @@ export default function EditRadioConfigScreen() {
 
     setLostModeEnabled(lostEnabled);
     if (lostEnabled && lostCfg) {
-      // We can’t reliably convert epoch->local date/time without helper; leave user to re-enter for now
+      const activation = fromUnixEpochSecondsToLocalStrings(
+        Number(lostCfg.activationEpoch ?? 0),
+      );
+
+      setActivationDate(activation?.date ?? '');
+      setActivationTime(activation?.time ?? '');
+
       setLostModeTransmitInterval(String(lostCfg.transmitIntervalMin ?? ''));
       setLostModeTxPowerDbm(Number(lostCfg.txPowerDbm ?? 14));
+    } else {
+      setActivationDate('');
+      setActivationTime('');
     }
   }, [seedCfg]);
 
@@ -283,7 +312,7 @@ export default function EditRadioConfigScreen() {
         }
       }
 
-      if (txOnlyOnNewGps) {
+      if (!txOnlyOnNewGps) {
         if (
           !requirePositiveNumber(
             'LoRaWAN transmitInterval (min)',
@@ -307,7 +336,7 @@ export default function EditRadioConfigScreen() {
         region: regionNum,
         auth: authNum,
         txOnlyOnNewGpsFix: Boolean(txOnlyOnNewGps),
-        transmitIntervalMin: txOnlyOnNewGps
+        transmitIntervalMin: !txOnlyOnNewGps
           ? Math.max(1, Math.trunc(Number(lorawanTransmitInterval)))
           : 0,
         txPowerDbm: clampInt(Number(lorawanTxPowerDbm), 0, 23),
@@ -575,13 +604,13 @@ export default function EditRadioConfigScreen() {
 
               <Text style={styles.label}>Transmit Interval (minutes)</Text>
               <TextInput
-                style={[styles.input, !txOnlyOnNewGps && styles.inputDisabled]}
+                style={[styles.input, txOnlyOnNewGps && styles.inputDisabled]}
                 keyboardType="numeric"
                 value={lorawanTransmitInterval}
                 onChangeText={setLorawanTransmitInterval}
                 placeholder="> 0"
                 placeholderTextColor="#999"
-                editable={txOnlyOnNewGps}
+                editable={!txOnlyOnNewGps}
               />
 
               <Text style={styles.label}>TX Power (dBm) [0–23]</Text>

@@ -264,6 +264,7 @@ export default function EditScheduleScreen() {
           />
 
           <Text style={styles.label}>Accuracy (1–10)</Text>
+          <Text style={styles.helper}>1 = low accuracy, 10 = high accuracy</Text>
           <Picker
             selectedValue={gpsAccuracy}
             onValueChange={v => setGpsAccuracy(Number(v))}
@@ -504,6 +505,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#111',
     marginBottom: 6,
+  },
+
+  helper: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
   },
 
   row: {

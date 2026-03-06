@@ -10084,7 +10084,7 @@ $root.ScheduleConfigPacket = (function() {
      * @param {IScheduleConfigPacket} message ScheduleConfigPacket message or plain object to encode
      * @param {$protobuf.Writer} [writer] Writer to encode to
      * @returns {$protobuf.Writer} Writer
-     */
+     */ 
     ScheduleConfigPacket.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();

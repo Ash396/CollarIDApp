@@ -41,12 +41,9 @@ export function RadioConfigProvider({ children }: { children: ReactNode }) {
 
       console.log('📥 [Radio] Loaded radio config:', raw);
 
-      const deviceCopy = PB.RadioConfigPacket.fromObject(
-        PB.RadioConfigPacket.toObject(raw, { defaults: true }),
-      );
-      const draftCopy = PB.RadioConfigPacket.fromObject(
-        PB.RadioConfigPacket.toObject(raw, { defaults: true }),
-      );
+      const encoded = PB.RadioConfigPacket.encode(raw).finish();
+      const deviceCopy = PB.RadioConfigPacket.decode(encoded);
+      const draftCopy = PB.RadioConfigPacket.decode(encoded);
 
       setDeviceRadioConfig(deviceCopy);
       setDraftRadioConfig(prev => prev ?? draftCopy);

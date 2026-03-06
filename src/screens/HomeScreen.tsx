@@ -21,7 +21,11 @@ import {
   COLLAR_SERVICE_UUID,
   STATUS_CHAR_UUID,
   disconnectFromCollar,
+  buildSchedulePacketFromAppState,
+  sendConfig,
 } from '../ble/bleManager';
+
+import { useSchedules } from '../context/SchedulesContext';
 
 interface Collar {
   id: string;
@@ -45,6 +49,26 @@ export default function HomeScreen() {
 
   const statusSubRef = useRef<{ remove: () => void } | null>(null);
   const disconnectSubRef = useRef<{ remove: () => void } | null>(null);
+
+  const { draftSchedules, draftEngaged } = useSchedules();
+  const DFU_SPECIAL_MODE = 27;
+
+  const handleEnterDfu = async (collar: Collar) => {
+    if (!collar.device) return;
+
+    try {
+      const packet = buildSchedulePacketFromAppState(
+        draftSchedules,
+        draftEngaged ?? false,
+        DFU_SPECIAL_MODE,
+      );
+
+      await sendConfig(collar.device, packet);
+      console.log('✅ DFU packet sent');
+    } catch (err) {
+      console.error('Failed to send DFU packet:', err);
+    }
+  };
 
   /* ----------------------------------------------------------
    * Ensure Bluetooth ON
@@ -341,6 +365,7 @@ export default function HomeScreen() {
           lastUpdate={collar.lastUpdate}
           onConnect={() => handleConnect(collar)}
           onDisconnect={() => handleDisconnect(collar)}
+          onEnterDfu={() => handleEnterDfu(collar)}
         />
       ))}
 

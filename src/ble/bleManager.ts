@@ -241,6 +241,7 @@ export function subscribeToStatus(
 export function buildSchedulePacketFromAppState(
   appSchedules: any[],
   appEngaged: boolean,
+  specialMode = 0,
 ): PB.BlePacket {
   const schedules = appSchedules.map(s =>
     PB.ScheduleConfig.create({
@@ -297,6 +298,7 @@ export function buildSchedulePacketFromAppState(
     scheduleConfigPacket: PB.ScheduleConfigPacket.create({
       engaged: Boolean(appEngaged),
       schedules,
+      specialMode,
     }),
   });
 }
