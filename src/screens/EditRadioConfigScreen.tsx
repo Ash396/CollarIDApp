@@ -339,7 +339,7 @@ export default function EditRadioConfigScreen() {
         transmitIntervalMin: !txOnlyOnNewGps
           ? Math.max(1, Math.trunc(Number(lorawanTransmitInterval)))
           : 0,
-        txPowerDbm: clampInt(Number(lorawanTxPowerDbm), 0, 23),
+        txPowerDbm: clampInt(Number(lorawanTxPowerDbm), 0, 22),
       });
 
       // oneof credentials
@@ -405,7 +405,7 @@ export default function EditRadioConfigScreen() {
         radioSpreadingFactor: sfNum,
         radioBandwidth: bwNum,
         radioCodingRate: crNum,
-        txPowerDbm: clampInt(Number(loraTxPowerDbm), 0, 26),
+        txPowerDbm: clampInt(Number(loraTxPowerDbm), 0, 22),
         syncWord: hexByteToInt(syncWordHex.trim() || '00'),
         frequency: Math.trunc(freq),
       });
@@ -438,7 +438,7 @@ export default function EditRadioConfigScreen() {
       transmitIntervalMin: lostModeEnabled
         ? Math.max(1, Math.trunc(Number(lostModeTransmitInterval)))
         : 1,
-      txPowerDbm: clampInt(Number(lostModeTxPowerDbm), 0, 26),
+      txPowerDbm: clampInt(Number(lostModeTxPowerDbm), 0, 22),
     });
 
     const obj: any = {
@@ -613,13 +613,13 @@ export default function EditRadioConfigScreen() {
                 editable={!txOnlyOnNewGps}
               />
 
-              <Text style={styles.label}>TX Power (dBm) [0–23]</Text>
+              <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
               <Picker
                 selectedValue={lorawanTxPowerDbm}
                 onValueChange={v => setLorawanTxPowerDbm(Number(v))}
                 itemStyle={{ color: '#111' }}
               >
-                {Array.from({ length: 24 }, (_, i) => i).map(p => (
+                {Array.from({ length: 23 }, (_, i) => i).map(p => (
                   <Picker.Item key={p} label={`${p} dBm`} value={p} />
                 ))}
               </Picker>
@@ -671,13 +671,13 @@ export default function EditRadioConfigScreen() {
                 <Picker.Item label="CR 4/8" value="4/8" />
               </Picker>
 
-              <Text style={styles.label}>TX Power (dBm) [0–26]</Text>
+              <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
               <Picker
                 selectedValue={loraTxPowerDbm}
                 onValueChange={v => setLoraTxPowerDbm(Number(v))}
                 itemStyle={{ color: '#111' }}
               >
-                {Array.from({ length: 27 }, (_, i) => i).map(p => (
+                {Array.from({ length: 23 }, (_, i) => i).map(p => (
                   <Picker.Item key={p} label={`${p} dBm`} value={p} />
                 ))}
               </Picker>
@@ -750,13 +750,13 @@ export default function EditRadioConfigScreen() {
                 placeholderTextColor="#999"
               />
 
-              <Text style={styles.label}>TX Power (dBm) [0–26]</Text>
+              <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
               <Picker
                 selectedValue={lostModeTxPowerDbm}
                 onValueChange={v => setLostModeTxPowerDbm(Number(v))}
                 itemStyle={{ color: '#111' }}
               >
-                {Array.from({ length: 27 }, (_, i) => i).map(p => (
+                {Array.from({ length: 23 }, (_, i) => i).map(p => (
                   <Picker.Item key={p} label={`${p} dBm`} value={p} />
                 ))}
               </Picker>

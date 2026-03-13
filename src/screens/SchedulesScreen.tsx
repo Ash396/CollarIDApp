@@ -31,6 +31,7 @@ export default function SchedulesScreen() {
     draftSchedules,
     addSchedule,
     loadSchedulesFromDevice,
+    clearSchedulesState,
     draftEngaged,
     collarEngaged,
     setDraftEngaged,
@@ -44,6 +45,14 @@ export default function SchedulesScreen() {
 
   useEffect(() => {
     const id = device?.id;
+    if (!id) {
+      lastLoadedId.current = null;
+      clearSchedulesState();
+    }
+  }, [device?.id]);
+
+  useEffect(() => {
+    const id = device?.id;
     if (!id || !device) return;
 
     if (lastLoadedId.current === id) return;
@@ -51,21 +60,50 @@ export default function SchedulesScreen() {
 
     (async () => {
       try {
+        clearSchedulesState();
         await loadSchedulesFromDevice(device);
         await loadRadioFromDevice(device);
       } catch (err) {
         console.error('❌ Failed to load schedules/radio:', err);
       }
     })();
-  }, [device?.id, loadSchedulesFromDevice, loadRadioFromDevice]);
+  }, [device?.id]);
 
   const handleAddSchedule = () => {
     const newSchedule = {
       id: Date.now().toString(),
       name: `New Schedule ${draftSchedules.length + 1}`,
-      window: { startHour: 8, endHour: 20 },
-      gps: { enabled: true, sampleIntervalMin: 10, accuracy: 5 },
+      window: { startHour: 0, endHour: 0 },
+
+      gps: { enabled: false, sampleIntervalMin: 10, accuracy: 5 },
+      light: { enabled: false, sampleIntervalMin: 10 },
+      environmental: { enabled: false, sampleIntervalMin: 10 },
+      particulate: { enabled: false, sampleIntervalMin: 10 },
+      microphone: {
+        enabled: false,
+        continuousMode: false,
+        sampleLengthMin: 1,
+        sampleWindowMin: 10,
+      },
+      accelerometer: {
+        enabled: false,
+        sampleRate: 0,
+        sensitivity: 0,
+      },
+      lorawan: {
+        enabled: false,
+        sendIntervalMin: 10,
+      },
+      lora: {
+        enabled: false,
+        sendIntervalMin: 10,
+      },
+      magnetometer: {
+        enabled: false,
+        sampleIntervalS: 10,
+      },
     };
+
     addSchedule(newSchedule);
   };
 
@@ -131,8 +169,8 @@ export default function SchedulesScreen() {
           <Text style={styles.engagedTitle}>System engaged</Text>
           <Text style={styles.engagedSub}>
             Device:{' '}
-            {collarEngaged === null ? '—' : collarEngaged ? 'ON' : 'OFF'} • Draft:{' '}
-            {draftEngaged === null ? '—' : draftEngaged ? 'ON' : 'OFF'}
+            {collarEngaged === null ? '—' : collarEngaged ? 'ON' : 'OFF'} •
+            Draft: {draftEngaged === null ? '—' : draftEngaged ? 'ON' : 'OFF'}
           </Text>
         </View>
         <Switch
@@ -225,7 +263,8 @@ export default function SchedulesScreen() {
 
               {s.magnetometer?.enabled && (
                 <Text style={styles.cardDetail}>
-                  🧲 Magnetometer: every {s.magnetometer.sampleIntervalS ?? '?'} s
+                  🧲 Magnetometer: every {s.magnetometer.sampleIntervalS ?? '?'}{' '}
+                  s
                 </Text>
               )}
 

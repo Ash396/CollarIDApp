@@ -9,11 +9,12 @@ type SchedulesContextType = {
   collarSchedules: Schedule[];
 
   // engaged flag (system on/off)
-  draftEngaged: boolean | null;   // user's draft intent (null = not set yet)
-  collarEngaged: boolean | null;  // device truth (null = unknown/not loaded)
+  draftEngaged: boolean | null;
+  collarEngaged: boolean | null;
   setDraftEngaged: (v: boolean | null) => void;
 
   loadSchedulesFromDevice: (device: any) => Promise<void>;
+  clearSchedulesState: () => void;
 
   // draft mutators
   updateSchedule: (id: string, updated: Schedule) => void;
@@ -32,6 +33,13 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
   const [draftEngaged, setDraftEngaged] = useState<boolean | null>(null);
   const [collarEngaged, setCollarEngaged] = useState<boolean | null>(null);
 
+  const clearSchedulesState = () => {
+    setDraftSchedules([]);
+    setCollarSchedules([]);
+    setDraftEngaged(null);
+    setCollarEngaged(null);
+  };
+
   /* ----------------------------------------------------------
    * Load from Collar (source of truth)
    * ---------------------------------------------------------- */
@@ -44,6 +52,8 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
         console.warn('⚠️ No schedule packet found (or not readable).');
         setCollarSchedules([]);
         setCollarEngaged(null);
+        setDraftSchedules([]);
+        setDraftEngaged(null);
         return;
       }
 
@@ -52,17 +62,17 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
 
       console.log('📥 [Schedules] Loaded schedules:', mapped);
 
-      // Device truth always updates
+      // Current connected collar is the source of truth
       setCollarSchedules(mapped);
       setCollarEngaged(engaged);
-
-      // Draft only seeds if user hasn't edited yet
-      setDraftSchedules(prev => (prev.length ? prev : mapped));
-      setDraftEngaged(prev => (prev === null ? engaged : prev));
+      setDraftSchedules(mapped);
+      setDraftEngaged(engaged);
     } catch (err) {
       console.error('❌ Failed to load schedules:', err);
-      // On errors, do NOT wipe draft; just mark device truth unknown
+      setCollarSchedules([]);
       setCollarEngaged(null);
+      setDraftSchedules([]);
+      setDraftEngaged(null);
     }
   };
 
@@ -92,6 +102,7 @@ export function SchedulesProvider({ children }: { children: ReactNode }) {
         collarEngaged,
         setDraftEngaged,
         loadSchedulesFromDevice,
+        clearSchedulesState,
         updateSchedule,
         deleteSchedule,
         addSchedule,

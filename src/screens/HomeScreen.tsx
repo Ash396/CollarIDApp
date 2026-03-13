@@ -50,7 +50,7 @@ export default function HomeScreen() {
   const statusSubRef = useRef<{ remove: () => void } | null>(null);
   const disconnectSubRef = useRef<{ remove: () => void } | null>(null);
 
-  const { draftSchedules, draftEngaged } = useSchedules();
+  const { draftSchedules, draftEngaged, clearSchedulesState } = useSchedules();
   const DFU_SPECIAL_MODE = 27;
 
   const handleEnterDfu = async (collar: Collar) => {
@@ -224,6 +224,7 @@ export default function HomeScreen() {
         },
       );
 
+      clearSchedulesState();
       setDevice(connected);
 
       console.log('🟣 after discover, about to subscribe to STATUS');
@@ -327,6 +328,8 @@ export default function HomeScreen() {
       disconnectSubRef.current?.remove();
       disconnectSubRef.current = null;
       await disconnectFromCollar(collar.device);
+
+      clearSchedulesState();
       setDevice(null);
       setConnectedDevice(null);
       setCollars([]);

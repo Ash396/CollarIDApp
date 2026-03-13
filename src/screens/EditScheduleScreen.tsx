@@ -35,7 +35,7 @@ export default function EditScheduleScreen() {
 
   /* Light */
   const [lightEnabled, setLightEnabled] = useState(
-    schedule.light?.enabled ?? true,
+    schedule.light?.enabled ?? false,
   );
   const [lightInterval, setLightInterval] = useState(
     String(schedule.light?.sampleIntervalMin ?? ''),
@@ -43,7 +43,7 @@ export default function EditScheduleScreen() {
 
   /* Environmental */
   const [envEnabled, setEnvEnabled] = useState(
-    schedule.environmental?.enabled ?? true,
+    schedule.environmental?.enabled ?? false,
   );
   const [envInterval, setEnvInterval] = useState(
     String(schedule.environmental?.sampleIntervalMin ?? ''),
@@ -51,7 +51,7 @@ export default function EditScheduleScreen() {
 
   /* Particulate */
   const [partEnabled, setPartEnabled] = useState(
-    schedule.particulate?.enabled ?? true,
+    schedule.particulate?.enabled ?? false,
   );
   const [partInterval, setPartInterval] = useState(
     String(schedule.particulate?.sampleIntervalMin ?? ''),
