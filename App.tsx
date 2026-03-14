@@ -11,6 +11,7 @@ import { RadioConfigProvider } from './src/context/RadioConfigContext';
 import SplashScreen from './src/screens/SplashScreen';
 import RadioNavigator from './src/navigation/RadioNavigator';
 import { DeviceProvider } from './src/context/DeviceContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 enableScreens();
 
@@ -29,30 +30,32 @@ export default function App() {
   }
 
   return (
-    <DeviceProvider>
-      <RadioConfigProvider>
-        <SchedulesProvider>
-          <NavigationContainer>
-            <Tab.Navigator>
-              <Tab.Screen name="Home" component={HomeScreen} />
-              <Tab.Screen
-                name="SchedulesTab"
-                component={ScheduleNavigator}
-                options={{ title: 'Schedules' }}
-              />
-              <Tab.Screen
-                name="RadioTab"
-                component={RadioNavigator}
-                options={{ title: 'Radio' }}
-              />
-              <Tab.Screen
-                name="Power Consumption"
-                component={PowerConsumptionScreen}
-              />
-            </Tab.Navigator>
-          </NavigationContainer>
-        </SchedulesProvider>
-      </RadioConfigProvider>
-    </DeviceProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <DeviceProvider>
+        <RadioConfigProvider>
+          <SchedulesProvider>
+            <NavigationContainer>
+              <Tab.Navigator>
+                <Tab.Screen name="Home" component={HomeScreen} />
+                <Tab.Screen
+                  name="SchedulesTab"
+                  component={ScheduleNavigator}
+                  options={{ title: 'Schedules' }}
+                />
+                <Tab.Screen
+                  name="RadioTab"
+                  component={RadioNavigator}
+                  options={{ title: 'Radio' }}
+                />
+                <Tab.Screen
+                  name="Power Consumption"
+                  component={PowerConsumptionScreen}
+                />
+              </Tab.Navigator>
+            </NavigationContainer>
+          </SchedulesProvider>
+        </RadioConfigProvider>
+      </DeviceProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -19,6 +19,7 @@ import { useDevice } from '../context/DeviceContext';
 import { verifyWrite } from '../utils/verifyWrite';
 import { schedulesEqual } from '../utils/scheduleEquality';
 import { readSchedulesFromDevice } from '../ble/bleManager';
+import { Swipeable } from 'react-native-gesture-handler';
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, 'Schedules'>;
 
@@ -30,6 +31,7 @@ export default function SchedulesScreen() {
   const {
     draftSchedules,
     addSchedule,
+    deleteSchedule,
     loadSchedulesFromDevice,
     clearSchedulesState,
     draftEngaged,
@@ -136,19 +138,13 @@ export default function SchedulesScreen() {
         },
       });
 
-      if (result.ok) {
+      if (result.ok || result.reason === 'mismatch') {
         await loadSchedulesFromDevice(device);
-        Alert.alert('✅ Success', 'Schedules verified on device!');
-      } else if (result.reason === 'mismatch') {
-        await loadSchedulesFromDevice(device);
-        Alert.alert(
-          '⚠️ Sent, but mismatch',
-          'Device schedule packet differs from what you sent (may be clamped).',
-        );
+        Alert.alert('Success', 'Schedules updated successfully.');
       } else {
         Alert.alert(
-          '⚠️ Sent, but not verified',
-          'Could not read schedule config back from device.',
+          'Warning',
+          'Schedules were sent but could not be verified from the device.',
         );
       }
     } catch (err) {
@@ -200,81 +196,105 @@ export default function SchedulesScreen() {
 
         const solarEstimate = estimateScheduleSolar(s).totalSolarHours;
 
-        return (
+        const renderRightActions = () => (
           <TouchableOpacity
-            key={s.id}
-            style={[styles.card, isDisabled && styles.disabledCard]}
-            onPress={() => navigation.navigate('EditSchedule', { schedule: s })}
+            style={styles.deleteSwipeButton}
+            onPress={() => {
+              Alert.alert(
+                'Delete Schedule',
+                `Are you sure you want to delete "${s.name}"?`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => deleteSchedule(s.id),
+                  },
+                ],
+              );
+            }}
           >
-            <Text style={styles.cardTitle}>{s.name}</Text>
-            <Text style={styles.cardText}>
-              🕓 {s.window.startHour}:00 – {s.window.endHour}:00
-            </Text>
-
-            <Text style={styles.cardText}>
-              ☀️ {solarEstimate.toFixed(1)} solar-hours / day
-            </Text>
-
-            <View style={styles.detailsContainer}>
-              {s.gps?.enabled && (
-                <Text style={styles.cardDetail}>
-                  📍 GPS: every {s.gps.sampleIntervalMin} min (accuracy{' '}
-                  {s.gps.accuracy ?? 'N/A'})
-                </Text>
-              )}
-              {s.light?.enabled && (
-                <Text style={styles.cardDetail}>
-                  💡 Light: every {s.light.sampleIntervalMin} min
-                </Text>
-              )}
-              {s.environmental?.enabled && (
-                <Text style={styles.cardDetail}>
-                  🌡️ Env: every {s.environmental.sampleIntervalMin} min
-                </Text>
-              )}
-              {s.particulate?.enabled && (
-                <Text style={styles.cardDetail}>
-                  💨 Particulate: every {s.particulate.sampleIntervalMin} min
-                </Text>
-              )}
-              {s.microphone?.enabled && (
-                <Text style={styles.cardDetail}>
-                  🎙️ Microphone:{' '}
-                  {s.microphone.continuousMode ? 'continuous' : 'windowed'}
-                </Text>
-              )}
-              {s.accelerometer?.enabled && (
-                <Text style={styles.cardDetail}>
-                  🏃 Accelerometer:{' '}
-                  {s.accelerometer.sampleRate === 0 ? '25Hz' : '50Hz'},{' '}
-                  {['2G', '4G', '8G'][s.accelerometer.sensitivity ?? 0]}
-                </Text>
-              )}
-              {s.lorawan?.enabled && (
-                <Text style={styles.cardDetail}>
-                  📡 LoRaWAN: every {s.lorawan.sendIntervalMin ?? '?'} min
-                </Text>
-              )}
-              {s.lora?.enabled && (
-                <Text style={styles.cardDetail}>
-                  📡 LoRa: every {s.lora.sendIntervalMin ?? '?'} min
-                </Text>
-              )}
-
-              {s.magnetometer?.enabled && (
-                <Text style={styles.cardDetail}>
-                  🧲 Magnetometer: every {s.magnetometer.sampleIntervalS ?? '?'}{' '}
-                  s
-                </Text>
-              )}
-
-              {isDisabled && (
-                <Text style={[styles.cardDetail, { color: '#888' }]}>
-                  No sensors enabled
-                </Text>
-              )}
-            </View>
+            <Text style={styles.deleteSwipeText}>Delete</Text>
           </TouchableOpacity>
+        );
+
+        return (
+          <Swipeable key={s.id} renderRightActions={renderRightActions}>
+            <TouchableOpacity
+              style={[styles.card, isDisabled && styles.disabledCard]}
+              onPress={() =>
+                navigation.navigate('EditSchedule', { schedule: s })
+              }
+            >
+              <Text style={styles.cardTitle}>{s.name}</Text>
+              <Text style={styles.cardText}>
+                🕓 {s.window.startHour}:00 – {s.window.endHour}:00
+              </Text>
+
+              <Text style={styles.cardText}>
+                ☀️ {solarEstimate.toFixed(1)} solar-hours / day
+              </Text>
+
+              <View style={styles.detailsContainer}>
+                {s.gps?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    📍 GPS: every {s.gps.sampleIntervalMin} min (accuracy{' '}
+                    {s.gps.accuracy ?? 'N/A'})
+                  </Text>
+                )}
+                {s.light?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    💡 Light: every {s.light.sampleIntervalMin} min
+                  </Text>
+                )}
+                {s.environmental?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    🌡️ Env: every {s.environmental.sampleIntervalMin} min
+                  </Text>
+                )}
+                {s.particulate?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    💨 Particulate: every {s.particulate.sampleIntervalMin} min
+                  </Text>
+                )}
+                {s.microphone?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    🎙️ Microphone:{' '}
+                    {s.microphone.continuousMode ? 'continuous' : 'windowed'}
+                  </Text>
+                )}
+                {s.accelerometer?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    🏃 Accelerometer:{' '}
+                    {s.accelerometer.sampleRate === 0 ? '25Hz' : '50Hz'},{' '}
+                    {['2G', '4G', '8G'][s.accelerometer.sensitivity ?? 0]}
+                  </Text>
+                )}
+                {s.lorawan?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    📡 LoRaWAN: every {s.lorawan.sendIntervalMin ?? '?'} min
+                  </Text>
+                )}
+                {s.lora?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    📡 LoRa: every {s.lora.sendIntervalMin ?? '?'} min
+                  </Text>
+                )}
+                {s.magnetometer?.enabled && (
+                  <Text style={styles.cardDetail}>
+                    🧲 Magnetometer: every{' '}
+                    {s.magnetometer.sampleIntervalS ?? '?'} s
+                  </Text>
+                )}
+
+                {isDisabled && (
+                  <Text style={[styles.cardDetail, { color: '#888' }]}>
+                    No sensors enabled
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          </Swipeable>
         );
       })}
 
@@ -360,5 +380,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     letterSpacing: 0.5,
+  },
+  deleteSwipeButton: {
+    backgroundColor: '#F87171',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 110,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  deleteSwipeText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });
