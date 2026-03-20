@@ -49,6 +49,7 @@ export default function HomeScreen() {
 
   const statusSubRef = useRef<{ remove: () => void } | null>(null);
   const disconnectSubRef = useRef<{ remove: () => void } | null>(null);
+  const manualDisconnectRef = useRef(false);
 
   const { draftSchedules, draftEngaged, clearSchedulesState } = useSchedules();
   const DFU_SPECIAL_MODE = 27;
@@ -221,14 +222,18 @@ export default function HomeScreen() {
         (error, _device) => {
           console.log('🔌 Disconnected:', error?.message);
 
-          statusSubRef.current?.remove();
           statusSubRef.current = null;
+          disconnectSubRef.current = null;
 
+          clearSchedulesState();
           setDevice(null);
           setConnectedDevice(null);
           setCollars([]);
 
-          navigation.getParent()?.navigate('Home');
+          if (manualDisconnectRef.current) {
+            manualDisconnectRef.current = false;
+            return;
+          }
         },
       );
 
@@ -331,17 +336,20 @@ export default function HomeScreen() {
     if (!collar.device) return;
 
     try {
-      statusSubRef.current?.remove();
-      statusSubRef.current = null;
-      disconnectSubRef.current?.remove();
-      disconnectSubRef.current = null;
-      await disconnectFromCollar(collar.device);
+      manualDisconnectRef.current = true;
+
+      const ok = await disconnectFromCollar(collar.device);
+      if (!ok) {
+        manualDisconnectRef.current = false;
+        return;
+      }
 
       clearSchedulesState();
       setDevice(null);
       setConnectedDevice(null);
       setCollars([]);
     } catch (err) {
+      manualDisconnectRef.current = false;
       console.error('Disconnect failed:', err);
     }
   };

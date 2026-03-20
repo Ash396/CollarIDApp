@@ -477,8 +477,9 @@ export async function disconnectFromCollar(device: Device) {
   try {
     await device.cancelConnection();
     console.log('🔌 Disconnected');
+    return true;
   } catch (err) {
     console.error('❌ Failed to disconnect:', err);
-    throw err;
+    return false;
   }
 }

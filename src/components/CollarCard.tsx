@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
   name: {
     fontWeight: "700",
     fontSize: 18,
+    color: "black"
   },
   statusText: {
     fontSize: 14,
