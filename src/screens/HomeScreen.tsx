@@ -201,6 +201,14 @@ export default function HomeScreen() {
 
       await connected.discoverAllServicesAndCharacteristics();
 
+      if (Platform.OS === 'android') {
+        try {
+          const updated = await connected.requestMTU(185);
+          console.log('✅ MTU updated to', updated.mtu);
+        } catch (err) {
+          console.warn('⚠️ requestMTU failed:', err);
+        }
+      }
       // cleanup old listeners if any
       statusSubRef.current?.remove();
       statusSubRef.current = null;

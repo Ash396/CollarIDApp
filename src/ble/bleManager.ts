@@ -106,6 +106,22 @@ export async function connectToCollar(device: Device): Promise<Device | null> {
 }
 
 /* --------- Initial state read (Schedules) --------- */
+// export async function readInitialState(device: Device): Promise<DecodedPacket> {
+//   try {
+//     const ch = await device.readCharacteristicForService(
+//       COLLAR_SERVICE_UUID,
+//       UPDATE_CHAR_UUID,
+//     );
+
+//     if (!ch?.value) return null;
+
+//     const bytes = Buffer.from(ch.value, 'base64');
+//     return safeDecode(bytes);
+//   } catch (err) {
+//     console.warn('⚠️ readInitialState failed:', err);
+//     return null;
+//   }
+// }
 export async function readInitialState(device: Device): Promise<DecodedPacket> {
   try {
     const ch = await device.readCharacteristicForService(
@@ -116,7 +132,31 @@ export async function readInitialState(device: Device): Promise<DecodedPacket> {
     if (!ch?.value) return null;
 
     const bytes = Buffer.from(ch.value, 'base64');
-    return safeDecode(bytes);
+    console.log('[Schedules] bytes hex:', bytes.toString('hex'));
+
+    // Try wrapped BlePacket first only if it actually contains scheduleConfigPacket
+    try {
+      const pkt = PB.BlePacket.decode(bytes);
+      if (pkt?.scheduleConfigPacket && Array.isArray(pkt.scheduleConfigPacket.schedules)) {
+        console.log('[Schedules] using BlePacket decode');
+        return {
+          blePacket: pkt,
+          scheduleConfigPacket: pkt.scheduleConfigPacket,
+        };
+      }
+    } catch {}
+
+    // Then try raw ScheduleConfigPacket
+    try {
+      const sched = PB.ScheduleConfigPacket.decode(bytes);
+      if (Array.isArray(sched?.schedules)) {
+        console.log('[Schedules] using raw ScheduleConfigPacket decode');
+        return { scheduleConfigPacket: sched };
+      }
+    } catch {}
+
+    console.warn('[Schedules] no valid schedule decode');
+    return null;
   } catch (err) {
     console.warn('⚠️ readInitialState failed:', err);
     return null;
@@ -141,9 +181,18 @@ export async function readRadioState(device: Device): Promise<DecodedPacket> {
   }
 }
 
+// export async function readSchedulesFromDevice(device: Device) {
+//   const decoded = await readInitialState(device);
+//   const pkt = decoded?.scheduleConfigPacket ?? null;
+//   return pkt ? { schedules: pkt.schedules ?? [], engaged: Boolean(pkt.engaged) } : null;
+// }
 export async function readSchedulesFromDevice(device: Device) {
   const decoded = await readInitialState(device);
+  console.log('[Schedules] decoded object:', JSON.stringify(decoded, null, 2));
+
   const pkt = decoded?.scheduleConfigPacket ?? null;
+  console.log('[Schedules] schedule packet:', JSON.stringify(pkt, null, 2));
+
   return pkt ? { schedules: pkt.schedules ?? [], engaged: Boolean(pkt.engaged) } : null;
 }
 
@@ -364,20 +413,44 @@ export function buildBlePacketFromRadioConfig(
 /*                              Send Config                                    */
 /* -------------------------------------------------------------------------- */
 
+// export async function sendConfig(device: Device, packet: PB.BlePacket) {
+//   console.log('📤 Sending schedule packet…');
+
+//   const encoded = PB.BlePacket.encode(packet).finish();
+//   const base64 = Buffer.from(encoded).toString('base64');
+
+//   await device.writeCharacteristicWithResponseForService(
+//     COLLAR_SERVICE_UUID,
+//     UPDATE_CHAR_UUID,
+//     base64,
+//   );
+
+//   console.log('✅ Write complete');
+//   return true;
+// }
 export async function sendConfig(device: Device, packet: PB.BlePacket) {
-  console.log('📤 Sending schedule packet…');
+  try {
+    console.log('📤 Sending schedule packet…');
 
-  const encoded = PB.BlePacket.encode(packet).finish();
-  const base64 = Buffer.from(encoded).toString('base64');
+    const encoded = PB.BlePacket.encode(packet).finish();
+    const base64 = Buffer.from(encoded).toString('base64');
 
-  await device.writeCharacteristicWithResponseForService(
-    COLLAR_SERVICE_UUID,
-    UPDATE_CHAR_UUID,
-    base64,
-  );
+    console.log('[sendConfig] encoded length:', encoded.length);
+    console.log('[sendConfig] base64 length:', base64.length);
+    console.log('[sendConfig] hex:', Buffer.from(encoded).toString('hex'));
 
-  console.log('✅ Write complete');
-  return true;
+    await device.writeCharacteristicWithResponseForService(
+      COLLAR_SERVICE_UUID,
+      UPDATE_CHAR_UUID,
+      base64,
+    );
+
+    console.log('✅ Write complete');
+    return true;
+  } catch (err) {
+    console.error('❌ sendConfig failed:', err);
+    throw err;
+  }
 }
 
 export async function sendRadioConfig(device: Device, packet: PB.BlePacket) {
