@@ -13,7 +13,13 @@ import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import * as PB from '../proto/collar_pb.js';
 import { useRadioConfig } from '../context/RadioConfigContext';
-import { hexByteToInt, hexToBytes, clampInt, bytesToHex } from '../utils/protoUtils';
+import {
+  hexByteToInt,
+  hexToBytes,
+  clampInt,
+  bytesToHex,
+} from '../utils/protoUtils';
+import StyledPicker from '../components/StyledPicker';
 
 type RadioRegion = 'REGION_US915' | 'REGION_AU915' | 'REGION_EU868';
 type RadioAuth = 'AUTH_OTAA' | 'AUTH_ABP';
@@ -46,10 +52,12 @@ function toUnixEpochSecondsFromLocal(
   return Number.isFinite(seconds) ? seconds : undefined;
 }
 
-function fromUnixEpochSecondsToLocalStrings(epoch: number): {
-  date: string;
-  time: string;
-} | undefined {
+function fromUnixEpochSecondsToLocalStrings(epoch: number):
+  | {
+      date: string;
+      time: string;
+    }
+  | undefined {
   if (!Number.isFinite(epoch) || epoch <= 0) return undefined;
 
   const d = new Date(epoch * 1000);
@@ -113,6 +121,41 @@ export default function EditRadioConfigScreen() {
   const [activationTime, setActivationTime] = useState('');
   const [lostModeTransmitInterval, setLostModeTransmitInterval] = useState('');
   const [lostModeTxPowerDbm, setLostModeTxPowerDbm] = useState(14);
+
+  /* ---------------- Picker Options ---------------- */
+  const regionOptions = [
+    { label: 'US915', value: 'REGION_US915' },
+    { label: 'AU915', value: 'REGION_AU915' },
+    { label: 'EU868', value: 'REGION_EU868' },
+  ];
+
+  const authOptions = [
+    { label: 'OTAA', value: 'AUTH_OTAA' },
+    { label: 'ABP', value: 'AUTH_ABP' },
+  ];
+
+  const txPowerOptions = Array.from({ length: 23 }, (_, i) => ({
+    label: `${i} dBm`,
+    value: i,
+  }));
+
+  const sfOptions = ['SF7', 'SF8', 'SF9', 'SF10', 'SF11', 'SF12'].map(sf => ({
+    label: sf,
+    value: sf,
+  }));
+
+  const bandwidthOptions = [
+    { label: '125 kHz', value: '125' },
+    { label: '250 kHz', value: '250' },
+    { label: '500 kHz', value: '500' },
+  ];
+
+  const codingRateOptions = [
+    { label: 'CR 4/5', value: '4/5' },
+    { label: 'CR 4/6', value: '4/6' },
+    { label: 'CR 4/7', value: '4/7' },
+    { label: 'CR 4/8', value: '4/8' },
+  ];
 
   // Seed state from existing draft/device config
   useEffect(() => {
@@ -472,25 +515,22 @@ export default function EditRadioConfigScreen() {
           {lorawanEnabled && (
             <>
               <Text style={styles.label}>Region</Text>
-              <Picker
+              <StyledPicker
                 selectedValue={lorawanRegion}
-                onValueChange={v => setLorawanRegion(v)}
-                itemStyle={{ color: '#111' }}
-              >
-                <Picker.Item label="US915" value="REGION_US915" />
-                <Picker.Item label="AU915" value="REGION_AU915" />
-                <Picker.Item label="EU868" value="REGION_EU868" />
-              </Picker>
+                onValueChange={value => setLorawanRegion(value as RadioRegion)}
+                items={regionOptions}
+                placeholder="Select region"
+                enabled={lorawanEnabled}
+              />
 
               <Text style={styles.label}>Auth</Text>
-              <Picker
+              <StyledPicker
                 selectedValue={lorawanAuth}
-                onValueChange={v => setLorawanAuth(v)}
-                itemStyle={{ color: '#111' }}
-              >
-                <Picker.Item label="OTAA" value="AUTH_OTAA" />
-                <Picker.Item label="ABP" value="AUTH_ABP" />
-              </Picker>
+                onValueChange={value => setLorawanAuth(value as RadioAuth)}
+                items={authOptions}
+                placeholder="Select auth mode"
+                enabled={lorawanEnabled}
+              />
 
               {lorawanAuth === 'AUTH_OTAA' ? (
                 <>
@@ -614,15 +654,13 @@ export default function EditRadioConfigScreen() {
               />
 
               <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
-              <Picker
+              <StyledPicker
                 selectedValue={lorawanTxPowerDbm}
-                onValueChange={v => setLorawanTxPowerDbm(Number(v))}
-                itemStyle={{ color: '#111' }}
-              >
-                {Array.from({ length: 23 }, (_, i) => i).map(p => (
-                  <Picker.Item key={p} label={`${p} dBm`} value={p} />
-                ))}
-              </Picker>
+                onValueChange={value => setLorawanTxPowerDbm(Number(value))}
+                items={txPowerOptions}
+                placeholder="Select TX power"
+                enabled={lorawanEnabled}
+              />
             </>
           )}
         </>,
@@ -636,51 +674,48 @@ export default function EditRadioConfigScreen() {
           {loraEnabled && (
             <>
               <Text style={styles.label}>Radio Spreading Factor</Text>
-              <Picker
+              <StyledPicker
                 selectedValue={loraSF}
-                onValueChange={v => setLoraSF(v)}
-                itemStyle={{ color: '#111' }}
-              >
-                {(['SF7', 'SF8', 'SF9', 'SF10', 'SF11', 'SF12'] as const).map(
-                  sf => (
-                    <Picker.Item key={sf} label={sf} value={sf} />
-                  ),
-                )}
-              </Picker>
+                onValueChange={value =>
+                  setLoraSF(
+                    value as 'SF7' | 'SF8' | 'SF9' | 'SF10' | 'SF11' | 'SF12',
+                  )
+                }
+                items={sfOptions}
+                placeholder="Select spreading factor"
+                enabled={loraEnabled}
+              />
 
               <Text style={styles.label}>Radio Bandwidth (kHz)</Text>
-              <Picker
+              <StyledPicker
                 selectedValue={loraBW}
-                onValueChange={v => setLoraBW(v)}
-                itemStyle={{ color: '#111' }}
-              >
-                <Picker.Item label="125 kHz" value="125" />
-                <Picker.Item label="250 kHz" value="250" />
-                <Picker.Item label="500 kHz" value="500" />
-              </Picker>
+                onValueChange={value =>
+                  setLoraBW(value as '125' | '250' | '500')
+                }
+                items={bandwidthOptions}
+                placeholder="Select bandwidth"
+                enabled={loraEnabled}
+              />
 
               <Text style={styles.label}>Radio Coding Rate</Text>
-              <Picker
+              <StyledPicker
                 selectedValue={loraCR}
-                onValueChange={v => setLoraCR(v)}
-                itemStyle={{ color: '#111' }}
-              >
-                <Picker.Item label="CR 4/5" value="4/5" />
-                <Picker.Item label="CR 4/6" value="4/6" />
-                <Picker.Item label="CR 4/7" value="4/7" />
-                <Picker.Item label="CR 4/8" value="4/8" />
-              </Picker>
+                onValueChange={value =>
+                  setLoraCR(value as '4/5' | '4/6' | '4/7' | '4/8')
+                }
+                items={codingRateOptions}
+                placeholder="Select coding rate"
+                enabled={loraEnabled}
+              />
 
               <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
-              <Picker
+              <StyledPicker
                 selectedValue={loraTxPowerDbm}
-                onValueChange={v => setLoraTxPowerDbm(Number(v))}
-                itemStyle={{ color: '#111' }}
-              >
-                {Array.from({ length: 23 }, (_, i) => i).map(p => (
-                  <Picker.Item key={p} label={`${p} dBm`} value={p} />
-                ))}
-              </Picker>
+                onValueChange={value => setLoraTxPowerDbm(Number(value))}
+                items={txPowerOptions}
+                placeholder="Select TX power"
+                enabled={loraEnabled}
+              />
 
               <Text style={styles.label}>syncWord (2 hex chars)</Text>
               <TextInput
@@ -751,15 +786,13 @@ export default function EditRadioConfigScreen() {
               />
 
               <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
-              <Picker
+              <StyledPicker
                 selectedValue={lostModeTxPowerDbm}
-                onValueChange={v => setLostModeTxPowerDbm(Number(v))}
-                itemStyle={{ color: '#111' }}
-              >
-                {Array.from({ length: 23 }, (_, i) => i).map(p => (
-                  <Picker.Item key={p} label={`${p} dBm`} value={p} />
-                ))}
-              </Picker>
+                onValueChange={value => setLostModeTxPowerDbm(Number(value))}
+                items={txPowerOptions}
+                placeholder="Select TX power"
+                enabled={lostModeEnabled}
+              />
             </>
           )}
         </>,

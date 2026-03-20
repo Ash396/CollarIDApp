@@ -9,9 +9,9 @@ import {
   Switch,
   Alert,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSchedules } from '../context/SchedulesContext';
+import StyledPicker from '../components/StyledPicker';
 
 export default function EditScheduleScreen() {
   const route = useRoute<any>();
@@ -105,6 +105,30 @@ export default function EditScheduleScreen() {
   const [magIntervalS, setMagIntervalS] = useState(
     String(schedule.magnetometer?.sampleIntervalS ?? ''),
   );
+
+  /* ---------------- PICKER OPTIONS ---------------- */
+
+  const hourOptions = [...Array(24).keys()].map(h => ({
+    label: `${h}:00`,
+    value: h,
+  }));
+
+  const gpsAccuracyOptions = [...Array(10).keys()].map(a => ({
+    label: `${a + 1}`,
+    value: a + 1,
+  }));
+
+  const accelRateOptions = [
+    { label: '25 Hz', value: 0 },
+    { label: '50 Hz', value: 1 },
+  ];
+
+  const accelSensitivityOptions = [
+    { label: '2G', value: 0 },
+    { label: '4G', value: 1 },
+    { label: '8G', value: 2 },
+  ];
+
   /* ---------------- SAVE ---------------- */
   const handleSave = () => {
     if (!name.trim()) {
@@ -226,26 +250,20 @@ export default function EditScheduleScreen() {
         '🕓 Time Window',
         <>
           <Text style={styles.label}>Start Hour</Text>
-          <Picker
+          <StyledPicker
             selectedValue={startHour}
-            onValueChange={v => setStartHour(Number(v))}
-            itemStyle={{ color: '#111' }}
-          >
-            {[...Array(24).keys()].map(h => (
-              <Picker.Item key={h} label={`${h}:00`} value={h} />
-            ))}
-          </Picker>
+            onValueChange={setStartHour}
+            items={hourOptions}
+            placeholder="Select start hour"
+          />
 
           <Text style={styles.label}>End Hour</Text>
-          <Picker
+          <StyledPicker
             selectedValue={endHour}
-            onValueChange={v => setEndHour(Number(v))}
-            itemStyle={{ color: '#111' }}
-          >
-            {[...Array(24).keys()].map(h => (
-              <Picker.Item key={h} label={`${h}:00`} value={h} />
-            ))}
-          </Picker>
+            onValueChange={setEndHour}
+            items={hourOptions}
+            placeholder="Select end hour"
+          />
         </>,
       )}
 
@@ -264,16 +282,16 @@ export default function EditScheduleScreen() {
           />
 
           <Text style={styles.label}>Accuracy (1–10)</Text>
-          <Text style={styles.helper}>1 = low accuracy, 10 = high accuracy</Text>
-          <Picker
+          <Text style={styles.helper}>
+            1 = low accuracy, 10 = high accuracy
+          </Text>
+          <StyledPicker
             selectedValue={gpsAccuracy}
-            onValueChange={v => setGpsAccuracy(Number(v))}
-            itemStyle={{ color: '#111' }}
-          >
-            {[...Array(10).keys()].map(a => (
-              <Picker.Item key={a + 1} label={`${a + 1}`} value={a + 1} />
-            ))}
-          </Picker>
+            onValueChange={setGpsAccuracy}
+            items={gpsAccuracyOptions}
+            placeholder="Select accuracy"
+            enabled={gpsEnabled}
+          />
         </>,
         gpsEnabled,
         setGpsEnabled,
@@ -371,25 +389,22 @@ export default function EditScheduleScreen() {
         '🏃 Accelerometer',
         <>
           <Text style={styles.label}>Sample Rate</Text>
-          <Picker
+          <StyledPicker
             selectedValue={accelRate}
-            onValueChange={v => setAccelRate(Number(v))}
-            itemStyle={{ color: '#111' }}
-          >
-            <Picker.Item label="25 Hz" value={0} />
-            <Picker.Item label="50 Hz" value={1} />
-          </Picker>
+            onValueChange={setAccelRate}
+            items={accelRateOptions}
+            placeholder="Select sample rate"
+            enabled={accelEnabled}
+          />
 
           <Text style={styles.label}>Sensitivity</Text>
-          <Picker
+          <StyledPicker
             selectedValue={accelSensitivity}
-            onValueChange={v => setAccelSensitivity(Number(v))}
-            itemStyle={{ color: '#111' }}
-          >
-            <Picker.Item label="2G" value={0} />
-            <Picker.Item label="4G" value={1} />
-            <Picker.Item label="8G" value={2} />
-          </Picker>
+            onValueChange={setAccelSensitivity}
+            items={accelSensitivityOptions}
+            placeholder="Select sensitivity"
+            enabled={accelEnabled}
+          />
         </>,
         accelEnabled,
         setAccelEnabled,
