@@ -2,57 +2,44 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useSchedules } from "../context/SchedulesContext";
-import { estimateMultiScheduleSolar, estimateScheduleSolar } from "../utils/powerEstimator";
+import { estimatePower, estimateScheduleMw } from "../utils/powerEstimator";
 
-function solarColor(hours: number): string {
-  if (hours < 1) return "#3CB371"; // green
-  if (hours < 3) return "#F2A900"; // yellow
-  if (hours < 5) return "#FF8C00"; // orange
-  return "#D9534F"; // red
+function badgeColor(solarHoursPerDay: number): string {
+  if (solarHoursPerDay < 1.5) return "#3CB371"; // green — well within solar budget
+  if (solarHoursPerDay < 3.0) return "#F2A900"; // yellow — moderate
+  return "#D9534F";                              // red — high demand
 }
 
-function labelFromShare(share: number): string {
-  if (share < 0.15) return "Low";
-  if (share < 0.35) return "Medium";
-  if (share < 0.6) return "High";
-  return "Very High";
+function badgeLabel(solarHoursPerDay: number): string {
+  if (solarHoursPerDay < 1.5) return "Good";
+  if (solarHoursPerDay < 3.0) return "Moderate";
+  return "High";
 }
 
 export default function PowerConsumptionScreen() {
   const { draftSchedules, collarSchedules } = useSchedules();
 
-  // Toggle mode
   const [mode, setMode] = useState<"draft" | "collar">("draft");
-
   const schedules = mode === "draft" ? draftSchedules : collarSchedules;
 
-  // ---- Total solar-hours (sum of all schedules)
-  const estimate = useMemo(
-    () => estimateMultiScheduleSolar(schedules),
-    [schedules]
-  );
+  const estimate = useMemo(() => estimatePower(schedules), [schedules]);
 
-  const totalHours = estimate.totalSolarHours;
-  const color = solarColor(totalHours);
+  const { totalMw, batteryLifeDays, solarHoursPerDay, components } = estimate;
 
-  // ---- Per-schedule solar hours (using your current estimator)
   const perSchedule = schedules.map((s) => ({
     id: s.id,
     name: s.name ?? "Schedule",
-    value: estimateScheduleSolar(s).totalSolarHours
+    mw: estimateScheduleMw(s),
   }));
 
-  // ---- Convert object → array for UI
-  const componentsArray = [
-    { key: "gps", label: "GPS", value: estimate.components.gps },
-    { key: "lora", label: "LoRa Transmission", value: estimate.components.lora },
-    { key: "particulate", label: "Particulate Sensor", value: estimate.components.particulate },
-    { key: "microphone", label: "Microphone", value: estimate.components.microphone },
-    { key: "accelerometer", label: "Accelerometer", value: estimate.components.accelerometer },
-    { key: "lightEnv", label: "Light + Environmental", value: estimate.components.lightEnv },
+  const compItems: { label: string; value: number; color: string }[] = [
+    { label: "Baseline (MCU + sensors)", value: components.baseline,   color: "#4A90D9" },
+    { label: "GPS acquisition",          value: components.gps,        color: "#3CB371" },
+    { label: "Microphone",               value: components.microphone, color: "#E0478A" },
+    { label: "LoRaWAN",                  value: components.lora,       color: "#9B6DD6" },
   ];
 
-  const totalComponentPower = componentsArray.reduce((s, c) => s + c.value, 0);
+  const color = badgeColor(solarHoursPerDay);
 
   return (
     <ScrollView style={styles.container}>
@@ -60,7 +47,8 @@ export default function PowerConsumptionScreen() {
       {/* HEADER */}
       <Text style={styles.header}>POWER & SOLAR BUDGET</Text>
       <Text style={styles.sub}>
-        Estimated solar-hours required per day based on {mode === "draft" ? "your draft schedules" : "the collar's schedules"}.
+        Estimated power draw and battery life based on{" "}
+        {mode === "draft" ? "your draft schedules" : "the collar's schedules"}.
       </Text>
 
       {/* TOGGLE */}
@@ -73,7 +61,6 @@ export default function PowerConsumptionScreen() {
             Draft
           </Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           onPress={() => setMode("collar")}
           style={[styles.toggleButton, mode === "collar" && styles.toggleActive]}
@@ -84,15 +71,32 @@ export default function PowerConsumptionScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* TOTAL SOLAR HOURS */}
+      {/* TOTAL */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Required Solar Hours</Text>
-        <Text style={[styles.solarValue, { color }]}>
-          {totalHours.toFixed(1)} hrs/day
+        <View style={styles.cardTitleRow}>
+          <Text style={styles.cardTitle}>Average Power Draw</Text>
+          <View style={[styles.badge, { backgroundColor: color }]}>
+            <Text style={styles.badgeText}>{badgeLabel(solarHoursPerDay)}</Text>
+          </View>
+        </View>
+        <Text style={[styles.primaryValue, { color }]}>
+          {totalMw.toFixed(2)} mW
         </Text>
-        <Text style={styles.cardExplanation}>
-          Hours of strong sunlight needed to offset daily energy usage.
-        </Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>
+              {batteryLifeDays < 1
+                ? `${(batteryLifeDays * 24).toFixed(0)} hrs`
+                : `${batteryLifeDays.toFixed(1)} days`}
+            </Text>
+            <Text style={styles.statLabel}>battery life (no solar)</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{solarHoursPerDay.toFixed(2)} hrs/day</Text>
+            <Text style={styles.statLabel}>solar needed for net-zero</Text>
+          </View>
+        </View>
       </View>
 
       {/* PER SCHEDULE */}
@@ -102,28 +106,45 @@ export default function PowerConsumptionScreen() {
           {perSchedule.map((s) => (
             <View key={s.id} style={styles.row}>
               <Text style={styles.rowLabel}>{s.name}</Text>
-              <Text style={styles.rowValue}>{s.value.toFixed(1)} hrs/day</Text>
+              <Text style={styles.rowValue}>{s.mw.toFixed(2)} mW</Text>
             </View>
           ))}
+          <Text style={styles.cardNote}>
+            Incremental only — baseline is shared across all schedules.
+          </Text>
         </View>
       )}
 
-      {/* POWER BREAKDOWN */}
+      {/* COMPONENT BREAKDOWN */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Power Breakdown</Text>
-        {componentsArray.map((c) => {
-          const share = totalComponentPower === 0 ? 0 : c.value / totalComponentPower;
+        <Text style={styles.cardTitle}>Component Breakdown</Text>
+        {compItems.map((c) => {
+          const pct = totalMw > 0 ? (c.value / totalMw) * 100 : 0;
           return (
-            <View key={c.key} style={styles.row}>
-              <View style={styles.rowLeft}>
+            <View key={c.label} style={styles.componentRow}>
+              <View style={styles.componentLabelRow}>
                 <Text style={styles.rowLabel}>{c.label}</Text>
-                <Text style={styles.rowTag}>{labelFromShare(share)}</Text>
+                <Text style={styles.rowValue}>
+                  {c.value.toFixed(2)} mW ({pct.toFixed(0)}%)
+                </Text>
               </View>
-              <Text style={styles.rowValue}>{(share * 100).toFixed(0)}%</Text>
+              <View style={styles.barTrack}>
+                <View
+                  style={[
+                    styles.barFill,
+                    { width: `${pct}%` as any, backgroundColor: c.color },
+                  ]}
+                />
+              </View>
             </View>
           );
         })}
       </View>
+
+      <Text style={styles.footnote}>
+        Based on empirical measurements at 22 dBm TX, 100-byte payload, 15 s GPS warm start.
+        2.96 Wh battery, 215 mW solar panel at 80% charge efficiency.
+      </Text>
 
       {/* EMPTY STATE */}
       {schedules.length === 0 && (
@@ -150,27 +171,15 @@ const styles = StyleSheet.create({
     padding: 4,
     marginBottom: 16,
   },
-
   toggleButton: {
     flex: 1,
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: "center",
   },
-
-  toggleActive: {
-    backgroundColor: "#FDC996",
-  },
-
-  toggleText: {
-    fontSize: 14,
-    color: "#555",
-    fontWeight: "600",
-  },
-
-  toggleTextActive: {
-    color: "white",
-  },
+  toggleActive: { backgroundColor: "#FDC996" },
+  toggleText: { fontSize: 14, color: "#555", fontWeight: "600" },
+  toggleTextActive: { color: "white" },
 
   card: {
     backgroundColor: "#FAFAFA",
@@ -182,12 +191,32 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
+  cardTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  cardTitle: { fontSize: 17, fontWeight: "600" },
 
-  cardTitle: { fontSize: 17, fontWeight: "600", marginBottom: 8 },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  badgeText: { fontSize: 12, fontWeight: "700", color: "#FFF" },
 
-  solarValue: { fontSize: 28, fontWeight: "700", marginBottom: 8 },
+  primaryValue: { fontSize: 32, fontWeight: "700", marginBottom: 12 },
 
-  cardExplanation: { fontSize: 14, color: "#555", lineHeight: 20 },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  statItem: { flex: 1, alignItems: "center" },
+  statDivider: { width: 1, height: 36, backgroundColor: "#DDD" },
+  statValue: { fontSize: 15, fontWeight: "700", color: "#111" },
+  statLabel: { fontSize: 12, color: "#777", marginTop: 2, textAlign: "center" },
 
   row: {
     flexDirection: "row",
@@ -195,23 +224,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 4,
   },
-
-  rowLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
-
   rowLabel: { fontSize: 14, color: "#333" },
-
   rowValue: { fontSize: 14, fontWeight: "600", color: "#111" },
 
-  rowTag: {
-    fontSize: 12,
-    color: "#555",
-    backgroundColor: "#EEE",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 999,
+  cardNote: { fontSize: 12, color: "#999", marginTop: 8 },
+
+  componentRow: { marginVertical: 6 },
+  componentLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
   },
+  barTrack: {
+    height: 6,
+    backgroundColor: "#E8E8E8",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  barFill: { height: 6, borderRadius: 3 },
+
+  footnote: { fontSize: 12, color: "#AAA", marginBottom: 24, lineHeight: 18 },
 
   center: { marginTop: 30, alignItems: "center" },
-
   empty: { fontSize: 14, color: "#666", textAlign: "center" },
 });

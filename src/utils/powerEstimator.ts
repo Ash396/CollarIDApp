@@ -1,25 +1,38 @@
 // utils/powerEstimator.ts
 import type { Schedule } from "../navigation/ScheduleNavigator";
 
-export type PowerBreakdown = {
-  totalSolarHours: number;
+// Empirical power measurements (mW) from characterization, Table 5.1
+const POWER_MW = {
+  base:          0.74,  // Quiescent: MCU + GPS standby only (no sensors)
+  alwaysOn25hz:  1.20,  // MCU + GPS standby + accel@25Hz + light + env + SD
+  alwaysOn50hz:  1.37,  // MCU + GPS standby + accel@50Hz + light + env + SD
+  micDelta:      7.60,  // Microphone incremental (recording + SD write)
+  gpsAcqDelta:  36.3,   // GPS acquisition incremental above baseline
+  loraPower:    40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
+  loraDur:       6.3,   // Duration of TX + RX event (s), 100-byte payload
+  gpsAcqS:      15,     // Average warm-start GPS acquisition time (s)
+  batteryWh:     2.96,
+  panelMw:       215,   // SM141K07TF solar panel at STC
+  chargeEff:     0.80,  // Charging circuit efficiency
+} as const;
+
+export type PowerEstimate = {
+  totalMw: number;
+  batteryLifeDays: number;
+  solarHoursPerDay: number;
   components: {
+    baseline: number;
     gps: number;
-    lora: number;
-    particulate: number;
     microphone: number;
-    accelerometer: number;
-    lightEnv: number;
+    lora: number;
   };
 };
 
-/** Clamp helper */
 function clamp(v: number, min: number, max: number): number {
   if (Number.isNaN(v)) return min;
   return Math.max(min, Math.min(max, v));
 }
 
-/** Hours in a schedule window, handling overnight windows. */
 function windowHours(window: { startHour: number; endHour: number }): number {
   const start = clamp(window.startHour ?? 0, 0, 23);
   const end = clamp(window.endHour ?? 0, 0, 23);
@@ -29,139 +42,96 @@ function windowHours(window: { startHour: number; endHour: number }): number {
 }
 
 /**
- * Estimate solar-hours per day for a single schedule.
- * Placeholder model (easy to tweak later).
+ * Returns the average baseline power (mW) weighted by schedule coverage.
+ * Hours covered by at least one schedule draw P_always_on; uncovered hours
+ * draw P_base (0.74 mW, MCU + GPS standby only, sensors off).
  */
-export function estimateScheduleSolar(schedule: Schedule): PowerBreakdown {
-  const hours = schedule.window
-    ? windowHours(schedule.window)
-    : 24;
+function computeBaselinePower(schedules: Schedule[]): number {
+  const covered = new Array<boolean>(24).fill(false);
 
-  const fracDay = hours / 24;
-
-  // ---- Placeholder base weights (tune with mentor later) ----
-  const GPS_BASE = 2.0;           // at 1 min interval over full day
-  const LORA_BASE = 1.5;          // roughly tied to GPS / transmit activity
-  const PARTICULATE_BASE = 1.6;   // PM sensor, 1 min interval full day
-  const MIC_BASE = 2.2;           // microphone at full duty
-  const ACCEL_BASE = 0.8;         // accelerometer baseline
-  const LIGHT_ENV_BASE = 0.7;     // lux + environmental baseline
-
-  // ---- GPS ----
-  let gpsHours = 0;
-  if (schedule.gps?.enabled) {
-    const gpsInterval = clamp(schedule.gps.sampleIntervalMin ?? 10, 1, 12 * 60);
-    const norm = Math.sqrt(1 / gpsInterval); // slower decay than linear
-    gpsHours = fracDay * GPS_BASE * norm;
-  }
-
-  // ---- LoRa (fake, derived from GPS interval for now) ----
-  let loraHours = 0;
-  if (schedule.gps?.enabled) {
-    const txInterval = clamp(schedule.gps.sampleIntervalMin ?? 30, 1, 12 * 60);
-    const norm = Math.sqrt(1 / txInterval);
-    loraHours = fracDay * LORA_BASE * norm;
-  }
-
-  // ---- Particulate ----
-  let particulateHours = 0;
-  if (schedule.particulate?.enabled) {
-    const pInterval = clamp(
-      schedule.particulate.sampleIntervalMin ?? 15,
-      1,
-      12 * 60
-    );
-    const norm = Math.sqrt(1 / pInterval);
-    particulateHours = fracDay * PARTICULATE_BASE * norm;
-  }
-
-  // ---- Microphone ----
-  let micHours = 0;
-  if (schedule.microphone?.enabled) {
-    if (schedule.microphone.continuousMode) {
-      micHours = fracDay * MIC_BASE; // always on during window
+  for (const s of schedules) {
+    if (!s.window) {
+      covered.fill(true);
+      break;
+    }
+    const start = clamp(s.window.startHour ?? 0, 0, 23);
+    const end   = clamp(s.window.endHour   ?? 0, 0, 23);
+    if (end > start) {
+      for (let h = start; h < end; h++) covered[h] = true;
     } else {
-      const sampleLen = clamp(schedule.microphone.sampleLengthMin ?? 1, 1, 60);
-      const sampleWindow = clamp(
-        schedule.microphone.sampleWindowMin ?? 10,
-        1,
-        60
-      );
-      const duty = clamp(sampleLen / sampleWindow, 0, 1);
-      micHours = fracDay * MIC_BASE * duty;
+      // Wraps midnight
+      for (let h = start; h < 24; h++) covered[h] = true;
+      for (let h = 0;     h < end; h++) covered[h] = true;
     }
   }
 
-  // ---- Accelerometer (assumed "roughly constant" when enabled) ----
-  let accelHours = 0;
-  if (schedule.accelerometer?.enabled) {
-    const rate = schedule.accelerometer.sampleRate ?? 0; // 0=25Hz,1=50Hz
-    const sensitivityIdx = schedule.accelerometer.sensitivity ?? 0; // 0,1,2
-    const rateFactor = rate === 1 ? 1.3 : 1.0;
-    const sensitivityFactor = 1 + sensitivityIdx * 0.15;
-    accelHours = fracDay * ACCEL_BASE * rateFactor * sensitivityFactor;
+  const coveredHours   = covered.filter(Boolean).length;
+  const uncoveredHours = 24 - coveredHours;
+  const has50hz = schedules.some(
+    s => s.accelerometer?.enabled && s.accelerometer.sampleRate === 1
+  );
+  const alwaysOn = has50hz ? POWER_MW.alwaysOn50hz : POWER_MW.alwaysOn25hz;
+
+  return (coveredHours * alwaysOn + uncoveredHours * POWER_MW.base) / 24;
+}
+
+/** Incremental (duty-cycled) power for a single schedule, in mW. */
+function scheduleIncrementalMw(s: Schedule): { mic: number; gps: number; lora: number } {
+  const hours = s.window ? windowHours(s.window) : 24;
+  const frac  = hours / 24;
+
+  let mic = 0, gps = 0, lora = 0;
+
+  if (s.microphone?.enabled) {
+    if (s.microphone.continuousMode) {
+      mic = frac * POWER_MW.micDelta;
+    } else {
+      const duty = clamp(
+        (s.microphone.sampleLengthMin ?? 1) / (s.microphone.sampleWindowMin ?? 10), 0, 1
+      );
+      mic = frac * POWER_MW.micDelta * duty;
+    }
   }
 
-  // ---- Light + Environmental (treated as mostly constant if enabled) ----
-  let lightEnvHours = 0;
-  const lightEnabled = schedule.light?.enabled ?? true;
-  const envEnabled = schedule.environmental?.enabled ?? true;
-  if (lightEnabled || envEnabled) {
-    const sensorsCount = (lightEnabled ? 1 : 0) + (envEnabled ? 1 : 0);
-    lightEnvHours = fracDay * LIGHT_ENV_BASE * (sensorsCount / 2);
+  if (s.gps?.enabled) {
+    const periodS = (s.gps.sampleIntervalMin ?? 20) * 60;
+    gps = frac * POWER_MW.gpsAcqDelta * (POWER_MW.gpsAcqS / periodS);
   }
 
-  const totalSolarHours =
-    gpsHours +
-    loraHours +
-    particulateHours +
-    micHours +
-    accelHours +
-    lightEnvHours;
+  if (s.lorawan?.enabled) {
+    const periodS = (s.lorawan.sendIntervalMin ?? 60) * 60;
+    lora = frac * POWER_MW.loraPower * (POWER_MW.loraDur / periodS);
+  }
+
+  return { mic, gps, lora };
+}
+
+/** Full power estimate across all schedules. */
+export function estimatePower(schedules: Schedule[]): PowerEstimate {
+  const baseline = computeBaselinePower(schedules);
+
+  let mic = 0, gps = 0, lora = 0;
+  for (const s of schedules) {
+    const inc = scheduleIncrementalMw(s);
+    mic  += inc.mic;
+    gps  += inc.gps;
+    lora += inc.lora;
+  }
+
+  const totalMw         = baseline + mic + gps + lora;
+  const batteryLifeDays = (POWER_MW.batteryWh * 1000) / totalMw / 24;
+  const solarHoursPerDay = (totalMw * 24) / (POWER_MW.panelMw * POWER_MW.chargeEff);
 
   return {
-    totalSolarHours,
-    components: {
-      gps: gpsHours,
-      lora: loraHours,
-      particulate: particulateHours,
-      microphone: micHours,
-      accelerometer: accelHours,
-      lightEnv: lightEnvHours,
-    },
+    totalMw,
+    batteryLifeDays,
+    solarHoursPerDay,
+    components: { baseline, gps, microphone: mic, lora },
   };
 }
 
-/**
- * Aggregate solar-hours over many schedules (e.g. per-collar).
- */
-export function estimateMultiScheduleSolar(
-  schedules: Schedule[]
-): PowerBreakdown {
-  let total = 0;
-
-  const agg = {
-    gps: 0,
-    lora: 0,
-    particulate: 0,
-    microphone: 0,
-    accelerometer: 0,
-    lightEnv: 0,
-  };
-
-  for (const s of schedules) {
-    const est = estimateScheduleSolar(s);
-    total += est.totalSolarHours;
-    agg.gps += est.components.gps;
-    agg.lora += est.components.lora;
-    agg.particulate += est.components.particulate;
-    agg.microphone += est.components.microphone;
-    agg.accelerometer += est.components.accelerometer;
-    agg.lightEnv += est.components.lightEnv;
-  }
-
-  return {
-    totalSolarHours: total,
-    components: agg,
-  };
+/** Incremental mW contribution of a single schedule (for list badges). */
+export function estimateScheduleMw(s: Schedule): number {
+  const { mic, gps, lora } = scheduleIncrementalMw(s);
+  return mic + gps + lora;
 }
