@@ -113,10 +113,11 @@ export default function EditScheduleScreen() {
     value: h,
   }));
 
-  const gpsAccuracyOptions = [...Array(10).keys()].map(a => ({
-    label: `${a + 1}`,
-    value: a + 1,
-  }));
+  const gpsAccuracyOptions = [
+    { label: 'Low', value: 1 },
+    { label: 'Medium', value: 5 },
+    { label: 'High', value: 10 },
+  ];
 
   const accelRateOptions = [
     { label: '25 Hz', value: 0 },
@@ -281,10 +282,7 @@ export default function EditScheduleScreen() {
             placeholderTextColor="#999"
           />
 
-          <Text style={styles.label}>Accuracy (1–10)</Text>
-          <Text style={styles.helper}>
-            1 = low accuracy, 10 = high accuracy
-          </Text>
+          <Text style={styles.label}>Accuracy</Text>
           <StyledPicker
             selectedValue={gpsAccuracy}
             onValueChange={setGpsAccuracy}
