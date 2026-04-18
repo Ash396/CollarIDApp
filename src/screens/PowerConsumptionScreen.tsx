@@ -86,6 +86,32 @@ export default function PowerConsumptionScreen() {
         </Text>
       </View>
 
+      {/* IRRADIANCE CONDITIONS */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Daylight Required by Condition</Text>
+        {[
+          { label: "Direct sunlight (STC)",      fraction: 1.00 },
+          { label: "Typical clear-sky average",  fraction: 0.50 },
+          { label: "Bright overcast",            fraction: 0.30 },
+          { label: "Open shade, clear sky",      fraction: 0.15 },
+          { label: "Forest canopy",              fraction: 0.05 },
+        ].map(({ label, fraction }) => {
+          const required = totalSolarHours / fraction;
+          const infeasible = required > 16;
+          return (
+            <View key={label} style={styles.row}>
+              <Text style={[styles.rowLabel, infeasible && styles.infeasibleText]}>{label}</Text>
+              <Text style={[styles.rowValue, infeasible && styles.infeasibleText]}>
+                {infeasible ? ">16 h" : `${required.toFixed(1)} h`}
+              </Text>
+            </View>
+          );
+        })}
+        <Text style={styles.cardNote}>
+          Hours of that condition needed per day for net-zero energy.
+        </Text>
+      </View>
+
       {/* PER SCHEDULE */}
       {perSchedule.length > 0 && (
         <View style={styles.card}>
@@ -225,4 +251,6 @@ const styles = StyleSheet.create({
 
   center: { marginTop: 30, alignItems: "center" },
   empty: { fontSize: 14, color: "#666", textAlign: "center" },
+
+  infeasibleText: { color: "#D9534F" },
 });
