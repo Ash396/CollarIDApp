@@ -2,17 +2,17 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useSchedules } from "../context/SchedulesContext";
-import { estimatePower, estimateScheduleMw } from "../utils/powerEstimator";
+import { estimatePower, estimateScheduleSolarHours } from "../utils/powerEstimator";
 
-function badgeColor(solarHoursPerDay: number): string {
-  if (solarHoursPerDay < 1.5) return "#3CB371"; // green — well within solar budget
-  if (solarHoursPerDay < 3.0) return "#F2A900"; // yellow — moderate
-  return "#D9534F";                              // red — high demand
+function badgeColor(solarHours: number): string {
+  if (solarHours < 1.5) return "#3CB371";
+  if (solarHours < 3.0) return "#F2A900";
+  return "#D9534F";
 }
 
-function badgeLabel(solarHoursPerDay: number): string {
-  if (solarHoursPerDay < 1.5) return "Good";
-  if (solarHoursPerDay < 3.0) return "Moderate";
+function badgeLabel(solarHours: number): string {
+  if (solarHours < 1.5) return "Good";
+  if (solarHours < 3.0) return "Moderate";
   return "High";
 }
 
@@ -24,12 +24,13 @@ export default function PowerConsumptionScreen() {
 
   const estimate = useMemo(() => estimatePower(schedules), [schedules]);
 
-  const { totalMw, batteryLifeDays, solarHoursPerDay, components } = estimate;
+  const { totalSolarHours, components } = estimate;
+  const color = badgeColor(totalSolarHours);
 
   const perSchedule = schedules.map((s) => ({
     id: s.id,
     name: s.name ?? "Schedule",
-    mw: estimateScheduleMw(s),
+    solarHours: estimateScheduleSolarHours(s),
   }));
 
   const compItems: { label: string; value: number; color: string }[] = [
@@ -39,15 +40,13 @@ export default function PowerConsumptionScreen() {
     { label: "LoRaWAN",                  value: components.lora,       color: "#9B6DD6" },
   ];
 
-  const color = badgeColor(solarHoursPerDay);
-
   return (
     <ScrollView style={styles.container}>
 
       {/* HEADER */}
       <Text style={styles.header}>POWER & SOLAR BUDGET</Text>
       <Text style={styles.sub}>
-        Estimated power draw and battery life based on{" "}
+        Estimated solar exposure required per day based on{" "}
         {mode === "draft" ? "your draft schedules" : "the collar's schedules"}.
       </Text>
 
@@ -74,29 +73,17 @@ export default function PowerConsumptionScreen() {
       {/* TOTAL */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Text style={styles.cardTitle}>Average Power Draw</Text>
+          <Text style={styles.cardTitle}>Required Solar Exposure</Text>
           <View style={[styles.badge, { backgroundColor: color }]}>
-            <Text style={styles.badgeText}>{badgeLabel(solarHoursPerDay)}</Text>
+            <Text style={styles.badgeText}>{badgeLabel(totalSolarHours)}</Text>
           </View>
         </View>
         <Text style={[styles.primaryValue, { color }]}>
-          {totalMw.toFixed(2)} mW
+          {totalSolarHours.toFixed(2)} hrs/day
         </Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>
-              {batteryLifeDays < 1
-                ? `${(batteryLifeDays * 24).toFixed(0)} hrs`
-                : `${batteryLifeDays.toFixed(1)} days`}
-            </Text>
-            <Text style={styles.statLabel}>battery life (no solar)</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{solarHoursPerDay.toFixed(2)} hrs/day</Text>
-            <Text style={styles.statLabel}>solar needed for net-zero</Text>
-          </View>
-        </View>
+        <Text style={styles.cardExplanation}>
+          Hours of direct sunlight needed to offset daily energy usage.
+        </Text>
       </View>
 
       {/* PER SCHEDULE */}
@@ -106,7 +93,7 @@ export default function PowerConsumptionScreen() {
           {perSchedule.map((s) => (
             <View key={s.id} style={styles.row}>
               <Text style={styles.rowLabel}>{s.name}</Text>
-              <Text style={styles.rowValue}>{s.mw.toFixed(2)} mW</Text>
+              <Text style={styles.rowValue}>{s.solarHours.toFixed(2)} sh</Text>
             </View>
           ))}
           <Text style={styles.cardNote}>
@@ -119,13 +106,13 @@ export default function PowerConsumptionScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Component Breakdown</Text>
         {compItems.map((c) => {
-          const pct = totalMw > 0 ? (c.value / totalMw) * 100 : 0;
+          const pct = totalSolarHours > 0 ? (c.value / totalSolarHours) * 100 : 0;
           return (
             <View key={c.label} style={styles.componentRow}>
               <View style={styles.componentLabelRow}>
                 <Text style={styles.rowLabel}>{c.label}</Text>
                 <Text style={styles.rowValue}>
-                  {c.value.toFixed(2)} mW ({pct.toFixed(0)}%)
+                  {c.value.toFixed(2)} sh ({pct.toFixed(0)}%)
                 </Text>
               </View>
               <View style={styles.barTrack}>
@@ -143,7 +130,7 @@ export default function PowerConsumptionScreen() {
 
       <Text style={styles.footnote}>
         Based on empirical measurements at 22 dBm TX, 100-byte payload, 15 s GPS warm start.
-        2.96 Wh battery, 215 mW solar panel at 80% charge efficiency.
+        215 mW solar panel at 80% charge efficiency.
       </Text>
 
       {/* EMPTY STATE */}
@@ -206,17 +193,8 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 12, fontWeight: "700", color: "#FFF" },
 
-  primaryValue: { fontSize: 32, fontWeight: "700", marginBottom: 12 },
-
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  statItem: { flex: 1, alignItems: "center" },
-  statDivider: { width: 1, height: 36, backgroundColor: "#DDD" },
-  statValue: { fontSize: 15, fontWeight: "700", color: "#111" },
-  statLabel: { fontSize: 12, color: "#777", marginTop: 2, textAlign: "center" },
+  primaryValue: { fontSize: 32, fontWeight: "700", marginBottom: 6 },
+  cardExplanation: { fontSize: 14, color: "#555", lineHeight: 20 },
 
   row: {
     flexDirection: "row",

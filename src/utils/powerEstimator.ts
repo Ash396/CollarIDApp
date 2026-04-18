@@ -11,15 +11,17 @@ const POWER_MW = {
   loraPower:    40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
   loraDur:       6.3,   // Duration of TX + RX event (s), 100-byte payload
   gpsAcqS:      15,     // Average warm-start GPS acquisition time (s)
-  batteryWh:     2.96,
   panelMw:       215,   // SM141K07TF solar panel at STC
   chargeEff:     0.80,  // Charging circuit efficiency
 } as const;
 
+// Convert mW average to solar-hours/day needed for net-zero
+function mwToSolarHours(mw: number): number {
+  return (mw * 24) / (POWER_MW.panelMw * POWER_MW.chargeEff);
+}
+
 export type PowerEstimate = {
-  totalMw: number;
-  batteryLifeDays: number;
-  solarHoursPerDay: number;
+  totalSolarHours: number;
   components: {
     baseline: number;
     gps: number;
@@ -59,7 +61,6 @@ function computeBaselinePower(schedules: Schedule[]): number {
     if (end > start) {
       for (let h = start; h < end; h++) covered[h] = true;
     } else {
-      // Wraps midnight
       for (let h = start; h < 24; h++) covered[h] = true;
       for (let h = 0;     h < end; h++) covered[h] = true;
     }
@@ -106,9 +107,9 @@ function scheduleIncrementalMw(s: Schedule): { mic: number; gps: number; lora: n
   return { mic, gps, lora };
 }
 
-/** Full power estimate across all schedules. */
+/** Full power estimate across all schedules, expressed in solar-hours/day. */
 export function estimatePower(schedules: Schedule[]): PowerEstimate {
-  const baseline = computeBaselinePower(schedules);
+  const baselineMw = computeBaselinePower(schedules);
 
   let mic = 0, gps = 0, lora = 0;
   for (const s of schedules) {
@@ -118,20 +119,19 @@ export function estimatePower(schedules: Schedule[]): PowerEstimate {
     lora += inc.lora;
   }
 
-  const totalMw         = baseline + mic + gps + lora;
-  const batteryLifeDays = (POWER_MW.batteryWh * 1000) / totalMw / 24;
-  const solarHoursPerDay = (totalMw * 24) / (POWER_MW.panelMw * POWER_MW.chargeEff);
-
   return {
-    totalMw,
-    batteryLifeDays,
-    solarHoursPerDay,
-    components: { baseline, gps, microphone: mic, lora },
+    totalSolarHours: mwToSolarHours(baselineMw + mic + gps + lora),
+    components: {
+      baseline:  mwToSolarHours(baselineMw),
+      gps:       mwToSolarHours(gps),
+      microphone: mwToSolarHours(mic),
+      lora:      mwToSolarHours(lora),
+    },
   };
 }
 
-/** Incremental mW contribution of a single schedule (for list badges). */
-export function estimateScheduleMw(s: Schedule): number {
+/** Solar-hours/day contribution of a single schedule's incremental load. */
+export function estimateScheduleSolarHours(s: Schedule): number {
   const { mic, gps, lora } = scheduleIncrementalMw(s);
-  return mic + gps + lora;
+  return mwToSolarHours(mic + gps + lora);
 }
