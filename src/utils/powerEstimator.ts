@@ -43,41 +43,9 @@ function windowHours(window: { startHour: number; endHour: number }): number {
   return diff;
 }
 
-/**
- * Returns the average baseline power (mW) weighted by schedule coverage.
- * Hours covered by at least one schedule draw P_always_on; uncovered hours
- * draw P_base (0.74 mW, MCU + GPS standby only, sensors off).
- */
-function computeBaselinePower(schedules: Schedule[]): number {
-  const covered = new Array<boolean>(24).fill(false);
 
-  for (const s of schedules) {
-    if (!s.window) {
-      covered.fill(true);
-      break;
-    }
-    const start = clamp(s.window.startHour ?? 0, 0, 23);
-    const end   = clamp(s.window.endHour   ?? 0, 0, 23);
-    if (end > start) {
-      for (let h = start; h < end; h++) covered[h] = true;
-    } else {
-      for (let h = start; h < 24; h++) covered[h] = true;
-      for (let h = 0;     h < end; h++) covered[h] = true;
-    }
-  }
-
-  const coveredHours   = covered.filter(Boolean).length;
-  const uncoveredHours = 24 - coveredHours;
-  const has50hz = schedules.some(
-    s => s.accelerometer?.enabled && s.accelerometer.sampleRate === 1
-  );
-  const alwaysOn = has50hz ? POWER_MW.alwaysOn50hz : POWER_MW.alwaysOn25hz;
-
-  return (coveredHours * alwaysOn + uncoveredHours * POWER_MW.base) / 24;
-}
-
-/** Incremental (duty-cycled) power for a single schedule, in mW. */
-function scheduleIncrementalMw(s: Schedule): { mic: number; gps: number; lora: number } {
+/** Per-schedule power in mW: always-on baseline for its window + duty-cycled increments. */
+function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gps: number; lora: number } {
   const hours = s.window ? windowHours(s.window) : 24;
   const frac  = hours / 24;
 
@@ -104,34 +72,57 @@ function scheduleIncrementalMw(s: Schedule): { mic: number; gps: number; lora: n
     lora = frac * POWER_MW.loraPower * (POWER_MW.loraDur / periodS);
   }
 
-  return { mic, gps, lora };
+  // Always-on baseline during this schedule's active window (P_always-on per Eq. 5.1)
+  const alwaysOn = (s.accelerometer?.enabled && s.accelerometer.sampleRate === 1)
+    ? POWER_MW.alwaysOn50hz : POWER_MW.alwaysOn25hz;
+  const baseline = frac * alwaysOn;
+
+  return { baseline, mic, gps, lora };
+}
+
+// Quiescent power (0.74 mW) for hours not covered by any schedule.
+function getUncoveredBaselineMw(schedules: Schedule[]): number {
+  const covered = new Array<boolean>(24).fill(false);
+  for (const s of schedules) {
+    if (!s.window) { covered.fill(true); break; }
+    const start = clamp(s.window.startHour ?? 0, 0, 23);
+    const end   = clamp(s.window.endHour   ?? 0, 0, 23);
+    if (end > start) {
+      for (let h = start; h < end; h++) covered[h] = true;
+    } else {
+      for (let h = start; h < 24; h++) covered[h] = true;
+      for (let h = 0;     h < end; h++) covered[h] = true;
+    }
+  }
+  const uncoveredHours = 24 - covered.filter(Boolean).length;
+  return uncoveredHours * POWER_MW.base / 24;
 }
 
 /** Full power estimate across all schedules, expressed in solar-hours/day. */
 export function estimatePower(schedules: Schedule[]): PowerEstimate {
-  const baselineMw = computeBaselinePower(schedules);
-
-  let mic = 0, gps = 0, lora = 0;
+  let baseline = 0, mic = 0, gps = 0, lora = 0;
   for (const s of schedules) {
     const inc = scheduleIncrementalMw(s);
-    mic  += inc.mic;
-    gps  += inc.gps;
-    lora += inc.lora;
+    baseline += inc.baseline;
+    mic      += inc.mic;
+    gps      += inc.gps;
+    lora     += inc.lora;
   }
+  const totalBaseline = baseline + getUncoveredBaselineMw(schedules);
 
   return {
-    totalSolarHours: mwToSolarHours(baselineMw + mic + gps + lora),
+    totalSolarHours: mwToSolarHours(totalBaseline + mic + gps + lora),
     components: {
-      baseline:  mwToSolarHours(baselineMw),
-      gps:       mwToSolarHours(gps),
+      baseline:   mwToSolarHours(totalBaseline),
+      gps:        mwToSolarHours(gps),
       microphone: mwToSolarHours(mic),
-      lora:      mwToSolarHours(lora),
+      lora:       mwToSolarHours(lora),
     },
   };
 }
 
-/** Solar-hours/day contribution of a single schedule's incremental load. */
+/** Solar-hours/day for a single schedule, including its always-on baseline. */
 export function estimateScheduleSolarHours(s: Schedule): number {
-  const { mic, gps, lora } = scheduleIncrementalMw(s);
-  return mwToSolarHours(mic + gps + lora);
+  const { baseline, mic, gps, lora } = scheduleIncrementalMw(s);
+  return mwToSolarHours(baseline + mic + gps + lora);
 }
