@@ -3,16 +3,24 @@ import type { Schedule } from "../navigation/ScheduleNavigator";
 
 // Empirical power measurements (mW) from characterization, Table 5.1
 const POWER_MW = {
-  base:          0.74,  // Quiescent: MCU + GPS standby only (no sensors)
-  alwaysOn25hz:  1.20,  // MCU + GPS standby + accel@25Hz + light + env + SD
-  alwaysOn50hz:  1.37,  // MCU + GPS standby + accel@50Hz + light + env + SD
-  micDelta:      7.60,  // Microphone incremental (recording + SD write)
-  gpsAcqDelta:  36.3,   // GPS acquisition incremental above baseline
-  loraPower:    40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
-  loraDur:       6.3,   // Duration of TX + RX event (s), 100-byte payload
-  gpsAcqS:      15,     // Average warm-start GPS acquisition time (s)
-  panelMw:       215,   // SM141K07TF solar panel at STC
-  chargeEff:     0.80,  // Charging circuit efficiency
+  // Always-on baseline — directly measured for each sensor combination
+  base:             0.74,  // MCU + GPS standby only (no sensors active)
+  alwaysOnLight:    0.760, // + light sensor
+  alwaysOnEnv:      0.840, // + environmental sensor (temp/humidity/pressure)
+  alwaysOnLightEnv: 1.00,  // + light + environmental
+  alwaysOn25hz:     1.20,  // + light + env + accel @ 25 Hz
+  alwaysOn50hz:     1.37,  // + light + env + accel @ 50 Hz
+  // Accel incremental above light+env baseline (for unmeasured combos)
+  accelDelta25hz:   0.20,  // 1.20 - 1.00
+  accelDelta50hz:   0.37,  // 1.37 - 1.00
+  // Duty-cycled increments
+  micDelta:         7.60,  // Microphone incremental (recording + SD write)
+  gpsAcqDelta:     36.3,   // GPS acquisition incremental above baseline
+  loraPower:       40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
+  loraDur:          6.3,   // Duration of TX + RX event (s), 100-byte payload
+  gpsAcqS:         15,     // Average warm-start GPS acquisition time (s)
+  panelMw:          215,   // SM141K07TF solar panel at STC
+  chargeEff:        0.80,  // Charging circuit efficiency
 } as const;
 
 // Convert mW average to solar-hours/day needed for net-zero
@@ -43,6 +51,28 @@ function windowHours(window: { startHour: number; endHour: number }): number {
   return diff;
 }
 
+/** Select the measured always-on power for a schedule's active sensor set. */
+function getAlwaysOnMw(s: Schedule): number {
+  const light = s.light?.enabled         ?? false;
+  const env   = s.environmental?.enabled ?? false;
+  const accel = s.accelerometer?.enabled ?? false;
+  const rate  = s.accelerometer?.sampleRate ?? 0; // 0 = 25 Hz, 1 = 50 Hz
+
+  if (!accel) {
+    if (light && env) return POWER_MW.alwaysOnLightEnv;
+    if (light)        return POWER_MW.alwaysOnLight;
+    if (env)          return POWER_MW.alwaysOnEnv;
+    return POWER_MW.base;
+  }
+
+  // Accel enabled — use directly measured value if light+env are both on,
+  // otherwise add accel delta to the appropriate measured base.
+  const accelDelta = rate === 1 ? POWER_MW.accelDelta50hz : POWER_MW.accelDelta25hz;
+  if (light && env) return rate === 1 ? POWER_MW.alwaysOn50hz : POWER_MW.alwaysOn25hz;
+  if (light)        return POWER_MW.alwaysOnLight + accelDelta;
+  if (env)          return POWER_MW.alwaysOnEnv   + accelDelta;
+  return              POWER_MW.base               + accelDelta;
+}
 
 /** Per-schedule power in mW: always-on baseline for its window + duty-cycled increments. */
 function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gps: number; lora: number } {
@@ -73,9 +103,7 @@ function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gp
   }
 
   // Always-on baseline during this schedule's active window (P_always-on per Eq. 5.1)
-  const alwaysOn = (s.accelerometer?.enabled && s.accelerometer.sampleRate === 1)
-    ? POWER_MW.alwaysOn50hz : POWER_MW.alwaysOn25hz;
-  const baseline = frac * alwaysOn;
+  const baseline = frac * getAlwaysOnMw(s);
 
   return { baseline, mic, gps, lora };
 }
