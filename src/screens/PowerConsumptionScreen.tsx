@@ -129,7 +129,7 @@ export default function PowerConsumptionScreen() {
       </View>
 
       <Text style={styles.footnote}>
-        Based on empirical measurements at 22 dBm TX, 100-byte payload, 15 s GPS warm start.
+        Based on empirical measurements at 22 dBm TX, 100-byte payload. GPS acquisition: 10 s (low), 25 s (med), 40 s (high).
         215 mW solar panel at 80% charge efficiency.
       </Text>
 

@@ -18,7 +18,9 @@ const POWER_MW = {
   gpsAcqDelta:     36.3,   // GPS acquisition incremental above baseline
   loraPower:       40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
   loraDur:          6.3,   // Duration of TX + RX event (s), 100-byte payload
-  gpsAcqS:         15,     // Average warm-start GPS acquisition time (s)
+  gpsAcqSLow:      10,     // GPS acquisition time (s) at low accuracy
+  gpsAcqSMed:      25,     // GPS acquisition time (s) at medium accuracy
+  gpsAcqSHigh:     40,     // GPS acquisition time (s) at high accuracy
   panelMw:          215,   // SM141K07TF solar panel at STC
   chargeEff:        0.80,  // Charging circuit efficiency
 } as const;
@@ -94,7 +96,9 @@ function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gp
 
   if (s.gps?.enabled) {
     const periodS = (s.gps.sampleIntervalMin ?? 20) * 60;
-    gps = frac * POWER_MW.gpsAcqDelta * (POWER_MW.gpsAcqS / periodS);
+    const acc = s.gps.accuracy ?? 5;
+    const gpsAcqS = acc <= 1 ? POWER_MW.gpsAcqSLow : acc <= 5 ? POWER_MW.gpsAcqSMed : POWER_MW.gpsAcqSHigh;
+    gps = frac * POWER_MW.gpsAcqDelta * (gpsAcqS / periodS);
   }
 
   if (s.lorawan?.enabled) {
