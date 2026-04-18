@@ -46,7 +46,7 @@ function clamp(v: number, min: number, max: number): number {
 function windowHours(window: { startHour: number; endHour: number }): number {
   const start = clamp(window.startHour ?? 0, 0, 23);
   const end = clamp(window.endHour ?? 0, 0, 23);
-  let diff = end - start;
+  let diff = end - start + 1;
   if (diff <= 0) diff += 24;
   return diff;
 }
@@ -115,11 +115,11 @@ function getUncoveredBaselineMw(schedules: Schedule[]): number {
     if (!s.window) { covered.fill(true); break; }
     const start = clamp(s.window.startHour ?? 0, 0, 23);
     const end   = clamp(s.window.endHour   ?? 0, 0, 23);
-    if (end > start) {
-      for (let h = start; h < end; h++) covered[h] = true;
+    if (end >= start) {
+      for (let h = start; h <= end; h++) covered[h] = true;
     } else {
       for (let h = start; h < 24; h++) covered[h] = true;
-      for (let h = 0;     h < end; h++) covered[h] = true;
+      for (let h = 0;     h <= end; h++) covered[h] = true;
     }
   }
   const uncoveredHours = 24 - covered.filter(Boolean).length;
