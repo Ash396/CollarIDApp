@@ -14,7 +14,7 @@ import type { ScheduleStackParamList } from '../navigation/ScheduleNavigator';
 import { useSchedules } from '../context/SchedulesContext';
 import { useRadioConfig } from '../context/RadioConfigContext';
 import { buildSchedulePacketFromAppState, sendConfig } from '../ble/bleManager';
-import { estimateScheduleSolar } from '../utils/powerEstimator';
+import { estimateScheduleSolarHours } from '../utils/powerEstimator';
 import { useDevice } from '../context/DeviceContext';
 import { verifyWrite } from '../utils/verifyWrite';
 import { schedulesEqual } from '../utils/scheduleEquality';
@@ -194,7 +194,7 @@ export default function SchedulesScreen() {
           s.lora?.enabled
         );
 
-        const solarEstimate = estimateScheduleSolar(s).totalSolarHours;
+        const shEstimate = estimateScheduleSolarHours(s);
 
         const renderRightActions = () => (
           <TouchableOpacity
@@ -232,7 +232,7 @@ export default function SchedulesScreen() {
               </Text>
 
               <Text style={styles.cardText}>
-                ☀️ {solarEstimate.toFixed(1)} solar-hours / day
+                ☀️ {shEstimate.toFixed(2)} sh/day
               </Text>
 
               <View style={styles.detailsContainer}>

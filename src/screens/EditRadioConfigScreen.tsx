@@ -16,7 +16,6 @@ import { useRadioConfig } from '../context/RadioConfigContext';
 import {
   hexByteToInt,
   hexToBytes,
-  clampInt,
   bytesToHex,
 } from '../utils/protoUtils';
 import StyledPicker from '../components/StyledPicker';
@@ -98,8 +97,6 @@ export default function EditRadioConfigScreen() {
   const [sNwkSIntKey, setSNwkSIntKey] = useState('');
 
   const [txOnlyOnNewGps, setTxOnlyOnNewGps] = useState(false);
-  const [lorawanTransmitInterval, setLorawanTransmitInterval] = useState('');
-  const [lorawanTxPowerDbm, setLorawanTxPowerDbm] = useState(14);
   const [lorawanEnabled, setLorawanEnabled] = useState(true);
 
   /* ---------------- LoRa ---------------- */
@@ -108,7 +105,6 @@ export default function EditRadioConfigScreen() {
   >('SF7');
   const [loraBW, setLoraBW] = useState<'125' | '250' | '500'>('125');
   const [loraCR, setLoraCR] = useState<'4/5' | '4/6' | '4/7' | '4/8'>('4/5');
-  const [loraTxPowerDbm, setLoraTxPowerDbm] = useState(14);
   const [syncWordHex, setSyncWordHex] = useState('');
 
   const [loraFrequencyMHz, setLoraFrequencyMHz] = useState('');
@@ -120,7 +116,6 @@ export default function EditRadioConfigScreen() {
   const [activationDate, setActivationDate] = useState('');
   const [activationTime, setActivationTime] = useState('');
   const [lostModeTransmitInterval, setLostModeTransmitInterval] = useState('');
-  const [lostModeTxPowerDbm, setLostModeTxPowerDbm] = useState(14);
 
   /* ---------------- Picker Options ---------------- */
   const regionOptions = [
@@ -133,11 +128,6 @@ export default function EditRadioConfigScreen() {
     { label: 'OTAA', value: 'AUTH_OTAA' },
     { label: 'ABP', value: 'AUTH_ABP' },
   ];
-
-  const txPowerOptions = Array.from({ length: 23 }, (_, i) => ({
-    label: `${i} dBm`,
-    value: i,
-  }));
 
   const sfOptions = ['SF7', 'SF8', 'SF9', 'SF10', 'SF11', 'SF12'].map(sf => ({
     label: sf,
@@ -178,14 +168,11 @@ export default function EditRadioConfigScreen() {
       setFNwkSIntKey('');
       setSNwkSIntKey('');
       setTxOnlyOnNewGps(false);
-      setLorawanTransmitInterval('');
-      setLorawanTxPowerDbm(14);
     }
     setLoraEnabled(lora != null);
     if (!lora) {
       setSyncWordHex('');
       setLoraFrequencyMHz('');
-      setLoraTxPowerDbm(14);
       setLoraSF('SF7');
       setLoraBW('125');
       setLoraCR('4/5');
@@ -201,8 +188,6 @@ export default function EditRadioConfigScreen() {
       );
       setLorawanAuth(lorawan.auth === 1 ? 'AUTH_ABP' : 'AUTH_OTAA');
       setTxOnlyOnNewGps(Boolean(lorawan.txOnlyOnNewGpsFix));
-      setLorawanTransmitInterval(String(lorawan.transmitIntervalMin ?? ''));
-      setLorawanTxPowerDbm(Number(lorawan.txPowerDbm ?? 14));
 
       // Seed credential TextInputs from bytes -> hex
       const otaa = lorawan.otaa;
@@ -260,7 +245,6 @@ export default function EditRadioConfigScreen() {
           : '125',
       );
       setLoraCR(['4/5', '4/6', '4/7', '4/8'][lora.radioCodingRate ?? 0] as any);
-      setLoraTxPowerDbm(Number(lora.txPowerDbm ?? 14));
       const sw = Number(lora.syncWord ?? 0);
       setSyncWordHex(sw.toString(16).padStart(2, '0').toUpperCase());
       setLoraFrequencyMHz(String(lora.frequency ?? ''));
@@ -276,7 +260,6 @@ export default function EditRadioConfigScreen() {
       setActivationTime(activation?.time ?? '');
 
       setLostModeTransmitInterval(String(lostCfg.transmitIntervalMin ?? ''));
-      setLostModeTxPowerDbm(Number(lostCfg.txPowerDbm ?? 14));
     } else {
       setActivationDate('');
       setActivationTime('');
@@ -355,17 +338,6 @@ export default function EditRadioConfigScreen() {
         }
       }
 
-      if (!txOnlyOnNewGps) {
-        if (
-          !requirePositiveNumber(
-            'LoRaWAN transmitInterval (min)',
-            lorawanTransmitInterval,
-          )
-        ) {
-          throw new Error('Invalid LoRaWAN interval');
-        }
-      }
-
       // Map strings to enum numbers (proto enum order)
       const regionNum =
         lorawanRegion === 'REGION_AU915'
@@ -379,10 +351,7 @@ export default function EditRadioConfigScreen() {
         region: regionNum,
         auth: authNum,
         txOnlyOnNewGpsFix: Boolean(txOnlyOnNewGps),
-        transmitIntervalMin: !txOnlyOnNewGps
-          ? Math.max(1, Math.trunc(Number(lorawanTransmitInterval)))
-          : 0,
-        txPowerDbm: clampInt(Number(lorawanTxPowerDbm), 0, 22),
+        txPowerDbm: 22,
       });
 
       // oneof credentials
@@ -448,7 +417,7 @@ export default function EditRadioConfigScreen() {
         radioSpreadingFactor: sfNum,
         radioBandwidth: bwNum,
         radioCodingRate: crNum,
-        txPowerDbm: clampInt(Number(loraTxPowerDbm), 0, 22),
+        txPowerDbm: 22,
         syncWord: hexByteToInt(syncWordHex.trim() || '00'),
         frequency: Math.trunc(freq),
       });
@@ -481,7 +450,7 @@ export default function EditRadioConfigScreen() {
       transmitIntervalMin: lostModeEnabled
         ? Math.max(1, Math.trunc(Number(lostModeTransmitInterval)))
         : 1,
-      txPowerDbm: clampInt(Number(lostModeTxPowerDbm), 0, 22),
+      txPowerDbm: 22,
     });
 
     const obj: any = {
@@ -642,25 +611,6 @@ export default function EditRadioConfigScreen() {
                 />
               </View>
 
-              <Text style={styles.label}>Transmit Interval (minutes)</Text>
-              <TextInput
-                style={[styles.input, txOnlyOnNewGps && styles.inputDisabled]}
-                keyboardType="numeric"
-                value={lorawanTransmitInterval}
-                onChangeText={setLorawanTransmitInterval}
-                placeholder="> 0"
-                placeholderTextColor="#999"
-                editable={!txOnlyOnNewGps}
-              />
-
-              <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
-              <StyledPicker
-                selectedValue={lorawanTxPowerDbm}
-                onValueChange={value => setLorawanTxPowerDbm(Number(value))}
-                items={txPowerOptions}
-                placeholder="Select TX power"
-                enabled={lorawanEnabled}
-              />
             </>
           )}
         </>,
@@ -705,15 +655,6 @@ export default function EditRadioConfigScreen() {
                 }
                 items={codingRateOptions}
                 placeholder="Select coding rate"
-                enabled={loraEnabled}
-              />
-
-              <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
-              <StyledPicker
-                selectedValue={loraTxPowerDbm}
-                onValueChange={value => setLoraTxPowerDbm(Number(value))}
-                items={txPowerOptions}
-                placeholder="Select TX power"
                 enabled={loraEnabled}
               />
 
@@ -785,14 +726,6 @@ export default function EditRadioConfigScreen() {
                 placeholderTextColor="#999"
               />
 
-              <Text style={styles.label}>TX Power (dBm) [0-22]</Text>
-              <StyledPicker
-                selectedValue={lostModeTxPowerDbm}
-                onValueChange={value => setLostModeTxPowerDbm(Number(value))}
-                items={txPowerOptions}
-                placeholder="Select TX power"
-                enabled={lostModeEnabled}
-              />
             </>
           )}
         </>,
