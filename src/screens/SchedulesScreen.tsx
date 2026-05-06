@@ -23,6 +23,38 @@ import { Swipeable } from 'react-native-gesture-handler';
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, 'Schedules'>;
 
+function findOverlappingSchedules(schedules: any[]) {
+  const normalized = schedules.map(s => {
+    const start = s.window.startHour;
+    const end = s.window.endHour;
+
+    return {
+      ...s,
+      intervals:
+        end > start
+          ? [[start, end]]
+          : [
+              [start, 24],
+              [0, end],
+            ],
+    };
+  });
+
+  for (let i = 0; i < normalized.length; i++) {
+    for (let j = i + 1; j < normalized.length; j++) {
+      for (const [aStart, aEnd] of normalized[i].intervals) {
+        for (const [bStart, bEnd] of normalized[j].intervals) {
+          if (aStart < bEnd && bStart < aEnd) {
+            return [normalized[i], normalized[j]];
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 export default function SchedulesScreen() {
   const navigation = useNavigation<Nav>();
   const { device } = useDevice();
@@ -44,6 +76,9 @@ export default function SchedulesScreen() {
 
   // Prevent re-loading from device repeatedly due to device object identity changes
   const lastLoadedId = useRef<string | null>(null);
+  
+  const overlappingSchedules = findOverlappingSchedules(draftSchedules);
+  const hasOverlaps = overlappingSchedules !== null;
 
   useEffect(() => {
     const id = device?.id;
@@ -116,6 +151,14 @@ export default function SchedulesScreen() {
         return;
       }
 
+      if (overlappingSchedules) {
+        Alert.alert(
+          'Overlapping Schedules',
+          `"${overlappingSchedules[0].name}" overlaps with "${overlappingSchedules[1].name}". Please resolve schedule conflicts before sending to the collar.`,
+        );
+        return;
+      }
+
       const result = await verifyWrite({
         draft: { schedules: draftSchedules, engaged: effectiveDraftEngaged },
 
@@ -174,6 +217,17 @@ export default function SchedulesScreen() {
           onValueChange={v => setDraftEngaged(v)}
         />
       </View>
+
+      {hasOverlaps && overlappingSchedules && (
+        <View style={styles.warningBox}>
+          <Text style={styles.warningTitle}>Overlapping schedules</Text>
+          <Text style={styles.warningText}>
+            "{overlappingSchedules[0].name}" overlaps with "
+            {overlappingSchedules[1].name}". Drafts can overlap, but schedules
+            must not overlap before sending to the collar.
+          </Text>
+        </View>
+      )}
 
       {draftSchedules.length === 0 && (
         <Text style={{ color: '#777', marginBottom: 20 }}>
@@ -302,7 +356,10 @@ export default function SchedulesScreen() {
         <Text style={styles.addText}>+ Add Schedule</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.sendButton} onPress={handleSendToDevice}>
+      <TouchableOpacity
+        style={[styles.sendButton, hasOverlaps && styles.sendButtonDisabled]}
+        onPress={handleSendToDevice}
+      >
         <Text style={styles.sendText}>SEND TO DEVICE</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -393,5 +450,26 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '700',
     fontSize: 15,
+  },
+  warningBox: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FDBA74',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  warningTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#9A3412',
+    marginBottom: 4,
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#9A3412',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#DDD',
   },
 });
