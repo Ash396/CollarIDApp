@@ -1,74 +1,59 @@
 // PowerConsumptionScreen.tsx
-import React, { useMemo, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
-import { useSchedules } from "../context/SchedulesContext";
-import { estimatePower, estimateScheduleSolarHours } from "../utils/powerEstimator";
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useSchedules } from '../context/SchedulesContext';
+import {
+  estimatePower,
+  estimateScheduleSolarHours,
+} from '../utils/powerEstimator';
 
 function badgeColor(solarHours: number): string {
-  if (solarHours < 1.5) return "#3CB371";
-  if (solarHours < 3.0) return "#F2A900";
-  return "#D9534F";
+  if (solarHours < 1.5) return '#3CB371';
+  if (solarHours < 3.0) return '#F2A900';
+  return '#D9534F';
 }
 
 function badgeLabel(solarHours: number): string {
-  if (solarHours < 1.5) return "Good";
-  if (solarHours < 3.0) return "Moderate";
-  return "High";
+  if (solarHours < 1.5) return 'Good';
+  if (solarHours < 3.0) return 'Moderate';
+  return 'High';
 }
 
 export default function PowerConsumptionScreen() {
-  const { draftSchedules, collarSchedules } = useSchedules();
+  const { draftSchedules } = useSchedules();
 
-  const [mode, setMode] = useState<"draft" | "collar">("draft");
-  const schedules = mode === "draft" ? draftSchedules : collarSchedules;
+  const schedules = draftSchedules;
 
   const estimate = useMemo(() => estimatePower(schedules), [schedules]);
 
   const { totalSolarHours, components } = estimate;
   const color = badgeColor(totalSolarHours);
 
-  const perSchedule = schedules.map((s) => ({
+  const perSchedule = schedules.map(s => ({
     id: s.id,
-    name: s.name ?? "Schedule",
+    name: s.name ?? 'Schedule',
     solarHours: estimateScheduleSolarHours(s),
   }));
 
   const compItems: { label: string; value: number; color: string }[] = [
-    { label: "Baseline (MCU + sensors)", value: components.baseline,   color: "#4A90D9" },
-    { label: "GPS acquisition",          value: components.gps,        color: "#3CB371" },
-    { label: "Microphone",               value: components.microphone, color: "#E0478A" },
-    { label: "LoRaWAN",                  value: components.lora,       color: "#9B6DD6" },
+    {
+      label: 'Baseline (MCU + sensors)',
+      value: components.baseline,
+      color: '#4A90D9',
+    },
+    { label: 'GPS acquisition', value: components.gps, color: '#3CB371' },
+    { label: 'Microphone', value: components.microphone, color: '#E0478A' },
+    { label: 'LoRaWAN', value: components.lora, color: '#9B6DD6' },
   ];
 
   return (
     <ScrollView style={styles.container}>
-
       {/* HEADER */}
       <Text style={styles.header}>POWER & SOLAR BUDGET</Text>
       <Text style={styles.sub}>
-        Estimated solar exposure required per day based on{" "}
-        {mode === "draft" ? "your draft schedules" : "the collar's schedules"}.
+        Estimated solar exposure required per day based on your draft
+        configuration.
       </Text>
-
-      {/* TOGGLE */}
-      <View style={styles.toggleContainer}>
-        <TouchableOpacity
-          onPress={() => setMode("draft")}
-          style={[styles.toggleButton, mode === "draft" && styles.toggleActive]}
-        >
-          <Text style={[styles.toggleText, mode === "draft" && styles.toggleTextActive]}>
-            Draft
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setMode("collar")}
-          style={[styles.toggleButton, mode === "collar" && styles.toggleActive]}
-        >
-          <Text style={[styles.toggleText, mode === "collar" && styles.toggleTextActive]}>
-            On Collar
-          </Text>
-        </TouchableOpacity>
-      </View>
 
       {/* TOTAL */}
       <View style={styles.card}>
@@ -90,19 +75,25 @@ export default function PowerConsumptionScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Daylight Required by Condition</Text>
         {[
-          { label: "Direct sunlight (STC)",      fraction: 1.00 },
-          { label: "Typical clear-sky average",  fraction: 0.50 },
-          { label: "Bright overcast",            fraction: 0.30 },
-          { label: "Open shade, clear sky",      fraction: 0.15 },
-          { label: "Forest canopy",              fraction: 0.05 },
+          { label: 'Direct sunlight (STC)', fraction: 1.0 },
+          { label: 'Typical clear-sky average', fraction: 0.5 },
+          { label: 'Bright overcast', fraction: 0.3 },
+          { label: 'Open shade, clear sky', fraction: 0.15 },
+          { label: 'Forest canopy', fraction: 0.05 },
         ].map(({ label, fraction }) => {
           const required = totalSolarHours / fraction;
           const infeasible = required > 16;
           return (
             <View key={label} style={styles.row}>
-              <Text style={[styles.rowLabel, infeasible && styles.infeasibleText]}>{label}</Text>
-              <Text style={[styles.rowValue, infeasible && styles.infeasibleText]}>
-                {infeasible ? ">16 h" : `${required.toFixed(1)} h`}
+              <Text
+                style={[styles.rowLabel, infeasible && styles.infeasibleText]}
+              >
+                {label}
+              </Text>
+              <Text
+                style={[styles.rowValue, infeasible && styles.infeasibleText]}
+              >
+                {infeasible ? '>16 h' : `${required.toFixed(1)} h`}
               </Text>
             </View>
           );
@@ -116,7 +107,7 @@ export default function PowerConsumptionScreen() {
       {perSchedule.length > 0 && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>By Schedule</Text>
-          {perSchedule.map((s) => (
+          {perSchedule.map(s => (
             <View key={s.id} style={styles.row}>
               <Text style={styles.rowLabel}>{s.name}</Text>
               <Text style={styles.rowValue}>{s.solarHours.toFixed(2)} sh</Text>
@@ -131,8 +122,9 @@ export default function PowerConsumptionScreen() {
       {/* COMPONENT BREAKDOWN */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Component Breakdown</Text>
-        {compItems.map((c) => {
-          const pct = totalSolarHours > 0 ? (c.value / totalSolarHours) * 100 : 0;
+        {compItems.map(c => {
+          const pct =
+            totalSolarHours > 0 ? (c.value / totalSolarHours) * 100 : 0;
           return (
             <View key={c.label} style={styles.componentRow}>
               <View style={styles.componentLabelRow}>
@@ -155,15 +147,16 @@ export default function PowerConsumptionScreen() {
       </View>
 
       <Text style={styles.footnote}>
-        Based on empirical measurements at 22 dBm TX, 100-byte payload. GPS acquisition: 10 s (low), 25 s (med), 40 s (high).
-        215 mW solar panel at 80% charge efficiency.
+        Based on empirical measurements at 22 dBm TX, 100-byte payload. GPS
+        acquisition: 10 s (low), 25 s (med), 40 s (high). 215 mW solar panel at
+        80% charge efficiency.
       </Text>
 
       {/* EMPTY STATE */}
       {schedules.length === 0 && (
         <View style={styles.center}>
           <Text style={styles.empty}>
-            No schedules available. Connect to a collar to load schedule data.
+            No draft schedules yet. Add a schedule to estimate power usage.
           </Text>
         </View>
       )}
@@ -172,85 +165,68 @@ export default function PowerConsumptionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#FFFFFF" },
+  container: { flex: 1, padding: 20, backgroundColor: '#FFFFFF' },
 
-  header: { fontSize: 26, fontWeight: "700", color: "#111", marginBottom: 6 },
-  sub: { fontSize: 15, color: "#555", marginBottom: 18 },
-
-  toggleContainer: {
-    flexDirection: "row",
-    backgroundColor: "#EEE",
-    borderRadius: 10,
-    padding: 4,
-    marginBottom: 16,
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  toggleActive: { backgroundColor: "#FDC996" },
-  toggleText: { fontSize: 14, color: "#555", fontWeight: "600" },
-  toggleTextActive: { color: "white" },
+  header: { fontSize: 26, fontWeight: '700', color: '#111', marginBottom: 6 },
+  sub: { fontSize: 15, color: '#555', marginBottom: 18 },
 
   card: {
-    backgroundColor: "#FAFAFA",
+    backgroundColor: '#FAFAFA',
     padding: 16,
     borderRadius: 16,
     marginBottom: 16,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
   cardTitleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  cardTitle: { fontSize: 17, fontWeight: "600" },
+  cardTitle: { fontSize: 17, fontWeight: '600', color: '#111' },
 
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 999,
   },
-  badgeText: { fontSize: 12, fontWeight: "700", color: "#FFF" },
+  badgeText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
 
-  primaryValue: { fontSize: 32, fontWeight: "700", marginBottom: 6 },
-  cardExplanation: { fontSize: 14, color: "#555", lineHeight: 20 },
+  primaryValue: { fontSize: 32, fontWeight: '700', marginBottom: 6 },
+  cardExplanation: { fontSize: 14, color: '#555', lineHeight: 20 },
 
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginVertical: 4,
   },
-  rowLabel: { fontSize: 14, color: "#333" },
-  rowValue: { fontSize: 14, fontWeight: "600", color: "#111" },
+  rowLabel: { fontSize: 14, color: '#333' },
+  rowValue: { fontSize: 14, fontWeight: '600', color: '#111' },
 
-  cardNote: { fontSize: 12, color: "#999", marginTop: 8 },
+  cardNote: { fontSize: 12, color: '#999', marginTop: 8 },
 
   componentRow: { marginVertical: 6 },
   componentLabelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 4,
   },
   barTrack: {
     height: 6,
-    backgroundColor: "#E8E8E8",
+    backgroundColor: '#E8E8E8',
     borderRadius: 3,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   barFill: { height: 6, borderRadius: 3 },
 
-  footnote: { fontSize: 12, color: "#AAA", marginBottom: 24, lineHeight: 18 },
+  footnote: { fontSize: 12, color: '#AAA', marginBottom: 24, lineHeight: 18 },
 
-  center: { marginTop: 30, alignItems: "center" },
-  empty: { fontSize: 14, color: "#666", textAlign: "center" },
+  center: { marginTop: 30, alignItems: 'center' },
+  empty: { fontSize: 14, color: '#666', textAlign: 'center' },
 
-  infeasibleText: { color: "#D9534F" },
+  infeasibleText: { color: '#D9534F' },
 });
