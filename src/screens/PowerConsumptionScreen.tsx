@@ -47,7 +47,11 @@ export default function PowerConsumptionScreen() {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+    >
       {/* HEADER */}
       <Text style={styles.header}>POWER & SOLAR BUDGET</Text>
       <Text style={styles.sub}>
@@ -229,4 +233,8 @@ const styles = StyleSheet.create({
   empty: { fontSize: 14, color: '#666', textAlign: 'center' },
 
   infeasibleText: { color: '#D9534F' },
+
+  scrollContent: {
+    paddingBottom: 20,
+  },
 });

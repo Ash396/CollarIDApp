@@ -13,11 +13,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import * as PB from '../proto/collar_pb.js';
 import { useRadioConfig } from '../context/RadioConfigContext';
-import {
-  hexByteToInt,
-  hexToBytes,
-  bytesToHex,
-} from '../utils/protoUtils';
+import { hexByteToInt, hexToBytes, bytesToHex } from '../utils/protoUtils';
 import StyledPicker from '../components/StyledPicker';
 
 type RadioRegion = 'REGION_US915' | 'REGION_AU915' | 'REGION_EU868';
@@ -475,7 +471,11 @@ export default function EditRadioConfigScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>Edit Radio Config</Text>
 
       {renderCard(
@@ -610,7 +610,6 @@ export default function EditRadioConfigScreen() {
                   onValueChange={setTxOnlyOnNewGps}
                 />
               </View>
-
             </>
           )}
         </>,
@@ -725,7 +724,6 @@ export default function EditRadioConfigScreen() {
                 placeholder="> 0"
                 placeholderTextColor="#999"
               />
-
             </>
           )}
         </>,
@@ -810,4 +808,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveText: { color: '#FFF', fontWeight: '700', fontSize: 17 },
+
+  scrollContent: {
+    paddingBottom: 50,
+  },
 });

@@ -228,7 +228,11 @@ export default function EditScheduleScreen() {
 
   /* ---------------- RENDER ---------------- */
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>Edit Schedule</Text>
 
       {/* NAME */}
@@ -548,4 +552,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   deleteText: { color: '#FFF', fontWeight: '700', fontSize: 17 },
+  scrollContent: {
+    paddingBottom: 50,
+  },
 });

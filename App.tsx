@@ -12,6 +12,7 @@ import SplashScreen from './src/screens/SplashScreen';
 import RadioNavigator from './src/navigation/RadioNavigator';
 import { DeviceProvider } from './src/context/DeviceContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Text } from 'react-native';
 
 enableScreens();
 
@@ -35,21 +36,40 @@ export default function App() {
         <RadioConfigProvider>
           <SchedulesProvider>
             <NavigationContainer>
-              <Tab.Navigator>
+              <Tab.Navigator
+                screenOptions={({ route }) => ({
+                  tabBarIcon: ({ size }) => {
+                    let icon = '•';
+
+                    if (route.name === 'Home') icon = '🏠';
+                    else if (route.name === 'SchedulesTab') icon = '📅';
+                    else if (route.name === 'RadioTab') icon = '📡';
+                    else if (route.name === 'Power Consumption') icon = '🔋';
+
+                    return <Text style={{ fontSize: size }}>{icon}</Text>;
+                  },
+                  tabBarActiveTintColor: '#2E7D32',
+                  tabBarInactiveTintColor: 'gray',
+                })}
+              >
                 <Tab.Screen name="Home" component={HomeScreen} />
+
                 <Tab.Screen
                   name="SchedulesTab"
                   component={ScheduleNavigator}
                   options={{ title: 'Schedules' }}
                 />
+
                 <Tab.Screen
                   name="RadioTab"
                   component={RadioNavigator}
                   options={{ title: 'Radio' }}
                 />
+
                 <Tab.Screen
                   name="Power Consumption"
                   component={PowerConsumptionScreen}
+                  options={{ title: 'Power' }}
                 />
               </Tab.Navigator>
             </NavigationContainer>

@@ -85,7 +85,11 @@ export default function StyledPicker({
               {placeholder ?? 'Select an option'}
             </Text>
 
-            <ScrollView style={styles.modalOptionsList}>
+            <ScrollView
+              style={styles.modalOptionsList}
+              contentContainerStyle={styles.modalOptionsContent}
+              nestedScrollEnabled
+            >
               {items.map(item => {
                 const isSelected = item.value === selectedValue;
                 return (
@@ -182,7 +186,7 @@ const styles = StyleSheet.create({
   modalCard: {
     backgroundColor: '#FFF',
     borderRadius: 16,
-    maxHeight: '70%',
+    maxHeight: '80%',
     padding: 16,
   },
 
@@ -194,7 +198,12 @@ const styles = StyleSheet.create({
   },
 
   modalOptionsList: {
+    maxHeight: 320,
     marginBottom: 12,
+  },
+
+  modalOptionsContent: {
+    paddingBottom: 8,
   },
 
   modalOption: {
