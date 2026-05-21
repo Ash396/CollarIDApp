@@ -183,7 +183,16 @@ export default function SchedulesScreen() {
 
       if (result.ok || result.reason === 'mismatch') {
         await loadSchedulesFromDevice(device);
-        Alert.alert('Success', 'Schedules updated successfully.');
+        if (!effectiveDraftEngaged) {
+          // The engaged flag rides along in the schedule packet, but a
+          // disengaged device won't act on the schedule.
+          Alert.alert(
+            'Schedule sent — device not engaged',
+            'The schedule was saved to the device, but it is currently disengaged and will not run the schedule or collect data. Turn on "System engaged" and send again to start it.',
+          );
+        } else {
+          Alert.alert('Success', 'Schedules updated successfully.');
+        }
       } else {
         Alert.alert(
           'Warning',
