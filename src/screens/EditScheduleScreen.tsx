@@ -123,6 +123,17 @@ export default function EditScheduleScreen() {
     String(schedule.lora?.sendIntervalMin ?? ''),
   );
 
+  // LoRa and LoRaWAN share one radio — a schedule may use at most one.
+  // Enabling either turns the other off.
+  const handleLorawanToggle = (val: boolean) => {
+    setLorawanEnabled(val);
+    if (val) setLoraEnabled(false);
+  };
+  const handleLoraToggle = (val: boolean) => {
+    setLoraEnabled(val);
+    if (val) setLorawanEnabled(false);
+  };
+
   /* Magnetometer */
   const [magEnabled, setMagEnabled] = useState(
     schedule.magnetometer?.enabled ?? false,
@@ -446,10 +457,14 @@ export default function EditScheduleScreen() {
         setAccelEnabled,
       )}
 
-      {/* LORAWAN */}
+      {/* LORAWAN — mutually exclusive with LoRa (shared radio) */}
       {renderCard(
         '📡 LoRaWAN',
         <>
+          <Text style={styles.helper}>
+            LoRa and LoRaWAN share one radio — only one can be active per
+            schedule.
+          </Text>
           <Text style={styles.label}>Send Interval (minutes)</Text>
           <TextInput
             style={styles.input}
@@ -462,13 +477,17 @@ export default function EditScheduleScreen() {
           />
         </>,
         lorawanEnabled,
-        setLorawanEnabled,
+        handleLorawanToggle,
       )}
 
-      {/* LORA */}
+      {/* LORA — mutually exclusive with LoRaWAN (shared radio) */}
       {renderCard(
         '📻 LoRa',
         <>
+          <Text style={styles.helper}>
+            LoRa and LoRaWAN share one radio — only one can be active per
+            schedule.
+          </Text>
           <Text style={styles.label}>Send Interval (minutes)</Text>
           <TextInput
             style={styles.input}
@@ -481,7 +500,7 @@ export default function EditScheduleScreen() {
           />
         </>,
         loraEnabled,
-        setLoraEnabled,
+        handleLoraToggle,
       )}
 
       {/* MAGNETOMETER */}
