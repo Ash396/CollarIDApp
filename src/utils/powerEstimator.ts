@@ -15,6 +15,7 @@ const POWER_MW = {
   accelDelta50hz:   0.37,  // 1.37 - 1.00
   // Duty-cycled increments
   micDelta:         7.60,  // Microphone incremental (recording + SD write)
+  micDeltaUnapproved: 15.20, // Mic incremental on an unapproved SD card (~2x)
   gpsAcqDelta:     36.3,   // GPS acquisition incremental above baseline
   loraPower:       40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
   loraDur:          6.3,   // Duration of TX + RX event (s), 100-byte payload
@@ -158,3 +159,29 @@ export function estimateScheduleSolarHours(s: Schedule): number {
   const { baseline, mic, gps, lora } = scheduleIncrementalMw(s);
   return mwToSolarHours(baseline + mic + gps + lora);
 }
+
+// ── SD card capacity ──────────────────────────────────────────
+// Microphone audio: 16 kHz x 16-bit mono PCM -> 32 000 B/s while recording.
+// Accelerometer + sensor CSV rows are <1% of that and ignored — the mic is
+// the only realistic capacity driver for any deployment with audio enabled.
+const MIC_BYTES_PER_SEC = 16000 * 2;
+
+/** SD-card bytes/day written by a schedule's microphone (0 if mic off). */
+export function estimateMicBytesPerDay(s: Schedule): number {
+  if (!s.microphone?.enabled) return 0;
+  const hours = s.window ? windowHours(s.window) : 24;
+  const frac = hours / 24;
+  const duty = s.microphone.continuousMode
+    ? 1
+    : clamp(
+        (s.microphone.sampleLengthMin ?? 1) /
+          (s.microphone.sampleWindowMin ?? 10),
+        0,
+        1,
+      );
+  return frac * duty * 86400 * MIC_BYTES_PER_SEC;
+}
+
+/** Microphone power multiplier on an unapproved SD card vs the approved one. */
+export const MIC_UNAPPROVED_POWER_RATIO =
+  POWER_MW.micDeltaUnapproved / POWER_MW.micDelta;

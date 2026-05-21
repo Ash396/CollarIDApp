@@ -5,6 +5,8 @@ import { useSchedules } from '../context/SchedulesContext';
 import {
   estimatePower,
   estimateScheduleSolarHours,
+  estimateMicBytesPerDay,
+  MIC_UNAPPROVED_POWER_RATIO,
 } from '../utils/powerEstimator';
 
 function badgeColor(solarHours: number): string {
@@ -19,6 +21,28 @@ function badgeLabel(solarHours: number): string {
   return 'High';
 }
 
+const SD_CARD_SIZES = [
+  { label: '32 GB', bytes: 32e9 },
+  { label: '128 GB', bytes: 128e9 },
+  { label: '256 GB', bytes: 256e9 },
+  { label: '512 GB', bytes: 512e9 },
+  { label: '2 TB', bytes: 2e12 },
+];
+
+// Human-friendly duration from a day count — avoids "1825 days" for 5 years.
+function formatDuration(days: number): string {
+  if (!isFinite(days) || days > 36500) return '>100 yr';
+  if (days < 1) return `${Math.round(days * 24)} hr`;
+  if (days < 30) return `${days.toFixed(1)} days`;
+  if (days < 365) {
+    const weeks = (days / 7).toFixed(1);
+    if (days > 70) return `${weeks} weeks (${(days / 30.4).toFixed(1)} months)`;
+    return `${weeks} weeks`;
+  }
+  if (days < 730) return `${(days / 30.4).toFixed(1)} months`;
+  return `${(days / 365).toFixed(1)} years`;
+}
+
 export default function PowerConsumptionScreen() {
   const { draftSchedules } = useSchedules();
 
@@ -28,6 +52,14 @@ export default function PowerConsumptionScreen() {
 
   const { totalSolarHours, components } = estimate;
   const color = badgeColor(totalSolarHours);
+
+  const micBytesPerDay = useMemo(
+    () => schedules.reduce((sum, s) => sum + estimateMicBytesPerDay(s), 0),
+    [schedules],
+  );
+  // Same draft on an unapproved SD card — mic power scales by the ratio.
+  const unapprovedTotalSh =
+    totalSolarHours + components.microphone * (MIC_UNAPPROVED_POWER_RATIO - 1);
 
   const perSchedule = schedules.map((s, idx) => ({
     id: s.id,
@@ -150,6 +182,54 @@ export default function PowerConsumptionScreen() {
         })}
       </View>
 
+      {/* SD CARD CAPACITY */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>SD Card Capacity</Text>
+        {micBytesPerDay <= 0 ? (
+          <Text style={styles.cardExplanation}>
+            Microphone is disabled in all schedules — even a 32 GB card lasts
+            effectively indefinitely on sensor and accelerometer data alone.
+          </Text>
+        ) : (
+          <>
+            <Text style={styles.cardExplanation}>
+              Audio writes {(micBytesPerDay / 1e9).toFixed(2)} GB/day with your
+              current configuration.
+            </Text>
+            <View style={{ marginTop: 8 }}>
+              {SD_CARD_SIZES.map(c => (
+                <View key={c.label} style={styles.row}>
+                  <Text style={styles.rowLabel}>{c.label}</Text>
+                  <Text style={styles.rowValue}>
+                    {formatDuration(c.bytes / micBytesPerDay)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {components.microphone > 0 && (
+          <View style={styles.unapprovedNote}>
+            <Text style={styles.unapprovedTitle}>Unapproved SD card?</Text>
+            <Text style={styles.unapprovedBody}>
+              The microphone estimate assumes the approved card (Kioxia
+              Exceria Plus). On an unapproved card (e.g. SanDisk Extreme or
+              Extreme Pro), the firmware keeps the card energised between
+              every mic write to protect its flash controller — roughly 2x the
+              microphone power while recording. That pushes the total to{' '}
+              {unapprovedTotalSh.toFixed(2)} solar-hours/day instead of{' '}
+              {totalSolarHours.toFixed(2)}.
+            </Text>
+          </View>
+        )}
+
+        <Text style={styles.cardNote}>
+          Based on 16 kHz / 16-bit mono PCM audio (32 kB/s while recording).
+          Card sizes use marketed capacity; subtract ~7% for exFAT overhead.
+        </Text>
+      </View>
+
       <Text style={styles.footnote}>
         Based on empirical measurements at 22 dBm TX, 100-byte payload. GPS
         acquisition: 10 s (low), 25 s (med), 40 s (high). 215 mW solar panel at
@@ -212,6 +292,22 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: 14, fontWeight: '600', color: '#111' },
 
   cardNote: { fontSize: 12, color: '#999', marginTop: 8 },
+
+  unapprovedNote: {
+    marginTop: 12,
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FDE3C2',
+    borderRadius: 10,
+    padding: 10,
+  },
+  unapprovedTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#B45309',
+    marginBottom: 3,
+  },
+  unapprovedBody: { fontSize: 12, color: '#7C5A2E', lineHeight: 17 },
 
   componentRow: { marginVertical: 6 },
   componentLabelRow: {
