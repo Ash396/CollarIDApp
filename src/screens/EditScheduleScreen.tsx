@@ -76,10 +76,8 @@ export default function EditScheduleScreen() {
     String(schedule.environmental?.sampleIntervalMin ?? ''),
   );
 
-  /* Particulate */
-  const [partEnabled, setPartEnabled] = useState(
-    schedule.particulate?.enabled ?? false,
-  );
+  /* Particulate — sensor not installed on this hardware; always off */
+  const [partEnabled] = useState(false);
   const [partInterval, setPartInterval] = useState(
     String(schedule.particulate?.sampleIntervalMin ?? ''),
   );
@@ -229,19 +227,26 @@ export default function EditScheduleScreen() {
   };
 
   /* ---------------- CARD HELPER ---------------- */
+  // `locked` greys the card out and disables its toggle — used for sensors
+  // that aren't present on this hardware.
   const renderCard = (
     title: string,
     children: React.ReactNode,
     enabled?: boolean,
     onToggle?: (val: boolean) => void,
+    locked?: boolean,
   ) => {
-    const dim = enabled === false;
+    const dim = enabled === false || locked === true;
     return (
       <View style={[styles.card, dim && styles.cardDisabled]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{title}</Text>
-          {typeof enabled === 'boolean' && onToggle && (
-            <Switch value={enabled} onValueChange={onToggle} />
+          {typeof enabled === 'boolean' && (
+            <Switch
+              value={locked ? false : enabled}
+              onValueChange={onToggle}
+              disabled={locked === true}
+            />
           )}
         </View>
         <View style={{ opacity: dim ? 0.5 : 1 }}>{children}</View>
@@ -359,10 +364,13 @@ export default function EditScheduleScreen() {
         setEnvEnabled,
       )}
 
-      {/* PARTICULATE */}
+      {/* PARTICULATE — sensor not installed on this hardware */}
       {renderCard(
         '💨 Particulate',
         <>
+          <Text style={styles.helper}>
+            Particulate sensor is not installed on this device.
+          </Text>
           <Text style={styles.label}>Interval (minutes)</Text>
           <TextInput
             style={styles.input}
@@ -371,10 +379,12 @@ export default function EditScheduleScreen() {
             onChangeText={setPartInterval}
             placeholder="1–720 min"
             placeholderTextColor="#999"
+            editable={false}
           />
         </>,
-        partEnabled,
-        setPartEnabled,
+        false,
+        undefined,
+        true,
       )}
 
       {/* MICROPHONE */}

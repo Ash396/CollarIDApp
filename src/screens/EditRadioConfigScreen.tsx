@@ -246,7 +246,9 @@ export default function EditRadioConfigScreen() {
       setLoraFrequencyMHz(String(lora.frequency ?? ''));
     }
 
-    setLostModeEnabled(lostEnabled);
+    // Lost Mode is not available on this hardware — keep it forced off
+    // regardless of what the device reports.
+    setLostModeEnabled(false);
     if (lostEnabled && lostCfg) {
       const activation = fromUnixEpochSecondsToLocalStrings(
         Number(lostCfg.activationEpoch ?? 0),
@@ -266,19 +268,26 @@ export default function EditRadioConfigScreen() {
     return toUnixEpochSecondsFromLocal(activationDate, activationTime);
   }, [activationDate, activationTime]);
 
+  // `locked` greys the card out and disables its toggle — used for
+  // features that aren't available on this hardware.
   const renderCard = (
     title: string,
     children: React.ReactNode,
     enabled?: boolean,
     onToggle?: (val: boolean) => void,
+    locked?: boolean,
   ) => {
-    const dim = enabled === false;
+    const dim = enabled === false || locked === true;
     return (
       <View style={[styles.card, dim && styles.cardDisabled]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{title}</Text>
-          {typeof enabled === 'boolean' && onToggle && (
-            <Switch value={enabled} onValueChange={onToggle} />
+          {typeof enabled === 'boolean' && (
+            <Switch
+              value={locked ? false : enabled}
+              onValueChange={onToggle}
+              disabled={locked === true}
+            />
           )}
         </View>
         <View style={{ opacity: dim ? 0.5 : 1 }}>{children}</View>
@@ -685,50 +694,15 @@ export default function EditRadioConfigScreen() {
         setLoraEnabled,
       )}
 
+      {/* Lost Mode — not available on this hardware */}
       {renderCard(
         '🚨 Lost Mode',
-        <>
-          {lostModeEnabled && (
-            <>
-              <Text style={styles.label}>Activation Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
-                value={activationDate}
-                onChangeText={setActivationDate}
-                placeholder="2026-02-06"
-                placeholderTextColor="#999"
-              />
-
-              <Text style={styles.label}>Activation Time (HH:MM, 24h)</Text>
-              <TextInput
-                style={styles.input}
-                value={activationTime}
-                onChangeText={setActivationTime}
-                placeholder="13:45"
-                placeholderTextColor="#999"
-              />
-
-              <Text style={styles.helper}>
-                Epoch preview:{' '}
-                {activationEpochPreview !== undefined
-                  ? activationEpochPreview
-                  : '—'}
-              </Text>
-
-              <Text style={styles.label}>Transmit Interval (minutes)</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                value={lostModeTransmitInterval}
-                onChangeText={setLostModeTransmitInterval}
-                placeholder="> 0"
-                placeholderTextColor="#999"
-              />
-            </>
-          )}
-        </>,
-        lostModeEnabled,
-        setLostModeEnabled,
+        <Text style={styles.helper}>
+          Lost Mode is not available on this device.
+        </Text>,
+        false,
+        undefined,
+        true,
       )}
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
