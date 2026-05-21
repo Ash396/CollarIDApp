@@ -16,13 +16,11 @@ import StyledPicker from '../components/StyledPicker';
 export default function EditScheduleScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { schedule } = route.params;
+  const { schedule, index } = route.params;
 
   const { updateSchedule, deleteSchedule } = useSchedules();
 
   /* ---------------- STATE ---------------- */
-  const [name, setName] = useState(schedule.name ?? '');
-
   const [startHour, setStartHour] = useState(schedule.window?.startHour ?? 0);
   const [endHour, setEndHour] = useState(schedule.window?.endHour ?? 0);
 
@@ -132,14 +130,8 @@ export default function EditScheduleScreen() {
 
   /* ---------------- SAVE ---------------- */
   const handleSave = () => {
-    if (!name.trim()) {
-      Alert.alert('Invalid name', 'Please enter a schedule name.');
-      return;
-    }
-
     const updated = {
       ...schedule,
-      name,
       window: { startHour, endHour },
       gps: {
         enabled: gpsEnabled,
@@ -190,7 +182,9 @@ export default function EditScheduleScreen() {
   const handleDelete = () => {
     Alert.alert(
       'Delete Schedule',
-      `Are you sure you want to delete "${schedule.name}"?`,
+      `Are you sure you want to delete ${
+        typeof index === 'number' ? `Schedule ${index + 1}` : 'this schedule'
+      }?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -233,22 +227,9 @@ export default function EditScheduleScreen() {
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Edit Schedule</Text>
-
-      {/* NAME */}
-      {renderCard(
-        'Schedule Info',
-        <>
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter schedule name"
-            placeholderTextColor="#999"
-          />
-        </>,
-      )}
+      <Text style={styles.title}>
+        {typeof index === 'number' ? `Edit Schedule ${index + 1}` : 'Edit Schedule'}
+      </Text>
 
       {/* TIME WINDOW */}
       {renderCard(

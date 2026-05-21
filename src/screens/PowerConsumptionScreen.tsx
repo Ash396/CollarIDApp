@@ -29,9 +29,9 @@ export default function PowerConsumptionScreen() {
   const { totalSolarHours, components } = estimate;
   const color = badgeColor(totalSolarHours);
 
-  const perSchedule = schedules.map(s => ({
+  const perSchedule = schedules.map((s, idx) => ({
     id: s.id,
-    name: s.name ?? 'Schedule',
+    name: `Schedule ${idx + 1}`,
     solarHours: estimateScheduleSolarHours(s),
   }));
 

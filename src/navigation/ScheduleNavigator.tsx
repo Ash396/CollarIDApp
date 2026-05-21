@@ -8,6 +8,7 @@ import EditScheduleScreen from '../screens/EditScheduleScreen';
  * ----------------------------------------------------- */
 export type Schedule = {
   id: string;
+  /** Derived positional label ("Schedule N") — not user-editable. */
   name: string;
   window: { startHour: number; endHour: number };
 
@@ -46,7 +47,7 @@ export type Schedule = {
  * ----------------------------------------------------- */
 export type ScheduleStackParamList = {
   Schedules: { device?: any } | undefined;
-  EditSchedule: { schedule: Schedule };
+  EditSchedule: { schedule: Schedule; index: number };
 };
 
 const Stack = createNativeStackNavigator<ScheduleStackParamList>();

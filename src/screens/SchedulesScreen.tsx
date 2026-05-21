@@ -109,7 +109,7 @@ export default function SchedulesScreen() {
   const handleAddSchedule = () => {
     const newSchedule = {
       id: Date.now().toString(),
-      name: `New Schedule ${draftSchedules.length + 1}`,
+      name: `Schedule ${draftSchedules.length + 1}`,
       window: { startHour: 0, endHour: 0 },
 
       gps: { enabled: false, sampleIntervalMin: 10, accuracy: 5 },
@@ -235,7 +235,7 @@ export default function SchedulesScreen() {
         </Text>
       )}
 
-      {draftSchedules.map(s => {
+      {draftSchedules.map((s, idx) => {
         const isDisabled = !(
           s.gps?.enabled ||
           s.light?.enabled ||
@@ -256,7 +256,7 @@ export default function SchedulesScreen() {
             onPress={() => {
               Alert.alert(
                 'Delete Schedule',
-                `Are you sure you want to delete "${s.name}"?`,
+                `Are you sure you want to delete Schedule ${idx + 1}?`,
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {
@@ -277,10 +277,10 @@ export default function SchedulesScreen() {
             <TouchableOpacity
               style={[styles.card, isDisabled && styles.disabledCard]}
               onPress={() =>
-                navigation.navigate('EditSchedule', { schedule: s })
+                navigation.navigate('EditSchedule', { schedule: s, index: idx })
               }
             >
-              <Text style={styles.cardTitle}>{s.name}</Text>
+              <Text style={styles.cardTitle}>Schedule {idx + 1}</Text>
               <Text style={styles.cardText}>
                 🕓 {s.window.startHour}:00 – {s.window.endHour}:00
               </Text>

@@ -4,7 +4,6 @@ import { mapProtoSchedule } from './mapProtoSchedule';
 
 function normalizeScheduleApp(s: Schedule) {
   return {
-    name: s.name ?? '',
     window: { startHour: s.window.startHour ?? 0, endHour: s.window.endHour ?? 0 },
     light: { enabled: !!s.light?.enabled, sampleIntervalMin: s.light?.sampleIntervalMin ?? 0 },
     environmental: { enabled: !!s.environmental?.enabled, sampleIntervalMin: s.environmental?.sampleIntervalMin ?? 0 },
@@ -33,8 +32,18 @@ export function schedulesEqual(
 ) {
   const readbackApp = readbackProto.map(mapProtoSchedule);
 
-  const A = draft.map(normalizeScheduleApp).sort((x, y) => x.name.localeCompare(y.name));
-  const B = readbackApp.map(normalizeScheduleApp).sort((x, y) => x.name.localeCompare(y.name));
+  // Order-independent compare keyed on the time window. The schedule name is
+  // a derived positional label ("Schedule N"), not part of the device
+  // config, so it must not factor into equality.
+  const byWindow = (
+    x: ReturnType<typeof normalizeScheduleApp>,
+    y: ReturnType<typeof normalizeScheduleApp>,
+  ) =>
+    x.window.startHour - y.window.startHour ||
+    x.window.endHour - y.window.endHour;
+
+  const A = draft.map(normalizeScheduleApp).sort(byWindow);
+  const B = readbackApp.map(normalizeScheduleApp).sort(byWindow);
 
   return JSON.stringify(A) === JSON.stringify(B);
 }
