@@ -10,7 +10,10 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { ScheduleStackParamList } from '../navigation/ScheduleNavigator';
+import type {
+  Schedule,
+  ScheduleStackParamList,
+} from '../navigation/ScheduleNavigator';
 import { useSchedules } from '../context/SchedulesContext';
 import { useRadioConfig } from '../context/RadioConfigContext';
 import { buildSchedulePacketFromAppState, sendConfig } from '../ble/bleManager';
@@ -23,29 +26,31 @@ import { Swipeable } from 'react-native-gesture-handler';
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, 'Schedules'>;
 
-function findOverlappingSchedules(schedules: any[]) {
-  const normalized = schedules.map(s => {
+// Returns the [i, j] indices of the first overlapping schedule pair, or
+// null if none overlap. end_hour is INCLUSIVE per the firmware contract
+// (matches windowHours() in powerEstimator), so a window start..end covers
+// the half-open hour range [start, end + 1); a window with end < start
+// wraps past midnight.
+function findOverlappingSchedules(
+  schedules: Schedule[],
+): [number, number] | null {
+  const intervals = schedules.map(s => {
     const start = s.window.startHour;
     const end = s.window.endHour;
-
-    return {
-      ...s,
-      intervals:
-        end > start
-          ? [[start, end]]
-          : [
-              [start, 24],
-              [0, end],
-            ],
-    };
+    return end >= start
+      ? [[start, end + 1]]
+      : [
+          [start, 24],
+          [0, end + 1],
+        ];
   });
 
-  for (let i = 0; i < normalized.length; i++) {
-    for (let j = i + 1; j < normalized.length; j++) {
-      for (const [aStart, aEnd] of normalized[i].intervals) {
-        for (const [bStart, bEnd] of normalized[j].intervals) {
+  for (let i = 0; i < intervals.length; i++) {
+    for (let j = i + 1; j < intervals.length; j++) {
+      for (const [aStart, aEnd] of intervals[i]) {
+        for (const [bStart, bEnd] of intervals[j]) {
           if (aStart < bEnd && bStart < aEnd) {
-            return [normalized[i], normalized[j]];
+            return [i, j];
           }
         }
       }
@@ -77,8 +82,8 @@ export default function SchedulesScreen() {
   // Prevent re-loading from device repeatedly due to device object identity changes
   const lastLoadedId = useRef<string | null>(null);
   
-  const overlappingSchedules = findOverlappingSchedules(draftSchedules);
-  const hasOverlaps = overlappingSchedules !== null;
+  const overlapPair = findOverlappingSchedules(draftSchedules);
+  const hasOverlaps = overlapPair !== null;
 
   useEffect(() => {
     const id = device?.id;
@@ -151,10 +156,12 @@ export default function SchedulesScreen() {
         return;
       }
 
-      if (overlappingSchedules) {
+      if (overlapPair) {
         Alert.alert(
           'Overlapping Schedules',
-          `"${overlappingSchedules[0].name}" overlaps with "${overlappingSchedules[1].name}". Please resolve schedule conflicts before sending to the collar.`,
+          `Schedule ${overlapPair[0] + 1} overlaps with Schedule ${
+            overlapPair[1] + 1
+          }. Please resolve schedule conflicts before sending to the collar.`,
         );
         return;
       }
@@ -227,13 +234,13 @@ export default function SchedulesScreen() {
         />
       </View>
 
-      {hasOverlaps && overlappingSchedules && (
+      {hasOverlaps && overlapPair && (
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>Overlapping schedules</Text>
           <Text style={styles.warningText}>
-            "{overlappingSchedules[0].name}" overlaps with "
-            {overlappingSchedules[1].name}". Drafts can overlap, but schedules
-            must not overlap before sending to the collar.
+            Schedule {overlapPair[0] + 1} overlaps with Schedule{' '}
+            {overlapPair[1] + 1}. Drafts can overlap, but schedules must not
+            overlap before sending to the collar.
           </Text>
         </View>
       )}
