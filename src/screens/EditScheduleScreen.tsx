@@ -13,6 +13,20 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSchedules } from '../context/SchedulesContext';
 import StyledPicker from '../components/StyledPicker';
 
+// "Active HH:00–HH:00 · N hours" readout for a time window. end_hour is
+// inclusive, so the window covers [start, end+1) and its length is
+// end-start+1 (wrapping past midnight when end < start).
+function timeWindowSummary(start: number, end: number): string {
+  let dur = end - start + 1;
+  const wraps = dur <= 0;
+  if (wraps) dur += 24;
+  const fmt = (h: number) => `${String(h).padStart(2, '0')}:00`;
+  const note = dur === 24 ? ' (full day)' : wraps ? ' (overnight)' : '';
+  return `Active ${fmt(start)}–${fmt(end + 1)} · ${dur} hour${
+    dur === 1 ? '' : 's'
+  }${note}`;
+}
+
 export default function EditScheduleScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -22,7 +36,22 @@ export default function EditScheduleScreen() {
 
   /* ---------------- STATE ---------------- */
   const [startHour, setStartHour] = useState(schedule.window?.startHour ?? 0);
-  const [endHour, setEndHour] = useState(schedule.window?.endHour ?? 0);
+  const [endHour, setEndHour] = useState(schedule.window?.endHour ?? 23);
+
+  // 24/7 is derived UI sugar — the device has no all-day flag; a full day
+  // is just start 0 / end 23. "On" locks the hour pickers to 0–23.
+  const [is247, setIs247] = useState(
+    (schedule.window?.startHour ?? 0) === 0 &&
+      (schedule.window?.endHour ?? 23) === 23,
+  );
+
+  const toggle247 = (val: boolean) => {
+    setIs247(val);
+    if (val) {
+      setStartHour(0);
+      setEndHour(23);
+    }
+  };
 
   /* GPS */
   const [gpsEnabled, setGpsEnabled] = useState(schedule.gps?.enabled ?? false);
@@ -235,12 +264,18 @@ export default function EditScheduleScreen() {
       {renderCard(
         '🕓 Time Window',
         <>
+          <View style={styles.row}>
+            <Text style={{ color: '#333' }}>Run 24/7 (all day)</Text>
+            <Switch value={is247} onValueChange={toggle247} />
+          </View>
+
           <Text style={styles.label}>Start Hour</Text>
           <StyledPicker
             selectedValue={startHour}
             onValueChange={setStartHour}
             items={hourOptions}
             placeholder="Select start hour"
+            enabled={!is247}
           />
 
           <Text style={styles.label}>End Hour</Text>
@@ -249,7 +284,15 @@ export default function EditScheduleScreen() {
             onValueChange={setEndHour}
             items={hourOptions}
             placeholder="Select end hour"
+            enabled={!is247}
           />
+
+          <Text style={styles.helper}>
+            Both hours are inclusive — the end hour is fully counted.
+          </Text>
+          <Text style={styles.windowSummary}>
+            {timeWindowSummary(startHour, endHour)}
+          </Text>
         </>,
       )}
 
@@ -509,6 +552,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     marginTop: 2,
+  },
+
+  windowSummary: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4A90D9',
+    marginTop: 6,
   },
 
   row: {

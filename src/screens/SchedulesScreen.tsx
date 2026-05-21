@@ -110,7 +110,7 @@ export default function SchedulesScreen() {
     const newSchedule = {
       id: Date.now().toString(),
       name: `Schedule ${draftSchedules.length + 1}`,
-      window: { startHour: 0, endHour: 0 },
+      window: { startHour: 0, endHour: 23 },
 
       gps: { enabled: false, sampleIntervalMin: 10, accuracy: 5 },
       light: { enabled: false, sampleIntervalMin: 10 },
