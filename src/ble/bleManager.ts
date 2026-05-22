@@ -16,6 +16,72 @@ export const STATUS_CHAR_UUID = '9eaf9ebe-c3e9-4bd6-956e-5ca63d222fbb';
 export const RADIO_CHAR_UUID = '68a6a356-49c1-4bed-b152-a02c0cb2c024';
 
 /* -------------------------------------------------------------------------- */
+/*          DEV MOCK COLLAR — simulator testing without Bluetooth             */
+/* -------------------------------------------------------------------------- */
+// The iOS Simulator has no Bluetooth. To exercise the connected-device flows
+// (loading schedules, Send to Device, the engaged/overlap checks) the app can
+// "connect" to this fake collar via the __DEV__-only button on HomeScreen.
+// readSchedulesFromDevice / sendConfig / readRadioState short-circuit to
+// in-memory canned data when the device is this mock.
+export const MOCK_COLLAR_ID = 'MOCK-COLLAR';
+export const MOCK_COLLAR = {
+  id: MOCK_COLLAR_ID,
+  name: 'Mock Collar',
+} as unknown as Device;
+
+export function isMockDevice(device: Device | null | undefined): boolean {
+  return device?.id === MOCK_COLLAR_ID;
+}
+
+// In-memory stand-in for the collar's stored schedule packet. Seeded with two
+// non-overlapping schedules and engaged=false, so a first "Send to Device"
+// exercises the disengaged-device warning. sendConfig() updates it so a send
+// round-trips and the read-back verifies.
+let mockScheduleStore: { schedules: any[]; engaged: boolean } = {
+  engaged: false,
+  schedules: [
+    {
+      window: { startHour: 0, endHour: 11 },
+      gps: { enabled: true, sampleIntervalMin: 20, accuracy: 5 },
+      light: { enabled: true, sampleIntervalMin: 10 },
+      environmental: { enabled: false, sampleIntervalMin: 5 },
+      particulate: { enabled: false, sampleIntervalMin: 15 },
+      microphone: {
+        enabled: true,
+        continuousMode: false,
+        sampleLengthMin: 1,
+        sampleWindowMin: 10,
+      },
+      accelerometer: { enabled: true, sampleRate: 0, sensitivity: 0 },
+      magnetometer: { enabled: false, sampleIntervalS: 60 },
+      lorawanEnabled: true,
+      lorawanSendIntervalMin: 60,
+      loraEnabled: false,
+      loraSendIntervalMin: 0,
+    },
+    {
+      window: { startHour: 12, endHour: 23 },
+      gps: { enabled: false, sampleIntervalMin: 20, accuracy: 5 },
+      light: { enabled: true, sampleIntervalMin: 10 },
+      environmental: { enabled: true, sampleIntervalMin: 5 },
+      particulate: { enabled: false, sampleIntervalMin: 15 },
+      microphone: {
+        enabled: false,
+        continuousMode: false,
+        sampleLengthMin: 1,
+        sampleWindowMin: 10,
+      },
+      accelerometer: { enabled: false, sampleRate: 0, sensitivity: 0 },
+      magnetometer: { enabled: true, sampleIntervalS: 60 },
+      lorawanEnabled: false,
+      lorawanSendIntervalMin: 0,
+      loraEnabled: false,
+      loraSendIntervalMin: 0,
+    },
+  ],
+};
+
+/* -------------------------------------------------------------------------- */
 /*                          Type Definitions                                  */
 /* -------------------------------------------------------------------------- */
 
@@ -165,6 +231,7 @@ export async function readInitialState(device: Device): Promise<DecodedPacket> {
 
 // Radio state read
 export async function readRadioState(device: Device): Promise<DecodedPacket> {
+  if (isMockDevice(device)) return null; // mock collar has no radio config
   try {
     const ch = await device.readCharacteristicForService(
       COLLAR_SERVICE_UUID,
@@ -187,6 +254,12 @@ export async function readRadioState(device: Device): Promise<DecodedPacket> {
 //   return pkt ? { schedules: pkt.schedules ?? [], engaged: Boolean(pkt.engaged) } : null;
 // }
 export async function readSchedulesFromDevice(device: Device) {
+  if (isMockDevice(device)) {
+    return {
+      schedules: mockScheduleStore.schedules,
+      engaged: mockScheduleStore.engaged,
+    };
+  }
   const decoded = await readInitialState(device);
   console.log('[Schedules] decoded object:', JSON.stringify(decoded, null, 2));
 
@@ -429,6 +502,22 @@ export function buildBlePacketFromRadioConfig(
 //   return true;
 // }
 export async function sendConfig(device: Device, packet: PB.BlePacket) {
+  if (isMockDevice(device)) {
+    const scp = packet.scheduleConfigPacket;
+    if (scp) {
+      mockScheduleStore = {
+        schedules: (scp.schedules ?? []) as any[],
+        engaged: Boolean(scp.engaged),
+      };
+    }
+    console.log(
+      '🧪 [mock] sendConfig stored',
+      mockScheduleStore.schedules.length,
+      'schedules, engaged =',
+      mockScheduleStore.engaged,
+    );
+    return true;
+  }
   try {
     console.log('📤 Sending schedule packet…');
 

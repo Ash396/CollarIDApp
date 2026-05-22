@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   PermissionsAndroid,
   Platform,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
@@ -23,6 +25,8 @@ import {
   disconnectFromCollar,
   buildSchedulePacketFromAppState,
   sendConfig,
+  MOCK_COLLAR,
+  isMockDevice,
 } from '../ble/bleManager';
 
 import { useSchedules } from '../context/SchedulesContext';
@@ -41,7 +45,7 @@ interface Collar {
 export default function HomeScreen() {
   const [collars, setCollars] = useState<Collar[]>([]);
   const [scanning, setScanning] = useState(false);
-  const { setDevice } = useDevice();
+  const { device, setDevice } = useDevice();
   const [connectedDevice, setConnectedDevice] = useState<Collar | null>(null);
 
   const navigation = useNavigation<any>();
@@ -354,6 +358,20 @@ export default function HomeScreen() {
     }
   };
 
+  /* ---------------- DEV: mock collar (simulator, no Bluetooth) ---------------- */
+  const handleConnectMock = () => {
+    setDevice(MOCK_COLLAR);
+    Alert.alert(
+      'Mock collar connected',
+      'A simulated collar is connected (no Bluetooth needed). Open the Schedules, Radio, or Power tab to test the configurator.',
+    );
+  };
+
+  const handleDisconnectMock = () => {
+    clearSchedulesState();
+    setDevice(null);
+  };
+
   const displayList = connectedDevice
     ? [connectedDevice]
     : collars.sort((a, b) => a.name.localeCompare(b.name));
@@ -393,6 +411,29 @@ export default function HomeScreen() {
           <Text style={styles.subtext}>No CollarID devices detected.</Text>
         </View>
       )}
+
+      {__DEV__ && (
+        <View style={styles.center}>
+          {isMockDevice(device) ? (
+            <TouchableOpacity
+              style={[styles.mockButton, styles.mockButtonOff]}
+              onPress={handleDisconnectMock}
+            >
+              <Text style={styles.mockButtonText}>Disconnect Mock Collar</Text>
+            </TouchableOpacity>
+          ) : !device ? (
+            <TouchableOpacity
+              style={styles.mockButton}
+              onPress={handleConnectMock}
+            >
+              <Text style={styles.mockButtonText}>🧪 Connect Mock Collar</Text>
+            </TouchableOpacity>
+          ) : null}
+          <Text style={styles.mockHint}>
+            Dev only — simulator testing without Bluetooth.
+          </Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -404,4 +445,13 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '700', color: '#111', letterSpacing: 0.5 },
   center: { alignItems: 'center', marginVertical: 24 },
   subtext: { marginTop: 10, fontSize: 16, color: '#444', fontWeight: '400' },
+  mockButton: {
+    backgroundColor: '#6D4AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: 10,
+  },
+  mockButtonOff: { backgroundColor: '#9CA3AF' },
+  mockButtonText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
+  mockHint: { marginTop: 8, fontSize: 12, color: '#999' },
 });
