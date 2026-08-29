@@ -251,8 +251,8 @@ export default function EditScheduleScreen() {
   // Wording mirrors VOCAB.micSampleRate / micBitDepth in the website's
   // js/collar-vocab.js — the two editors describe the same firmware fields.
   const micRateOptions = [
-    { label: '16 kHz (default)', value: 0 },
-    { label: '8 kHz (half the storage)', value: 1 },
+    { label: '16 kHz', value: 0 },
+    { label: '8 kHz', value: 1 },
   ];
 
 
@@ -711,17 +711,12 @@ export default function EditScheduleScreen() {
             enabled={micEnabled && micFormatCapable}
           />
 
-          {!micFormatCapable ? (
+          {/* Only the firmware-gating message — no explainer when usable. */}
+          {!micFormatCapable && (
             <Text style={styles.noteAmber}>
               {fwBuild
                 ? `This collar’s firmware (build ${fwBuild}) records at 16 kHz only — a selectable sample rate needs build 338+.`
                 : 'Selecting the sample rate needs firmware build 338+. Connect to a collar to check.'}
-            </Text>
-          ) : (
-            <Text style={styles.noteAmber}>
-              Halves the recording size, at the cost of sound above 4 kHz.
-              Recording less often saves far more power than recording at a
-              lower rate.
             </Text>
           )}
         </>,
