@@ -175,10 +175,13 @@ describe('firmware gating', () => {
       micRateExt: false,
     });
   });
-  it('opens the extended-rate gate exactly at build 341', () => {
-    // 338-340: base format yes, extended rates no.
+  it('keeps the extended-rate gate closed on every real firmware', () => {
+    // The 48/96/192 kHz clocks watchdog-crashed b341 (RM0456 ratio) and are
+    // clamped from b342 — no shipped build may open this gate until the
+    // PLL3 kernel redesign lands and this test names its build number.
     expect(bleFeatureGates(340, 0)).toMatchObject({ micFormat: true, micRateExt: false });
-    expect(bleFeatureGates(341, 0)).toMatchObject({ micFormat: true, micRateExt: true });
+    expect(bleFeatureGates(341, 0)).toMatchObject({ micFormat: true, micRateExt: false });
+    expect(bleFeatureGates(342, 0)).toMatchObject({ micFormat: true, micRateExt: false });
   });
   it('opens the microphone format gate exactly at build 338', () => {
     expect(bleFeatureGates(337, 0).micFormat).toBe(false);
