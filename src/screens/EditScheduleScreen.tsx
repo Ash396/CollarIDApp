@@ -256,9 +256,11 @@ export default function EditScheduleScreen() {
   // per-item disable, so on fw 338-340 the extended rates are filtered out of
   // the list rather than greyed; the collar cannot honour them and the save
   // path clamps them anyway.
+  // Ascending Hz for display; the values are wire values and not in display
+  // order (0 = 16 kHz is the historical default).
   const micRateOptions = [
-    { label: '16 kHz', value: 0 },
     { label: '8 kHz', value: 1 },
+    { label: '16 kHz', value: 0 },
     ...(micRateExtCapable
       ? [
           { label: '48 kHz', value: 2 },
