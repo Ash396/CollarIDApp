@@ -1,0 +1,245 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+
+// ================== SERVER → COLLAR DOWNLINK ==================
+// Designed for LoRaWAN RX windows. Keep payloads minimal.
+// At DR2 (SF10/125kHz) max payload is ~51 bytes.
+// At DR5 (SF7/125kHz) max payload is ~222 bytes.
+//
+// Config updates use a transactional model with integrity checking:
+//   1. CMD_CONFIG_BEGIN  → device snapshots live config into staging buffer
+//   2. Config fragments sent (one per downlink, any order)
+//      Each fragment carries fragment_index and fragment_total for integrity
+//   3. CMD_CONFIG_COMMIT → device verifies all fragments received, then
+//      applies staging → live, persists, notifies threads
+//   If any fragments are missing, commit is rejected (staging discarded).
+//   Device uplinks a config ACK/NACK so the server knows whether to retry.
+
+// ---- Commands ----
+enum CommandType {
+  CMD_NONE           = 0;
+  CMD_RESET          = 1;   // Reboot the device
+  CMD_DROP_OFF       = 2;   // Detach the collar (irreversible)
+  CMD_HIGH_FIX_ON    = 3;   // Enable high-fix GPS mode
+  CMD_HIGH_FIX_OFF   = 4;   // Disable high-fix GPS mode
+  CMD_SYNC_TIME      = 5;   // Sync RTC to server epoch
+  CMD_BUZZ           = 6;   // Audible locate ping (future)
+  CMD_ENGAGE         = 7;   // Engage the system (start scheduling)
+  CMD_DISENGAGE      = 8;   // Disengage (stop all sensors, idle)
+  CMD_CONFIG_BEGIN   = 9;   // Start config transaction (snapshot live → staging)
+  CMD_CONFIG_COMMIT  = 10;  // Verify + apply staging → live, persist, notify
+  CMD_CONFIG_ABORT   = 11;  // Discard staging buffer
+  // 7.1 remote add-on control: routed into the collar's durable command
+  // queue and forwarded to the detach add-on at its next rendezvous.
+  CMD_ADDON_ARM      = 13;  // Arm detach at addon_arm_epoch (UTC s)
+  CMD_ADDON_ABORT    = 14;  // Disarm the detach add-on
+  // Missed-packet recovery (DESIGN_lorawan_reliability.md): server detected
+  // a gap in packet_header.packet_index and asks the device to replay the
+  // stored uplinks verbatim (pure retransmit, fPort 12).
+  CMD_RESEND         = 15;  // Replay uplinks named by resend_from/resend_mask
+  // Remote schedule push (DESIGN_remote_schedule_push.md): ask the device to
+  // uplink its full ConfigPacket + sched_crc so the server can (re)learn the
+  // running schedule — the SD-card-edit recovery path, and the freshness
+  // prerequisite for building delta fragments.
+  CMD_CONFIG_REPORT  = 16;  // Uplink current schedule config
+  // Bench-only fence tester (DESIGN_geofence_actions.md): feed the geofence
+  // engine a synthetic GPS fix so an operator can walk a desk collar through
+  // a fence from the dashboard. The fix rides GeofenceData.vertices[0].
+  // Compiled OUT of PRODUCTION_BUILD firmware — a production collar ignores
+  // it entirely.
+  CMD_TEST_FIX       = 17;
+
+  // Pre-ship factory reset (fw 305+). Wipes recorded data (METADATA.CSV and
+  // the whole date tree of audio/accel/GPS files), clears the uplink replay
+  // ring and LoRa session state, and resets every setting to stock:
+  // disengaged, default schedules, no radio credentials, no geofences.
+  // Accepted ONLY over the BLE config tunnel — physical possession is the
+  // authority. A radio downlink carrying this command is logged and ignored,
+  // so no server bug or spoofed downlink can wipe a deployed collar.
+  CMD_FACTORY_RESET  = 18;
+}
+
+// ---- Geofence ----
+message GeoPoint {
+  int32 latitude_e7  = 1;
+  int32 longitude_e7 = 2;
+}
+
+message GeofenceData {
+  uint32 fence_id    = 1;
+  repeated GeoPoint vertices = 2;  // max 8
+  bool   active      = 3;
+}
+
+// ---- High-fix parameters ----
+message HighFixParams {
+  uint32 duration_hours       = 1;  // default 24
+  uint32 sample_interval_sec  = 2;  // default 300
+}
+
+// ================== CONFIG FRAGMENTS (STAGED) ==================
+// All fields optional — only present fields overwrite staging.
+// Omitted fields retain their current live value.
+
+// Time window for a schedule slot (~4 bytes)
+message ConfigTimeWindow {
+  optional uint32 start_hour = 1;  // 0-23
+  optional uint32 end_hour   = 2;  // 0-23
+}
+
+// Accelerometer (~4 bytes)
+message ConfigAccelerometer {
+  optional bool   enabled      = 1;
+  optional uint32 sample_rate  = 2;  // 0=25Hz, 1=50Hz
+  optional uint32 sensitivity  = 3;  // 0=2G, 1=4G, 2=8G
+}
+
+// Microphone (~9 bytes)
+//
+// sample_rate/bit_depth mirror ble.proto's MicSampleRate/MicBitDepth. They
+// are uint32 here (as ConfigAccelerometer.sample_rate already is) because
+// downlink.proto does not import ble.proto. Both are optional, so a server
+// that never sets them costs zero extra bytes and a collar predating them
+// skips the unknown fields and keeps its 16 kHz / 16-bit default.
+message ConfigMicrophone {
+  optional bool   enabled           = 1;
+  optional bool   continuous_mode   = 2;
+  optional uint32 sample_length_min = 3;
+  optional uint32 sample_window_min = 4;
+  optional uint32 sample_rate       = 5;  // 0=16kHz, 1=8kHz
+  optional uint32 bit_depth         = 6;  // 0=16-bit, 1=8-bit
+}
+
+// GPS (~4 bytes)
+message ConfigGPS {
+  optional bool   enabled              = 1;
+  optional uint32 sample_interval_min  = 2;
+  optional uint32 accuracy             = 3;  // 1-10
+}
+
+// Magnetometer (~3 bytes)
+message ConfigMagnetometer {
+  optional bool   enabled           = 1;
+  optional uint32 sample_interval_s = 2;
+}
+
+// Generic sensor: light, environmental, particulate (~3 bytes)
+message ConfigSampling {
+  optional bool   enabled              = 1;
+  optional uint32 sample_interval_min  = 2;
+}
+
+// Per-schedule radio enable/interval (~6 bytes)
+message ConfigRadioTiming {
+  optional bool   lorawan_enabled           = 1;
+  optional uint32 lorawan_send_interval_min = 2;
+  optional bool   lora_enabled              = 3;
+  optional uint32 lora_send_interval_min    = 4;
+  optional int32  tx_power_dbm              = 5;
+}
+
+// Mortality detection — collar-wide, lives in the radio config on the
+// device (~6 bytes). Remote-safe by construction: enabling or disabling it
+// can never silence the collar (the beacon is an EXTRA transmission on top
+// of the scheduled radio cadence), so no reachability rail applies. Zero
+// values mean "use firmware defaults" (48 h trigger, 240 min beacon),
+// matching the CONFIG.CSV parser's semantics.
+message ConfigMortality {
+  optional bool   enabled               = 1;
+  optional uint32 trigger_duration_hours = 2;
+  optional uint32 transmit_interval_min  = 3;
+}
+
+// Global system flags — not per-schedule (~4 bytes)
+message ConfigSystem {
+  optional bool   verbose_logging       = 1;
+  optional bool   enable_reset_on_error = 2;
+  optional uint32 special_mode          = 3;
+  // Number of active schedule slots (1-5). Lets a remote push add or remove
+  // slots — the per-slot fragments above can only mutate existing ones.
+  // Firmware rails: growing requires the same transaction to configure each
+  // new slot (at minimum its time window); staging zeroes slots beyond the
+  // live count at BEGIN so a stale array entry can never be resurrected.
+  optional uint32 schedules_count       = 4;
+}
+
+// Geofence definition, delivered through the config transaction one
+// fragment per vertex plus one meta fragment (DESIGN_geofence_actions.md —
+// a worst-case vertex is ~14 B against the 33 B RX2 floor). The meta
+// fragment carries every scalar; vertex fragments carry vertex_index +
+// vertex. vertex_count = 0 on a meta fragment deletes the fence. The same
+// message is the self-report vocabulary (consumed reports a fired detach
+// fence). Rails: R7 shape, R8 zone slot, R9 GPS off, R10 detach safety.
+message ConfigGeofence {
+  uint32 fence_id = 1;                     // 1..4
+  optional uint32 action = 2;              // 0=SCHEDULE_OVERRIDE 1=DETACH 2=REPORT_ONLY
+  optional uint32 zone_slot = 3;           // SCHEDULE_OVERRIDE: slot to preempt with
+  optional uint32 confirm_fixes = 4;       // default 2
+  optional uint32 min_dwell_min = 5;       // default 15; state lock after transitions
+  optional uint32 max_hacc_m = 6;          // 0 = no accuracy gate
+  optional uint32 start_epoch = 7;         // 0 = armed on delivery
+  optional uint32 expiry_epoch = 8;        // mandatory for DETACH (<= start+30 d)
+  optional uint32 vertex_count = 9;        // meta fragment; 0 = delete fence
+  optional uint32 vertex_index = 10;       // vertex fragment
+  optional GeoPoint vertex = 11;           // vertex fragment
+  optional bool consumed = 12;             // report only: detach fence has fired
+}
+
+// ---- Config fragment wrapper ----
+// Pairs a schedule slot index with exactly one sensor/system config.
+// fragment_index and fragment_total enable integrity checking on commit.
+message ConfigFragment {
+  uint32 schedule_index = 1;  // target schedule slot (0-4)
+  uint32 fragment_index = 2;  // 0-based index of this fragment in the transaction
+  uint32 fragment_total = 3;  // total number of fragments the server will send
+
+  oneof setting {
+    ConfigTimeWindow    cfg_time_window   = 4;
+    ConfigAccelerometer cfg_accelerometer = 5;
+    ConfigMicrophone    cfg_microphone    = 6;
+    ConfigGPS           cfg_gps           = 7;
+    ConfigMagnetometer  cfg_magnetometer  = 8;
+    ConfigSampling      cfg_light         = 9;
+    ConfigSampling      cfg_environmental = 10;
+    ConfigSampling      cfg_particulate   = 11;
+    ConfigRadioTiming   cfg_radio_timing  = 12;
+    ConfigSystem        cfg_system        = 13;  // global, schedule_index ignored
+    ConfigMortality     cfg_mortality     = 14;  // global, schedule_index ignored
+    ConfigGeofence      cfg_geofence      = 15;  // global, schedule_index ignored
+  }
+}
+
+// ---- Main downlink envelope ----
+message DownlinkPacket {
+  uint32 epoch = 1;               // server UTC epoch for RTC sync
+  CommandType command = 2;         // command to execute
+
+  optional HighFixParams high_fix_params = 3;
+  optional GeofenceData geofence = 4;
+
+  // Config fragment: one per downlink.
+  // Only processed when a config transaction is open (after CMD_CONFIG_BEGIN).
+  // On CMD_CONFIG_COMMIT, device checks that all fragment_total fragments
+  // were received (via a bitmask indexed by fragment_index). If any are
+  // missing, commit is rejected, staging is discarded, and the device
+  // uplinks a NACK with the missing fragment bitmask so the server can retry.
+  optional ConfigFragment config = 5;
+
+  // CMD_ADDON_ARM: the armed drop-off time. Deliberately NOT the epoch
+  // field above — that one is the RTC-sync reference on every downlink.
+  optional uint32 addon_arm_epoch = 6;
+
+  // CMD_RESEND: bit i of resend_mask set => replay the stored uplink with
+  // packet_index == resend_from + i (bit 0 = resend_from itself), so one
+  // command names up to 32 indices. Device replays at most a few per
+  // command (duty cycle); the server re-requests the rest later.
+  optional uint32 resend_from = 7;
+  optional uint32 resend_mask = 8;
+
+  // Config transaction id, present on CMD_CONFIG_BEGIN/COMMIT/ABORT and on
+  // every fragment of that transaction. Echoed back in the device's
+  // AckPacket so a retried COMMIT and a stale ack are distinguishable.
+  // Server-assigned, monotonically increasing per device; 0 = legacy client.
+  optional uint32 cfg_txn_id = 9;
+}

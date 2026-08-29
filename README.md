@@ -43,7 +43,34 @@ npm start
 # Run on device/simulator
 npm run ios
 npm run android
+
+# Type-check + tests (also run in CI)
+npm run typecheck
+npm test
 ```
+
+### Protobuf regeneration
+
+The BLE schema is generated from the master protos in
+`~/dev/CollarID_protobufs`. After copying updated `.proto` files into
+`src/proto/`, regenerate the static module + typings with:
+
+```sh
+npm run proto:gen
+```
+
+Known quirk: `pbts` silently stops emitting the `I*` message interfaces
+after the first enum in the schema (a longstanding jsdoc issue), so the
+generated `collar_pb.d.ts` only has a handful of them. Use the message
+*classes* (`PB.ScheduleConfig`, plain-object args to `.create()`) and never
+reference `PB.IFoo` types in app code.
+
+### Simulator testing without Bluetooth
+
+The iOS Simulator has no BLE. In `__DEV__` builds the Home tab offers a
+**Mock Collar** (schedules/radio round-trip in memory, add-on relay with two
+fake CollarDTs) and the Add-ons tab offers a **Mock CollarDT** for the
+direct-connection panel.
 
 ## Key Dependencies
 
@@ -51,3 +78,4 @@ npm run android
 - `react-native-gesture-handler` — swipeable list items
 - `@react-navigation/native` — navigation
 - `protobufjs` — BLE payload encoding
+- `@react-native-async-storage/async-storage` — persisted drafts + login session

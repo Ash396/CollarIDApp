@@ -7,6 +7,15 @@ import {
   clampInt,
   unixNow,
 } from '../utils/protoUtils.ts';
+import {
+  AddonEntry,
+  DT_CMD,
+  DtInfo,
+  buildDtDirectCmd,
+  buildDtFwdCmd,
+  parseDtInfo,
+  parseLocalDevices,
+} from '../utils/dt';
 
 export const manager = new BleManager();
 
@@ -14,6 +23,11 @@ export const COLLAR_SERVICE_UUID = '1a17b2cd-7314-493d-a4b5-32a2d53e6fd7';
 export const UPDATE_CHAR_UUID = 'c4dd1054-f3f3-456b-8ad5-44aaa7ba4fd2';
 export const STATUS_CHAR_UUID = '9eaf9ebe-c3e9-4bd6-956e-5ca63d222fbb';
 export const RADIO_CHAR_UUID = '68a6a356-49c1-4bed-b152-a02c0cb2c024';
+/* Capability probe: WB5M-era collar firmware exposes ...6fd8 ('C','P',ver,caps);
+ * frozen WB15 builds throw on the characteristic lookup — no add-on relay. */
+export const CAPS_CHAR_UUID = '1a17b2cd-7314-493d-a4b5-32a2d53e6fd8';
+/* Local add-on list ('D','L' blob) — devices heard at Thread check-ins. */
+export const LOCAL_DEVICES_CHAR_UUID = '1a17b2cd-7314-493d-a4b5-32a2d53e6fd9';
 
 /* -------------------------------------------------------------------------- */
 /*          DEV MOCK COLLAR — simulator testing without Bluetooth             */
@@ -42,7 +56,18 @@ let mockScheduleStore: { schedules: any[]; engaged: boolean } = {
   schedules: [
     {
       window: { startHour: 0, endHour: 11 },
-      gps: { enabled: true, sampleIntervalMin: 20, accuracy: 5 },
+      gps: {
+        enabled: true,
+        sampleIntervalMin: 20,
+        accuracy: 5,
+        dynamicSamplingMode: true,
+        mediumMotionVedbaThresholdX100: 20,
+        mediumMotionGpsIntervalMin: 10,
+        highMotionVedbaThresholdX100: 100,
+        highMotionGpsIntervalMin: 5,
+        lorawanTxOnGpsFix: false,
+        loraTxOnGpsFix: false,
+      },
       light: { enabled: true, sampleIntervalMin: 10 },
       environmental: { enabled: false, sampleIntervalMin: 5 },
       particulate: { enabled: false, sampleIntervalMin: 15 },
@@ -360,55 +385,102 @@ export function subscribeToStatus(
 /*                   Build Schedule Packet to Send to Device                  */
 /* -------------------------------------------------------------------------- */
 
+// Strip disabled sensors so protobuf doesn't encode their default-value
+// fields — mirrors minimizeSchedule() in the website configurator. Keeps a
+// fully-loaded 4-schedule config under the deployed WB15's ~300-byte ATT
+// value cap (a single clean write, no fragile long/prepared writes).
 export function buildSchedulePacketFromAppState(
   appSchedules: any[],
   appEngaged: boolean,
   specialMode = 0,
 ): PB.BlePacket {
-  const schedules = appSchedules.map(s =>
-    PB.ScheduleConfig.create({
+  const schedules = appSchedules.map(s => {
+    // Plain-object ScheduleConfig fields (the generated .d.ts drops the
+    // I-interfaces after the first enum — longstanding pbts/jsdoc quirk).
+    const fields: { [k: string]: any } = {
       window: PB.TimeWindow.create({
         startHour: Math.max(0, Math.min(23, Number(s.window?.startHour ?? 0))),
         endHour: Math.max(0, Math.min(23, Number(s.window?.endHour ?? 0))),
       }),
-      light: PB.SamplingConfig.create({
-        enabled: Boolean(s.light?.enabled ?? true),
-        sampleIntervalMin: Number(s.light?.sampleIntervalMin ?? 10),
-      }),
-      environmental: PB.SamplingConfig.create({
-        enabled: Boolean(s.environmental?.enabled ?? true),
-        sampleIntervalMin: Number(s.environmental?.sampleIntervalMin ?? 5),
-      }),
-      particulate: PB.SamplingConfig.create({
-        enabled: Boolean(s.particulate?.enabled ?? true),
-        sampleIntervalMin: Number(s.particulate?.sampleIntervalMin ?? 15),
-      }),
-      gps: PB.GPSConfig.create({
-        enabled: Boolean(s.gps?.enabled ?? true),
+      lorawanEnabled: Boolean(s.lorawan?.enabled ?? false),
+      loraEnabled: Boolean(s.lora?.enabled ?? false),
+    };
+    if (s.lorawan?.enabled) {
+      fields.lorawanSendIntervalMin = Number(s.lorawan?.sendIntervalMin ?? 0);
+    }
+    if (s.lora?.enabled) {
+      fields.loraSendIntervalMin = Number(s.lora?.sendIntervalMin ?? 0);
+    }
+    if (s.gps?.enabled) {
+      fields.gps = PB.GPSConfig.create({
+        enabled: true,
         sampleIntervalMin: Number(s.gps?.sampleIntervalMin ?? 20),
         accuracy: Math.min(Math.max(1, Number(s.gps?.accuracy ?? 5)), 10),
-      }),
-      microphone: PB.MicrophoneConfig.create({
-        enabled: Boolean(s.microphone?.enabled ?? false),
+        dynamicSamplingMode: Boolean(s.gps?.dynamicSamplingMode ?? false),
+        mediumMotionVedbaThresholdX100: Number(
+          s.gps?.mediumMotionVedbaThresholdX100 ?? 20,
+        ),
+        mediumMotionGpsIntervalMin: Number(
+          s.gps?.mediumMotionGpsIntervalMin ?? 10,
+        ),
+        highMotionVedbaThresholdX100: Number(
+          s.gps?.highMotionVedbaThresholdX100 ?? 100,
+        ),
+        highMotionGpsIntervalMin: Number(s.gps?.highMotionGpsIntervalMin ?? 5),
+        // TX-on-fix flags live on GPSConfig; only meaningful while the
+        // matching radio is enabled (the editor forces them off otherwise).
+        lorawanTxOnGpsFix: Boolean(
+          s.lorawan?.enabled && s.gps?.lorawanTxOnGpsFix,
+        ),
+        loraTxOnGpsFix: Boolean(s.lora?.enabled && s.gps?.loraTxOnGpsFix),
+      });
+    }
+    if (s.light?.enabled) {
+      fields.light = PB.SamplingConfig.create({
+        enabled: true,
+        sampleIntervalMin: Number(s.light?.sampleIntervalMin ?? 10),
+      });
+    }
+    if (s.environmental?.enabled) {
+      fields.environmental = PB.SamplingConfig.create({
+        enabled: true,
+        sampleIntervalMin: Number(s.environmental?.sampleIntervalMin ?? 5),
+      });
+    }
+    if (s.particulate?.enabled) {
+      fields.particulate = PB.SamplingConfig.create({
+        enabled: true,
+        sampleIntervalMin: Number(s.particulate?.sampleIntervalMin ?? 15),
+      });
+    }
+    if (s.microphone?.enabled) {
+      fields.microphone = PB.MicrophoneConfig.create({
+        enabled: true,
         continuousMode: Boolean(s.microphone?.continuousMode ?? false),
         sampleLengthMin: Number(s.microphone?.sampleLengthMin ?? 1),
-        sampleWindowMin: Number(s.microphone?.sampleWindowMin ?? 1),
-      }),
-      accelerometer: PB.AccelerometerConfig.create({
-        enabled: Boolean(s.accelerometer?.enabled ?? false),
+        sampleWindowMin: Number(s.microphone?.sampleWindowMin ?? 10),
+        // 0 (16 kHz / 16-bit) is both the historical behaviour and the
+        // proto3 default, so it costs nothing on the wire and a collar that
+        // predates the fields ignores it.
+        sampleRate: Number(s.microphone?.sampleRate ?? 0),
+        bitDepth: Number(s.microphone?.bitDepth ?? 0),
+      });
+    }
+    if (s.accelerometer?.enabled) {
+      fields.accelerometer = PB.AccelerometerConfig.create({
+        enabled: true,
         sampleRate: Number(s.accelerometer?.sampleRate ?? 0),
         sensitivity: Number(s.accelerometer?.sensitivity ?? 0),
-      }),
-      lorawanEnabled: Boolean(s.lorawan?.enabled ?? false),
-      lorawanSendIntervalMin: Number(s.lorawan?.sendIntervalMin ?? 0),
-      loraEnabled: Boolean(s.lora?.enabled ?? false),
-      loraSendIntervalMin: Number(s.lora?.sendIntervalMin ?? 0),
-      magnetometer: PB.MagnetometerConfig.create({
-        enabled: Boolean(s.magnetometer?.enabled ?? false),
+      });
+    }
+    if (s.magnetometer?.enabled) {
+      fields.magnetometer = PB.MagnetometerConfig.create({
+        enabled: true,
         sampleIntervalS: Number(s.magnetometer?.sampleIntervalS ?? 0),
-      }),
-    }),
-  );
+      });
+    }
+    return PB.ScheduleConfig.create(fields);
+  });
 
   return PB.BlePacket.create({
     header: PB.PacketHeader.create({
@@ -556,6 +628,230 @@ export async function sendRadioConfig(device: Device, packet: PB.BlePacket) {
 
   console.log('✅ Radio write complete');
   return true;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                    Thread add-ons (relayed through the collar)             */
+/* -------------------------------------------------------------------------- */
+
+// Mock add-ons for simulator testing (see MOCK_COLLAR above). Commands sent
+// via sendDtFwdCommand mutate these so the panel round-trips without radios.
+const mockAddonStore: AddonEntry[] = [
+  {
+    uid: 0xa1b2c3d4,
+    type: 1,
+    battMv: 2987,
+    motorState: 0,
+    detachEpoch: 0,
+    heardAgoS: 42,
+    paired: false,
+    fired: false,
+    name: 'CollarDT-A1B2C3D4',
+  },
+  {
+    uid: 0x00c0ffee,
+    type: 1,
+    battMv: 3104,
+    motorState: 0,
+    detachEpoch: Math.floor(Date.now() / 1000) + 2 * 86400,
+    heardAgoS: 8,
+    paired: true,
+    fired: false,
+    name: 'CollarDT-00C0FFEE',
+  },
+];
+
+/** Read the collar's capability byte (0 when the characteristic is absent —
+ *  legacy WB15 firmware). Bit 0 = Thread add-on relay available. */
+export async function readCollarCaps(device: Device): Promise<number> {
+  if (isMockDevice(device)) return 0x01;
+  try {
+    const ch = await device.readCharacteristicForService(
+      COLLAR_SERVICE_UUID,
+      CAPS_CHAR_UUID,
+    );
+    if (!ch?.value) return 0;
+    const b = Buffer.from(ch.value, 'base64');
+    if (b.length >= 4 && b[0] === 0x43 && b[1] === 0x50) return b[3];
+    return 0;
+  } catch (_) {
+    return 0; // legacy collar: no caps characteristic
+  }
+}
+
+/** Read the add-ons the collar has heard at its Thread check-ins. */
+export async function readLocalDevices(
+  device: Device,
+): Promise<AddonEntry[] | null> {
+  if (isMockDevice(device)) {
+    return mockAddonStore.map(a => ({ ...a }));
+  }
+  try {
+    const ch = await device.readCharacteristicForService(
+      COLLAR_SERVICE_UUID,
+      LOCAL_DEVICES_CHAR_UUID,
+    );
+    if (!ch?.value) return null;
+    return parseLocalDevices(new Uint8Array(Buffer.from(ch.value, 'base64')));
+  } catch (err) {
+    console.warn('⚠️ readLocalDevices failed:', err);
+    return null;
+  }
+}
+
+/** Forward a DT command through the collar (delivered at the add-on's next
+ *  check-in). 16-byte DtBleFwdV1_t on the collar's update characteristic. */
+export async function sendDtFwdCommand(
+  device: Device,
+  targetUid: number,
+  cmd: number,
+  param = 0,
+): Promise<void> {
+  if (isMockDevice(device)) {
+    const a = mockAddonStore.find(x => x.uid === targetUid);
+    if (a) {
+      if (cmd === DT_CMD.PAIR) a.paired = true;
+      if (cmd === DT_CMD.UNPAIR) a.paired = false;
+      if (cmd === DT_CMD.ARM) a.detachEpoch = param;
+      if (cmd === DT_CMD.DISARM) {
+        a.detachEpoch = 0;
+        a.fired = false;
+      }
+      if (cmd === DT_CMD.DETACH) a.fired = true;
+      if (cmd === DT_CMD.ATTACH) a.fired = false;
+      a.heardAgoS = 1;
+    }
+    return;
+  }
+  const frame = buildDtFwdCmd(targetUid, cmd, param, unixNow());
+  await device.writeCharacteristicWithResponseForService(
+    COLLAR_SERVICE_UUID,
+    UPDATE_CHAR_UUID,
+    Buffer.from(frame).toString('base64'),
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                    CollarDT direct connection (detach node)                */
+/* -------------------------------------------------------------------------- */
+
+export const MOCK_DT_ID = 'MOCK-DT';
+export const MOCK_DT = {
+  id: MOCK_DT_ID,
+  name: 'CollarDT-MOCK0001',
+} as unknown as Device;
+
+export function isMockDt(device: Device | null | undefined): boolean {
+  return device?.id === MOCK_DT_ID;
+}
+
+// Simulated detach node — v5 status blob, mutated by direct commands.
+const mockDtState = {
+  fwMajor: 1,
+  fwMinor: 4,
+  git: 'deadbeef',
+  bootedAt: Date.now(),
+  detachEpoch: 0,
+  battMv: 3012,
+  motorUntil: 0, // Date.now() ms deadline while "running"
+  motorKind: 0, // 1 detaching, 2 attaching
+  rtcEpoch: 0,
+  mode: 1, // add-on (linked)
+  fired: 0,
+  pairedUid: 0x1234abcd,
+  loadedMv: 0,
+  dieTempC: 21,
+  autoDetach: 1,
+  checkinS: 86400,
+};
+
+function mockDtBlob(): Uint8Array {
+  const s = mockDtState;
+  const buf = new Uint8Array(42);
+  const dv = new DataView(buf.buffer);
+  buf[0] = 0x44;
+  buf[1] = 0x54;
+  buf[2] = 5; // payload version
+  buf[3] = s.fwMajor;
+  buf[4] = s.fwMinor;
+  for (let i = 0; i < 8; i++) buf[5 + i] = s.git.charCodeAt(i);
+  dv.setUint32(13, Math.floor((Date.now() - s.bootedAt) / 1000), true);
+  dv.setUint32(17, s.detachEpoch, true);
+  dv.setUint16(21, s.battMv, true);
+  buf[23] = Date.now() < s.motorUntil ? s.motorKind : 0;
+  dv.setUint32(24, s.rtcEpoch, true);
+  buf[28] = s.mode;
+  buf[29] = s.fired;
+  dv.setUint32(30, s.pairedUid, true);
+  dv.setUint16(34, s.loadedMv, true);
+  dv.setInt8(36, s.dieTempC);
+  buf[37] = s.autoDetach;
+  dv.setUint32(38, s.checkinS, true);
+  return buf;
+}
+
+/** Read + parse a directly-connected CollarDT's status blob. */
+export async function readDtInfo(device: Device): Promise<DtInfo | null> {
+  if (isMockDt(device)) return parseDtInfo(mockDtBlob());
+  try {
+    const ch = await device.readCharacteristicForService(
+      COLLAR_SERVICE_UUID,
+      STATUS_CHAR_UUID,
+    );
+    if (!ch?.value) return null;
+    return parseDtInfo(new Uint8Array(Buffer.from(ch.value, 'base64')));
+  } catch (err) {
+    console.warn('⚠️ readDtInfo failed:', err);
+    return null;
+  }
+}
+
+/** Send a direct DT command (12-byte DtBleCmdV1_t). Every frame carries our
+ *  UTC epoch, so a NOP is a pure clock sync. */
+export async function sendDtDirectCommand(
+  device: Device,
+  cmd: number,
+  param = 0,
+): Promise<void> {
+  if (isMockDt(device)) {
+    const s = mockDtState;
+    s.rtcEpoch = unixNow(); // every frame disciplines the RTC
+    if (cmd === DT_CMD.ARM) s.detachEpoch = param;
+    if (cmd === DT_CMD.DISARM) {
+      s.detachEpoch = 0;
+      s.fired = 0;
+    }
+    if (cmd === DT_CMD.DETACH) {
+      s.motorKind = 1;
+      s.motorUntil = Date.now() + 5000;
+      s.fired = 1;
+    }
+    if (cmd === DT_CMD.ATTACH) {
+      s.motorKind = 2;
+      s.motorUntil = Date.now() + 5000;
+      s.fired = 0;
+    }
+    if (cmd === DT_CMD.STOP) s.motorUntil = 0;
+    if (cmd === DT_CMD.UNPAIR) {
+      s.pairedUid = 0;
+      s.mode = 0;
+    }
+    if (cmd === DT_CMD.FACTORY_RESET) {
+      s.pairedUid = 0;
+      s.mode = 0;
+      s.detachEpoch = 0;
+      s.fired = 0;
+    }
+    if (cmd === DT_CMD.LOAD_TEST) s.loadedMv = s.battMv - 142;
+    if (cmd === DT_CMD.SET_AUTODETACH) s.autoDetach = param ? 1 : 0;
+    return;
+  }
+  const frame = buildDtDirectCmd(cmd, param, unixNow());
+  await device.writeCharacteristicWithResponseForService(
+    COLLAR_SERVICE_UUID,
+    UPDATE_CHAR_UUID,
+    Buffer.from(frame).toString('base64'),
+  );
 }
 
 /* -------------------------------------------------------------------------- */

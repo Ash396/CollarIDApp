@@ -29,6 +29,16 @@ export function mapProtoSchedule(p: PB.ScheduleConfig, index: number): Schedule 
         enabled: Boolean(p.gps.enabled),
         sampleIntervalMin: p.gps.sampleIntervalMin ?? undefined,
         accuracy: p.gps.accuracy ?? undefined,
+        dynamicSamplingMode: Boolean(p.gps.dynamicSamplingMode),
+        mediumMotionVedbaThresholdX100:
+          p.gps.mediumMotionVedbaThresholdX100 ?? undefined,
+        mediumMotionGpsIntervalMin:
+          p.gps.mediumMotionGpsIntervalMin ?? undefined,
+        highMotionVedbaThresholdX100:
+          p.gps.highMotionVedbaThresholdX100 ?? undefined,
+        highMotionGpsIntervalMin: p.gps.highMotionGpsIntervalMin ?? undefined,
+        lorawanTxOnGpsFix: Boolean(p.gps.lorawanTxOnGpsFix),
+        loraTxOnGpsFix: Boolean(p.gps.loraTxOnGpsFix),
         }
     : undefined,
 
@@ -52,6 +62,8 @@ export function mapProtoSchedule(p: PB.ScheduleConfig, index: number): Schedule 
         continuousMode: Boolean(p.microphone.continuousMode),
         sampleLengthMin: p.microphone.sampleLengthMin ?? undefined,
         sampleWindowMin: p.microphone.sampleWindowMin ?? undefined,
+        sampleRate: p.microphone.sampleRate ?? 0,
+        bitDepth: p.microphone.bitDepth ?? 0,
         }
     : undefined,
 

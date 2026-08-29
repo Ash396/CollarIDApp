@@ -9,6 +9,7 @@ import {
   Platform,
   TouchableOpacity,
   Alert,
+  Linking,
 } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
@@ -25,11 +26,19 @@ import {
   disconnectFromCollar,
   buildSchedulePacketFromAppState,
   sendConfig,
+  readCollarCaps,
   MOCK_COLLAR,
   isMockDevice,
 } from '../ble/bleManager';
 
 import { useSchedules } from '../context/SchedulesContext';
+import { useRadioConfig } from '../context/RadioConfigContext';
+import { parseFwBuild } from '../utils/fw';
+
+// uint64 proto fields decode as Long objects when the long lib is bundled,
+// plain numbers otherwise — same tolerance as the website's longToNumber().
+const toNum = (v: any): number =>
+  typeof v?.toNumber === "function" ? v.toNumber() : Number(v ?? 0);
 
 interface Collar {
   id: string;
@@ -40,12 +49,17 @@ interface Collar {
   connected: boolean;
   device?: any;
   lastUpdate?: string;
+  firmwareVersion?: string;
+  /** Boot HW-diagnostic bitmask (SystemStatePacket.hw_diag); undefined on
+   *  firmware that predates it. Bit 7 = diagnostics ran; other set bits are
+   *  faults. */
+  hwDiag?: number;
 }
 
 export default function HomeScreen() {
   const [collars, setCollars] = useState<Collar[]>([]);
   const [scanning, setScanning] = useState(false);
-  const { device, setDevice } = useDevice();
+  const { device, setDevice, setFwBuild, setCaps } = useDevice();
   const [connectedDevice, setConnectedDevice] = useState<Collar | null>(null);
 
   const navigation = useNavigation<any>();
@@ -56,7 +70,16 @@ export default function HomeScreen() {
   const manualDisconnectRef = useRef(false);
 
   const { draftSchedules, draftEngaged, clearSchedulesState } = useSchedules();
+  const { clearRadioState } = useRadioConfig();
   const DFU_SPECIAL_MODE = 27;
+
+  // Surface the Bluetooth adapter state — a denied permission or a switched-
+  // off radio used to render as a silent, misleading "no devices detected".
+  const [bleState, setBleState] = useState<State | null>(null);
+  useEffect(() => {
+    const sub = manager.onStateChange(s => setBleState(s), true);
+    return () => sub.remove();
+  }, []);
 
   const handleEnterDfu = async (collar: Collar) => {
     if (!collar.device) return;
@@ -230,6 +253,7 @@ export default function HomeScreen() {
           disconnectSubRef.current = null;
 
           clearSchedulesState();
+          clearRadioState();
           setDevice(null);
           setConnectedDevice(null);
           setCollars([]);
@@ -242,6 +266,7 @@ export default function HomeScreen() {
       );
 
       clearSchedulesState();
+      clearRadioState();
       setDevice(connected);
 
       console.log('🟣 after discover, about to subscribe to STATUS');
@@ -269,9 +294,39 @@ export default function HomeScreen() {
           }
           if (!characteristic?.value) return;
 
-          console.log('✅ STATUS notify b64:', characteristic.value);
-          const bytes = Buffer.from(characteristic.value, 'base64');
-          console.log('✅ STATUS bytes len:', bytes.length);
+          // Live status: keep the card fresh (battery, SD, firmware,
+          // hardware self-test) — matches the website's status subscription.
+          try {
+            const bytes = Buffer.from(characteristic.value, 'base64');
+            const decoded = PB.BlePacket.decode(bytes);
+            const sys = decoded.systemStatePacket;
+            if (!sys) return;
+            setConnectedDevice(prev =>
+              prev
+                ? {
+                    ...prev,
+                    battery: sys.battery?.percentage ?? prev.battery,
+                    sdRemaining: sys.sdcard
+                      ? toNum(sys.sdcard.spaceRemaining)
+                      : prev.sdRemaining,
+                    sdTotal: sys.sdcard
+                      ? toNum(sys.sdcard.totalSpace)
+                      : prev.sdTotal,
+                    firmwareVersion:
+                      sys.firmwareVersion || prev.firmwareVersion,
+                    hwDiag: sys.hwDiag ?? prev.hwDiag,
+                    lastUpdate: new Date().toLocaleTimeString(),
+                  }
+                : prev,
+            );
+            // BLE feature gates key off the reported build. A just-rebooted
+            // collar can send unparsable versions first — only overwrite on
+            // a successful parse.
+            const build = parseFwBuild(sys.firmwareVersion);
+            if (build) setFwBuild(build);
+          } catch (_) {
+            /* mid-transition blob — ignore */
+          }
         },
       );
 
@@ -296,6 +351,13 @@ export default function HomeScreen() {
           });
         }
       }
+      /* ---------- Capability probe (add-on relay etc.) ---------- */
+      try {
+        setCaps(await readCollarCaps(connected));
+      } catch (_) {
+        setCaps(0);
+      }
+
       /* ---------- Read STATUS metadata ---------- */
       try {
         const ch = await connected.readCharacteristicForService(
@@ -315,10 +377,14 @@ export default function HomeScreen() {
             connected: true,
             device: connected,
             battery: sys?.battery?.percentage ?? null,
-            sdRemaining: Number(sys?.sdcard?.spaceRemaining ?? 0),
-            sdTotal: Number(sys?.sdcard?.totalSpace ?? 0),
+            sdRemaining: toNum(sys?.sdcard?.spaceRemaining),
+            sdTotal: toNum(sys?.sdcard?.totalSpace),
+            firmwareVersion: sys?.firmwareVersion || undefined,
+            hwDiag: sys?.hwDiag ?? undefined,
             lastUpdate: new Date().toLocaleTimeString(),
           };
+          const build = parseFwBuild(sys?.firmwareVersion);
+          if (build) setFwBuild(build);
 
           setConnectedDevice(updated);
           setCollars([updated]);
@@ -349,6 +415,7 @@ export default function HomeScreen() {
       }
 
       clearSchedulesState();
+      clearRadioState();
       setDevice(null);
       setConnectedDevice(null);
       setCollars([]);
@@ -361,6 +428,8 @@ export default function HomeScreen() {
   /* ---------------- DEV: mock collar (simulator, no Bluetooth) ---------------- */
   const handleConnectMock = () => {
     setDevice(MOCK_COLLAR);
+    setFwBuild(310); // pretend current firmware so every gated feature shows
+    setCaps(0x01); // add-on relay available
     Alert.alert(
       'Mock collar connected',
       'A simulated collar is connected (no Bluetooth needed). Open the Schedules, Radio, or Power tab to test the configurator.',
@@ -369,6 +438,7 @@ export default function HomeScreen() {
 
   const handleDisconnectMock = () => {
     clearSchedulesState();
+    clearRadioState();
     setDevice(null);
   };
 
@@ -384,7 +454,39 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {scanning && !connectedDevice && (
+      {/* Bluetooth trouble states — say WHY nothing is being found. */}
+      {!connectedDevice && bleState !== null && bleState !== State.PoweredOn && (
+        <View style={styles.bleWarnBox}>
+          <Text style={styles.bleWarnTitle}>
+            {bleState === State.Unauthorized
+              ? 'Bluetooth permission needed'
+              : bleState === State.PoweredOff
+              ? 'Bluetooth is off'
+              : bleState === State.Unsupported
+              ? 'Bluetooth unavailable'
+              : 'Starting Bluetooth…'}
+          </Text>
+          <Text style={styles.bleWarnText}>
+            {bleState === State.Unauthorized
+              ? 'This app is not allowed to use Bluetooth, so it cannot scan for collars. Allow Bluetooth for CollarIDApp in Settings.'
+              : bleState === State.PoweredOff
+              ? 'Turn on Bluetooth in Control Center or Settings to scan for collars.'
+              : bleState === State.Unsupported
+              ? 'This device does not support Bluetooth Low Energy.'
+              : 'Waiting for the Bluetooth radio to become ready.'}
+          </Text>
+          {bleState === State.Unauthorized && (
+            <TouchableOpacity
+              style={styles.bleWarnButton}
+              onPress={() => Linking.openSettings()}
+            >
+              <Text style={styles.bleWarnButtonText}>Open Settings</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {scanning && !connectedDevice && bleState === State.PoweredOn && (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#f8b26a" />
           <Text style={styles.subtext}>Scanning for CollarID devices…</Text>
@@ -400,17 +502,22 @@ export default function HomeScreen() {
           sdTotal={collar.sdTotal}
           connected={collar.connected}
           lastUpdate={collar.lastUpdate}
+          firmwareVersion={collar.firmwareVersion}
+          hwDiag={collar.hwDiag}
           onConnect={() => handleConnect(collar)}
           onDisconnect={() => handleDisconnect(collar)}
           onEnterDfu={() => handleEnterDfu(collar)}
         />
       ))}
 
-      {!scanning && !connectedDevice && displayList.length === 0 && (
-        <View style={styles.center}>
-          <Text style={styles.subtext}>No CollarID devices detected.</Text>
-        </View>
-      )}
+      {!scanning &&
+        !connectedDevice &&
+        displayList.length === 0 &&
+        bleState === State.PoweredOn && (
+          <View style={styles.center}>
+            <Text style={styles.subtext}>No CollarID devices detected.</Text>
+          </View>
+        )}
 
       {__DEV__ && (
         <View style={styles.center}>
@@ -454,4 +561,28 @@ const styles = StyleSheet.create({
   mockButtonOff: { backgroundColor: '#9CA3AF' },
   mockButtonText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
   mockHint: { marginTop: 8, fontSize: 12, color: '#999' },
+
+  bleWarnBox: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FDBA74',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginVertical: 10,
+  },
+  bleWarnTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#9A3412',
+    marginBottom: 4,
+  },
+  bleWarnText: { fontSize: 14, color: '#9A3412', lineHeight: 20 },
+  bleWarnButton: {
+    marginTop: 10,
+    backgroundColor: '#FDC996',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  bleWarnButtonText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
 });

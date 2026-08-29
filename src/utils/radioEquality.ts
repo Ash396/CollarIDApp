@@ -15,6 +15,7 @@ export function normalizeRadio(cfg: PB.RadioConfigPacket | null) {
   const lw = c.loRaWANConfig;
   const lo = c.loRaConfig;
   const lost = c.lostModeConfig;
+  const mort = c.mortalityConfig;
 
   return {
     lorawan: {
@@ -48,12 +49,18 @@ export function normalizeRadio(cfg: PB.RadioConfigPacket | null) {
       txPowerDbm: lo?.txPowerDbm ?? 0,
       syncWord: lo?.syncWord ?? 0,
       frequency: lo?.frequency ?? 0,
+      rxListen: !!lo?.rxListen,
     },
     lost: {
       enabled: !!c.lostModeEnabled,
       activationEpoch: lost?.activationEpoch ?? 0,
       transmitIntervalMin: lost?.transmitIntervalMin ?? 0,
       txPowerDbm: lost?.txPowerDbm ?? 0,
+    },
+    mortality: {
+      enabled: !!c.mortalityEnabled,
+      triggerDurationHours: mort?.triggerDurationHours ?? 0,
+      transmitIntervalMin: mort?.transmitIntervalMin ?? 0,
     },
   };
 }

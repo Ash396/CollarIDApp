@@ -1,22 +1,2319 @@
 import * as $protobuf from "protobufjs";
 import Long = require("long");
-/** Properties of a PacketHeader. */
-export interface IPacketHeader {
+/** Properties of a TimeWindow. */
+export interface ITimeWindow {
 
-    /** PacketHeader systemUid */
-    systemUid?: (number|null);
+    /** TimeWindow startHour */
+    startHour?: (number|null);
 
-    /** PacketHeader msFromStart */
-    msFromStart?: (number|null);
+    /** TimeWindow endHour */
+    endHour?: (number|null);
+}
 
-    /** PacketHeader epoch */
-    epoch?: (number|null);
+/** Represents a TimeWindow. */
+export class TimeWindow implements ITimeWindow {
 
-    /** PacketHeader packetIndex */
-    packetIndex?: (number|null);
+    /**
+     * Constructs a new TimeWindow.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: ITimeWindow);
 
-    /** PacketHeader requestAck */
-    requestAck?: (boolean|null);
+    /** TimeWindow startHour. */
+    public startHour: number;
+
+    /** TimeWindow endHour. */
+    public endHour: number;
+
+    /**
+     * Creates a new TimeWindow instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns TimeWindow instance
+     */
+    public static create(properties?: ITimeWindow): TimeWindow;
+
+    /**
+     * Encodes the specified TimeWindow message. Does not implicitly {@link TimeWindow.verify|verify} messages.
+     * @param message TimeWindow message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: ITimeWindow, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified TimeWindow message, length delimited. Does not implicitly {@link TimeWindow.verify|verify} messages.
+     * @param message TimeWindow message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: ITimeWindow, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a TimeWindow message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns TimeWindow
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): TimeWindow;
+
+    /**
+     * Decodes a TimeWindow message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns TimeWindow
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): TimeWindow;
+
+    /**
+     * Verifies a TimeWindow message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a TimeWindow message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns TimeWindow
+     */
+    public static fromObject(object: { [k: string]: any }): TimeWindow;
+
+    /**
+     * Creates a plain object from a TimeWindow message. Also converts values to other types if specified.
+     * @param message TimeWindow
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: TimeWindow, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this TimeWindow to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for TimeWindow
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Properties of a SamplingConfig. */
+export interface ISamplingConfig {
+
+    /** SamplingConfig enabled */
+    enabled?: (boolean|null);
+
+    /** SamplingConfig sampleIntervalMin */
+    sampleIntervalMin?: (number|null);
+}
+
+/** Represents a SamplingConfig. */
+export class SamplingConfig implements ISamplingConfig {
+
+    /**
+     * Constructs a new SamplingConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: ISamplingConfig);
+
+    /** SamplingConfig enabled. */
+    public enabled: boolean;
+
+    /** SamplingConfig sampleIntervalMin. */
+    public sampleIntervalMin: number;
+
+    /**
+     * Creates a new SamplingConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns SamplingConfig instance
+     */
+    public static create(properties?: ISamplingConfig): SamplingConfig;
+
+    /**
+     * Encodes the specified SamplingConfig message. Does not implicitly {@link SamplingConfig.verify|verify} messages.
+     * @param message SamplingConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: ISamplingConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified SamplingConfig message, length delimited. Does not implicitly {@link SamplingConfig.verify|verify} messages.
+     * @param message SamplingConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: ISamplingConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a SamplingConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns SamplingConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): SamplingConfig;
+
+    /**
+     * Decodes a SamplingConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns SamplingConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): SamplingConfig;
+
+    /**
+     * Verifies a SamplingConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a SamplingConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns SamplingConfig
+     */
+    public static fromObject(object: { [k: string]: any }): SamplingConfig;
+
+    /**
+     * Creates a plain object from a SamplingConfig message. Also converts values to other types if specified.
+     * @param message SamplingConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: SamplingConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this SamplingConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for SamplingConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Properties of a GPSConfig. */
+export interface IGPSConfig {
+
+    /** GPSConfig enabled */
+    enabled?: (boolean|null);
+
+    /** GPSConfig sampleIntervalMin */
+    sampleIntervalMin?: (number|null);
+
+    /** GPSConfig accuracy */
+    accuracy?: (number|null);
+
+    /** GPSConfig dynamicSamplingMode */
+    dynamicSamplingMode?: (boolean|null);
+
+    /** GPSConfig mediumMotionVedbaThresholdX100 */
+    mediumMotionVedbaThresholdX100?: (number|null);
+
+    /** GPSConfig mediumMotionGpsIntervalMin */
+    mediumMotionGpsIntervalMin?: (number|null);
+
+    /** GPSConfig highMotionVedbaThresholdX100 */
+    highMotionVedbaThresholdX100?: (number|null);
+
+    /** GPSConfig highMotionGpsIntervalMin */
+    highMotionGpsIntervalMin?: (number|null);
+
+    /** GPSConfig lorawanTxOnGpsFix */
+    lorawanTxOnGpsFix?: (boolean|null);
+
+    /** GPSConfig loraTxOnGpsFix */
+    loraTxOnGpsFix?: (boolean|null);
+}
+
+/** Represents a GPSConfig. */
+export class GPSConfig implements IGPSConfig {
+
+    /**
+     * Constructs a new GPSConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IGPSConfig);
+
+    /** GPSConfig enabled. */
+    public enabled: boolean;
+
+    /** GPSConfig sampleIntervalMin. */
+    public sampleIntervalMin: number;
+
+    /** GPSConfig accuracy. */
+    public accuracy: number;
+
+    /** GPSConfig dynamicSamplingMode. */
+    public dynamicSamplingMode: boolean;
+
+    /** GPSConfig mediumMotionVedbaThresholdX100. */
+    public mediumMotionVedbaThresholdX100: number;
+
+    /** GPSConfig mediumMotionGpsIntervalMin. */
+    public mediumMotionGpsIntervalMin: number;
+
+    /** GPSConfig highMotionVedbaThresholdX100. */
+    public highMotionVedbaThresholdX100: number;
+
+    /** GPSConfig highMotionGpsIntervalMin. */
+    public highMotionGpsIntervalMin: number;
+
+    /** GPSConfig lorawanTxOnGpsFix. */
+    public lorawanTxOnGpsFix: boolean;
+
+    /** GPSConfig loraTxOnGpsFix. */
+    public loraTxOnGpsFix: boolean;
+
+    /**
+     * Creates a new GPSConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns GPSConfig instance
+     */
+    public static create(properties?: IGPSConfig): GPSConfig;
+
+    /**
+     * Encodes the specified GPSConfig message. Does not implicitly {@link GPSConfig.verify|verify} messages.
+     * @param message GPSConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IGPSConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified GPSConfig message, length delimited. Does not implicitly {@link GPSConfig.verify|verify} messages.
+     * @param message GPSConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IGPSConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a GPSConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns GPSConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): GPSConfig;
+
+    /**
+     * Decodes a GPSConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns GPSConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): GPSConfig;
+
+    /**
+     * Verifies a GPSConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a GPSConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns GPSConfig
+     */
+    public static fromObject(object: { [k: string]: any }): GPSConfig;
+
+    /**
+     * Creates a plain object from a GPSConfig message. Also converts values to other types if specified.
+     * @param message GPSConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: GPSConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this GPSConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for GPSConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** RadioRegion enum. */
+export enum RadioRegion {
+    REGION_US915 = 0,
+    REGION_AU915 = 1,
+    REGION_EU868 = 2
+}
+
+/** RadioAuth enum. */
+export enum RadioAuth {
+    AUTH_OTAA = 0,
+    AUTH_ABP = 1
+}
+
+/** Represents a RadioOTAA. */
+export class RadioOTAA implements IRadioOTAA {
+
+    /**
+     * Constructs a new RadioOTAA.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IRadioOTAA);
+
+    /** RadioOTAA devEui. */
+    public devEui: Uint8Array;
+
+    /** RadioOTAA joinEui. */
+    public joinEui: Uint8Array;
+
+    /** RadioOTAA appKey. */
+    public appKey: Uint8Array;
+
+    /** RadioOTAA nwkKey. */
+    public nwkKey: Uint8Array;
+
+    /**
+     * Creates a new RadioOTAA instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns RadioOTAA instance
+     */
+    public static create(properties?: IRadioOTAA): RadioOTAA;
+
+    /**
+     * Encodes the specified RadioOTAA message. Does not implicitly {@link RadioOTAA.verify|verify} messages.
+     * @param message RadioOTAA message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IRadioOTAA, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified RadioOTAA message, length delimited. Does not implicitly {@link RadioOTAA.verify|verify} messages.
+     * @param message RadioOTAA message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IRadioOTAA, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a RadioOTAA message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns RadioOTAA
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): RadioOTAA;
+
+    /**
+     * Decodes a RadioOTAA message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns RadioOTAA
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): RadioOTAA;
+
+    /**
+     * Verifies a RadioOTAA message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a RadioOTAA message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns RadioOTAA
+     */
+    public static fromObject(object: { [k: string]: any }): RadioOTAA;
+
+    /**
+     * Creates a plain object from a RadioOTAA message. Also converts values to other types if specified.
+     * @param message RadioOTAA
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: RadioOTAA, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this RadioOTAA to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for RadioOTAA
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a RadioABP. */
+export class RadioABP implements IRadioABP {
+
+    /**
+     * Constructs a new RadioABP.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IRadioABP);
+
+    /** RadioABP devAddr. */
+    public devAddr: Uint8Array;
+
+    /** RadioABP nwkSKey. */
+    public nwkSKey: Uint8Array;
+
+    /** RadioABP appSKey. */
+    public appSKey: Uint8Array;
+
+    /** RadioABP fNwkSIntKey. */
+    public fNwkSIntKey: Uint8Array;
+
+    /** RadioABP sNwkSIntKey. */
+    public sNwkSIntKey: Uint8Array;
+
+    /**
+     * Creates a new RadioABP instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns RadioABP instance
+     */
+    public static create(properties?: IRadioABP): RadioABP;
+
+    /**
+     * Encodes the specified RadioABP message. Does not implicitly {@link RadioABP.verify|verify} messages.
+     * @param message RadioABP message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IRadioABP, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified RadioABP message, length delimited. Does not implicitly {@link RadioABP.verify|verify} messages.
+     * @param message RadioABP message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IRadioABP, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a RadioABP message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns RadioABP
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): RadioABP;
+
+    /**
+     * Decodes a RadioABP message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns RadioABP
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): RadioABP;
+
+    /**
+     * Verifies a RadioABP message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a RadioABP message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns RadioABP
+     */
+    public static fromObject(object: { [k: string]: any }): RadioABP;
+
+    /**
+     * Creates a plain object from a RadioABP message. Also converts values to other types if specified.
+     * @param message RadioABP
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: RadioABP, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this RadioABP to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for RadioABP
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** RadioSpreadingFactor enum. */
+export enum RadioSpreadingFactor {
+    SF7 = 0,
+    SF8 = 1,
+    SF9 = 2,
+    SF10 = 3,
+    SF11 = 4,
+    SF12 = 5
+}
+
+/** RadioBandwidth enum. */
+export enum RadioBandwidth {
+    bw_125 = 0,
+    bw_250 = 1,
+    bw_500 = 2
+}
+
+/** RadioCodingRate enum. */
+export enum RadioCodingRate {
+    cr_4_5 = 0,
+    cr_4_6 = 1,
+    cr_4_7 = 2,
+    cr_4_8 = 3
+}
+
+/** Represents a LoRaWANConfig. */
+export class LoRaWANConfig implements ILoRaWANConfig {
+
+    /**
+     * Constructs a new LoRaWANConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: ILoRaWANConfig);
+
+    /** LoRaWANConfig region. */
+    public region: RadioRegion;
+
+    /** LoRaWANConfig auth. */
+    public auth: RadioAuth;
+
+    /** LoRaWANConfig otaa. */
+    public otaa?: (IRadioOTAA|null);
+
+    /** LoRaWANConfig abp. */
+    public abp?: (IRadioABP|null);
+
+    /** LoRaWANConfig transmitIntervalMin. */
+    public transmitIntervalMin: number;
+
+    /** LoRaWANConfig txOnlyOnNewGpsFix. */
+    public txOnlyOnNewGpsFix: boolean;
+
+    /** LoRaWANConfig txPowerDbm. */
+    public txPowerDbm: number;
+
+    /** LoRaWANConfig credentials. */
+    public credentials?: ("otaa"|"abp");
+
+    /**
+     * Creates a new LoRaWANConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns LoRaWANConfig instance
+     */
+    public static create(properties?: ILoRaWANConfig): LoRaWANConfig;
+
+    /**
+     * Encodes the specified LoRaWANConfig message. Does not implicitly {@link LoRaWANConfig.verify|verify} messages.
+     * @param message LoRaWANConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: ILoRaWANConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified LoRaWANConfig message, length delimited. Does not implicitly {@link LoRaWANConfig.verify|verify} messages.
+     * @param message LoRaWANConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: ILoRaWANConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a LoRaWANConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns LoRaWANConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): LoRaWANConfig;
+
+    /**
+     * Decodes a LoRaWANConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns LoRaWANConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): LoRaWANConfig;
+
+    /**
+     * Verifies a LoRaWANConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a LoRaWANConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns LoRaWANConfig
+     */
+    public static fromObject(object: { [k: string]: any }): LoRaWANConfig;
+
+    /**
+     * Creates a plain object from a LoRaWANConfig message. Also converts values to other types if specified.
+     * @param message LoRaWANConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: LoRaWANConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this LoRaWANConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for LoRaWANConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a LoRaConfig. */
+export class LoRaConfig implements ILoRaConfig {
+
+    /**
+     * Constructs a new LoRaConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: ILoRaConfig);
+
+    /** LoRaConfig radioSpreadingFactor. */
+    public radioSpreadingFactor: RadioSpreadingFactor;
+
+    /** LoRaConfig radioBandwidth. */
+    public radioBandwidth: RadioBandwidth;
+
+    /** LoRaConfig radioCodingRate. */
+    public radioCodingRate: RadioCodingRate;
+
+    /** LoRaConfig txPowerDbm. */
+    public txPowerDbm: number;
+
+    /** LoRaConfig syncWord. */
+    public syncWord: number;
+
+    /** LoRaConfig frequency. */
+    public frequency: number;
+
+    /** LoRaConfig rxListen. */
+    public rxListen: boolean;
+
+    /**
+     * Creates a new LoRaConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns LoRaConfig instance
+     */
+    public static create(properties?: ILoRaConfig): LoRaConfig;
+
+    /**
+     * Encodes the specified LoRaConfig message. Does not implicitly {@link LoRaConfig.verify|verify} messages.
+     * @param message LoRaConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: ILoRaConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified LoRaConfig message, length delimited. Does not implicitly {@link LoRaConfig.verify|verify} messages.
+     * @param message LoRaConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: ILoRaConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a LoRaConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns LoRaConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): LoRaConfig;
+
+    /**
+     * Decodes a LoRaConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns LoRaConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): LoRaConfig;
+
+    /**
+     * Verifies a LoRaConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a LoRaConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns LoRaConfig
+     */
+    public static fromObject(object: { [k: string]: any }): LoRaConfig;
+
+    /**
+     * Creates a plain object from a LoRaConfig message. Also converts values to other types if specified.
+     * @param message LoRaConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: LoRaConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this LoRaConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for LoRaConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a LostMode_config. */
+export class LostMode_config implements ILostMode_config {
+
+    /**
+     * Constructs a new LostMode_config.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: ILostMode_config);
+
+    /** LostMode_config activationEpoch. */
+    public activationEpoch: number;
+
+    /** LostMode_config transmitIntervalMin. */
+    public transmitIntervalMin: number;
+
+    /** LostMode_config txPowerDbm. */
+    public txPowerDbm: number;
+
+    /**
+     * Creates a new LostMode_config instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns LostMode_config instance
+     */
+    public static create(properties?: ILostMode_config): LostMode_config;
+
+    /**
+     * Encodes the specified LostMode_config message. Does not implicitly {@link LostMode_config.verify|verify} messages.
+     * @param message LostMode_config message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: ILostMode_config, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified LostMode_config message, length delimited. Does not implicitly {@link LostMode_config.verify|verify} messages.
+     * @param message LostMode_config message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: ILostMode_config, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a LostMode_config message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns LostMode_config
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): LostMode_config;
+
+    /**
+     * Decodes a LostMode_config message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns LostMode_config
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): LostMode_config;
+
+    /**
+     * Verifies a LostMode_config message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a LostMode_config message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns LostMode_config
+     */
+    public static fromObject(object: { [k: string]: any }): LostMode_config;
+
+    /**
+     * Creates a plain object from a LostMode_config message. Also converts values to other types if specified.
+     * @param message LostMode_config
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: LostMode_config, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this LostMode_config to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for LostMode_config
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a Mortality_config. */
+export class Mortality_config implements IMortality_config {
+
+    /**
+     * Constructs a new Mortality_config.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IMortality_config);
+
+    /** Mortality_config triggerDurationHours. */
+    public triggerDurationHours: number;
+
+    /** Mortality_config transmitIntervalMin. */
+    public transmitIntervalMin: number;
+
+    /**
+     * Creates a new Mortality_config instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns Mortality_config instance
+     */
+    public static create(properties?: IMortality_config): Mortality_config;
+
+    /**
+     * Encodes the specified Mortality_config message. Does not implicitly {@link Mortality_config.verify|verify} messages.
+     * @param message Mortality_config message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IMortality_config, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified Mortality_config message, length delimited. Does not implicitly {@link Mortality_config.verify|verify} messages.
+     * @param message Mortality_config message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IMortality_config, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a Mortality_config message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns Mortality_config
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): Mortality_config;
+
+    /**
+     * Decodes a Mortality_config message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns Mortality_config
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): Mortality_config;
+
+    /**
+     * Verifies a Mortality_config message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a Mortality_config message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns Mortality_config
+     */
+    public static fromObject(object: { [k: string]: any }): Mortality_config;
+
+    /**
+     * Creates a plain object from a Mortality_config message. Also converts values to other types if specified.
+     * @param message Mortality_config
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: Mortality_config, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this Mortality_config to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for Mortality_config
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a RadioConfigPacket. */
+export class RadioConfigPacket implements IRadioConfigPacket {
+
+    /**
+     * Constructs a new RadioConfigPacket.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IRadioConfigPacket);
+
+    /** RadioConfigPacket loRaWANConfig. */
+    public loRaWANConfig?: (ILoRaWANConfig|null);
+
+    /** RadioConfigPacket loRaConfig. */
+    public loRaConfig?: (ILoRaConfig|null);
+
+    /** RadioConfigPacket lostModeEnabled. */
+    public lostModeEnabled: boolean;
+
+    /** RadioConfigPacket lostModeConfig. */
+    public lostModeConfig?: (ILostMode_config|null);
+
+    /** RadioConfigPacket mortalityEnabled. */
+    public mortalityEnabled: boolean;
+
+    /** RadioConfigPacket mortalityConfig. */
+    public mortalityConfig?: (IMortality_config|null);
+
+    /** RadioConfigPacket _loRaWANConfig. */
+    public _loRaWANConfig?: "loRaWANConfig";
+
+    /** RadioConfigPacket _loRaConfig. */
+    public _loRaConfig?: "loRaConfig";
+
+    /**
+     * Creates a new RadioConfigPacket instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns RadioConfigPacket instance
+     */
+    public static create(properties?: IRadioConfigPacket): RadioConfigPacket;
+
+    /**
+     * Encodes the specified RadioConfigPacket message. Does not implicitly {@link RadioConfigPacket.verify|verify} messages.
+     * @param message RadioConfigPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IRadioConfigPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified RadioConfigPacket message, length delimited. Does not implicitly {@link RadioConfigPacket.verify|verify} messages.
+     * @param message RadioConfigPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IRadioConfigPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a RadioConfigPacket message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns RadioConfigPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): RadioConfigPacket;
+
+    /**
+     * Decodes a RadioConfigPacket message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns RadioConfigPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): RadioConfigPacket;
+
+    /**
+     * Verifies a RadioConfigPacket message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a RadioConfigPacket message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns RadioConfigPacket
+     */
+    public static fromObject(object: { [k: string]: any }): RadioConfigPacket;
+
+    /**
+     * Creates a plain object from a RadioConfigPacket message. Also converts values to other types if specified.
+     * @param message RadioConfigPacket
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: RadioConfigPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this RadioConfigPacket to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for RadioConfigPacket
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** MicSampleRate enum. */
+export enum MicSampleRate {
+    MIC_RATE_16KHZ = 0,
+    MIC_RATE_8KHZ = 1
+}
+
+/** MicBitDepth enum. */
+export enum MicBitDepth {
+    MIC_DEPTH_16BIT = 0,
+    MIC_DEPTH_8BIT = 1
+}
+
+/** Represents a MicrophoneConfig. */
+export class MicrophoneConfig implements IMicrophoneConfig {
+
+    /**
+     * Constructs a new MicrophoneConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IMicrophoneConfig);
+
+    /** MicrophoneConfig enabled. */
+    public enabled: boolean;
+
+    /** MicrophoneConfig continuousMode. */
+    public continuousMode: boolean;
+
+    /** MicrophoneConfig sampleLengthMin. */
+    public sampleLengthMin: number;
+
+    /** MicrophoneConfig sampleWindowMin. */
+    public sampleWindowMin: number;
+
+    /** MicrophoneConfig sampleRate. */
+    public sampleRate: MicSampleRate;
+
+    /** MicrophoneConfig bitDepth. */
+    public bitDepth: MicBitDepth;
+
+    /**
+     * Creates a new MicrophoneConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns MicrophoneConfig instance
+     */
+    public static create(properties?: IMicrophoneConfig): MicrophoneConfig;
+
+    /**
+     * Encodes the specified MicrophoneConfig message. Does not implicitly {@link MicrophoneConfig.verify|verify} messages.
+     * @param message MicrophoneConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IMicrophoneConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified MicrophoneConfig message, length delimited. Does not implicitly {@link MicrophoneConfig.verify|verify} messages.
+     * @param message MicrophoneConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IMicrophoneConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a MicrophoneConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns MicrophoneConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): MicrophoneConfig;
+
+    /**
+     * Decodes a MicrophoneConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns MicrophoneConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): MicrophoneConfig;
+
+    /**
+     * Verifies a MicrophoneConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a MicrophoneConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns MicrophoneConfig
+     */
+    public static fromObject(object: { [k: string]: any }): MicrophoneConfig;
+
+    /**
+     * Creates a plain object from a MicrophoneConfig message. Also converts values to other types if specified.
+     * @param message MicrophoneConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: MicrophoneConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this MicrophoneConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for MicrophoneConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** AccelSampleRate enum. */
+export enum AccelSampleRate {
+    ACCEL_25HZ = 0,
+    ACCEL_50HZ = 1
+}
+
+/** AccelSensitivity enum. */
+export enum AccelSensitivity {
+    ACCEL_2G = 0,
+    ACCEL_4G = 1,
+    ACCEL_8G = 2
+}
+
+/** Represents an AccelerometerConfig. */
+export class AccelerometerConfig implements IAccelerometerConfig {
+
+    /**
+     * Constructs a new AccelerometerConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IAccelerometerConfig);
+
+    /** AccelerometerConfig enabled. */
+    public enabled: boolean;
+
+    /** AccelerometerConfig sampleRate. */
+    public sampleRate: AccelSampleRate;
+
+    /** AccelerometerConfig sensitivity. */
+    public sensitivity: AccelSensitivity;
+
+    /**
+     * Creates a new AccelerometerConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns AccelerometerConfig instance
+     */
+    public static create(properties?: IAccelerometerConfig): AccelerometerConfig;
+
+    /**
+     * Encodes the specified AccelerometerConfig message. Does not implicitly {@link AccelerometerConfig.verify|verify} messages.
+     * @param message AccelerometerConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IAccelerometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified AccelerometerConfig message, length delimited. Does not implicitly {@link AccelerometerConfig.verify|verify} messages.
+     * @param message AccelerometerConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IAccelerometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes an AccelerometerConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns AccelerometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): AccelerometerConfig;
+
+    /**
+     * Decodes an AccelerometerConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns AccelerometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): AccelerometerConfig;
+
+    /**
+     * Verifies an AccelerometerConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates an AccelerometerConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns AccelerometerConfig
+     */
+    public static fromObject(object: { [k: string]: any }): AccelerometerConfig;
+
+    /**
+     * Creates a plain object from an AccelerometerConfig message. Also converts values to other types if specified.
+     * @param message AccelerometerConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: AccelerometerConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this AccelerometerConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for AccelerometerConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a MagnetometerConfig. */
+export class MagnetometerConfig implements IMagnetometerConfig {
+
+    /**
+     * Constructs a new MagnetometerConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IMagnetometerConfig);
+
+    /** MagnetometerConfig enabled. */
+    public enabled: boolean;
+
+    /** MagnetometerConfig sampleIntervalS. */
+    public sampleIntervalS: number;
+
+    /**
+     * Creates a new MagnetometerConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns MagnetometerConfig instance
+     */
+    public static create(properties?: IMagnetometerConfig): MagnetometerConfig;
+
+    /**
+     * Encodes the specified MagnetometerConfig message. Does not implicitly {@link MagnetometerConfig.verify|verify} messages.
+     * @param message MagnetometerConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IMagnetometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified MagnetometerConfig message, length delimited. Does not implicitly {@link MagnetometerConfig.verify|verify} messages.
+     * @param message MagnetometerConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IMagnetometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a MagnetometerConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns MagnetometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): MagnetometerConfig;
+
+    /**
+     * Decodes a MagnetometerConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns MagnetometerConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): MagnetometerConfig;
+
+    /**
+     * Verifies a MagnetometerConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a MagnetometerConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns MagnetometerConfig
+     */
+    public static fromObject(object: { [k: string]: any }): MagnetometerConfig;
+
+    /**
+     * Creates a plain object from a MagnetometerConfig message. Also converts values to other types if specified.
+     * @param message MagnetometerConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: MagnetometerConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this MagnetometerConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for MagnetometerConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a ScheduleConfig. */
+export class ScheduleConfig implements IScheduleConfig {
+
+    /**
+     * Constructs a new ScheduleConfig.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IScheduleConfig);
+
+    /** ScheduleConfig window. */
+    public window?: (ITimeWindow|null);
+
+    /** ScheduleConfig light. */
+    public light?: (ISamplingConfig|null);
+
+    /** ScheduleConfig environmental. */
+    public environmental?: (ISamplingConfig|null);
+
+    /** ScheduleConfig particulate. */
+    public particulate?: (ISamplingConfig|null);
+
+    /** ScheduleConfig gps. */
+    public gps?: (IGPSConfig|null);
+
+    /** ScheduleConfig microphone. */
+    public microphone?: (IMicrophoneConfig|null);
+
+    /** ScheduleConfig accelerometer. */
+    public accelerometer?: (IAccelerometerConfig|null);
+
+    /** ScheduleConfig lorawanEnabled. */
+    public lorawanEnabled: boolean;
+
+    /** ScheduleConfig lorawanSendIntervalMin. */
+    public lorawanSendIntervalMin: number;
+
+    /** ScheduleConfig loraEnabled. */
+    public loraEnabled: boolean;
+
+    /** ScheduleConfig loraSendIntervalMin. */
+    public loraSendIntervalMin: number;
+
+    /** ScheduleConfig magnetometer. */
+    public magnetometer?: (IMagnetometerConfig|null);
+
+    /**
+     * Creates a new ScheduleConfig instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns ScheduleConfig instance
+     */
+    public static create(properties?: IScheduleConfig): ScheduleConfig;
+
+    /**
+     * Encodes the specified ScheduleConfig message. Does not implicitly {@link ScheduleConfig.verify|verify} messages.
+     * @param message ScheduleConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IScheduleConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified ScheduleConfig message, length delimited. Does not implicitly {@link ScheduleConfig.verify|verify} messages.
+     * @param message ScheduleConfig message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IScheduleConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a ScheduleConfig message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns ScheduleConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ScheduleConfig;
+
+    /**
+     * Decodes a ScheduleConfig message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns ScheduleConfig
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ScheduleConfig;
+
+    /**
+     * Verifies a ScheduleConfig message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a ScheduleConfig message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns ScheduleConfig
+     */
+    public static fromObject(object: { [k: string]: any }): ScheduleConfig;
+
+    /**
+     * Creates a plain object from a ScheduleConfig message. Also converts values to other types if specified.
+     * @param message ScheduleConfig
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: ScheduleConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this ScheduleConfig to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for ScheduleConfig
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a ScheduleConfigPacket. */
+export class ScheduleConfigPacket implements IScheduleConfigPacket {
+
+    /**
+     * Constructs a new ScheduleConfigPacket.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IScheduleConfigPacket);
+
+    /** ScheduleConfigPacket engaged. */
+    public engaged: boolean;
+
+    /** ScheduleConfigPacket schedules. */
+    public schedules: IScheduleConfig[];
+
+    /** ScheduleConfigPacket specialMode. */
+    public specialMode: number;
+
+    /** ScheduleConfigPacket cfgDownlink. */
+    public cfgDownlink: Uint8Array;
+
+    /** ScheduleConfigPacket bleQuery. */
+    public bleQuery: number;
+
+    /** ScheduleConfigPacket cfgEcho. */
+    public cfgEcho?: (ICfgEchoPacket|null);
+
+    /**
+     * Creates a new ScheduleConfigPacket instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns ScheduleConfigPacket instance
+     */
+    public static create(properties?: IScheduleConfigPacket): ScheduleConfigPacket;
+
+    /**
+     * Encodes the specified ScheduleConfigPacket message. Does not implicitly {@link ScheduleConfigPacket.verify|verify} messages.
+     * @param message ScheduleConfigPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IScheduleConfigPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified ScheduleConfigPacket message, length delimited. Does not implicitly {@link ScheduleConfigPacket.verify|verify} messages.
+     * @param message ScheduleConfigPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IScheduleConfigPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a ScheduleConfigPacket message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns ScheduleConfigPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ScheduleConfigPacket;
+
+    /**
+     * Decodes a ScheduleConfigPacket message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns ScheduleConfigPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ScheduleConfigPacket;
+
+    /**
+     * Verifies a ScheduleConfigPacket message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a ScheduleConfigPacket message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns ScheduleConfigPacket
+     */
+    public static fromObject(object: { [k: string]: any }): ScheduleConfigPacket;
+
+    /**
+     * Creates a plain object from a ScheduleConfigPacket message. Also converts values to other types if specified.
+     * @param message ScheduleConfigPacket
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: ScheduleConfigPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this ScheduleConfigPacket to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for ScheduleConfigPacket
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a CfgEchoPacket. */
+export class CfgEchoPacket implements ICfgEchoPacket {
+
+    /**
+     * Constructs a new CfgEchoPacket.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: ICfgEchoPacket);
+
+    /** CfgEchoPacket txnId. */
+    public txnId: number;
+
+    /** CfgEchoPacket ackStatus. */
+    public ackStatus: number;
+
+    /** CfgEchoPacket missingMask. */
+    public missingMask: number;
+
+    /** CfgEchoPacket fenceUsedMask. */
+    public fenceUsedMask: number;
+
+    /** CfgEchoPacket fenceActiveMask. */
+    public fenceActiveMask: number;
+
+    /** CfgEchoPacket fenceFiredMask. */
+    public fenceFiredMask: number;
+
+    /** CfgEchoPacket schedCrc. */
+    public schedCrc: number;
+
+    /** CfgEchoPacket fenceReport. */
+    public fenceReport: Uint8Array;
+
+    /** CfgEchoPacket echoSeq. */
+    public echoSeq: number;
+
+    /** CfgEchoPacket wipeStatus. */
+    public wipeStatus: number;
+
+    /** CfgEchoPacket wipeRemoved. */
+    public wipeRemoved: number;
+
+    /**
+     * Creates a new CfgEchoPacket instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns CfgEchoPacket instance
+     */
+    public static create(properties?: ICfgEchoPacket): CfgEchoPacket;
+
+    /**
+     * Encodes the specified CfgEchoPacket message. Does not implicitly {@link CfgEchoPacket.verify|verify} messages.
+     * @param message CfgEchoPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: ICfgEchoPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified CfgEchoPacket message, length delimited. Does not implicitly {@link CfgEchoPacket.verify|verify} messages.
+     * @param message CfgEchoPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: ICfgEchoPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a CfgEchoPacket message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns CfgEchoPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): CfgEchoPacket;
+
+    /**
+     * Decodes a CfgEchoPacket message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns CfgEchoPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): CfgEchoPacket;
+
+    /**
+     * Verifies a CfgEchoPacket message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a CfgEchoPacket message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns CfgEchoPacket
+     */
+    public static fromObject(object: { [k: string]: any }): CfgEchoPacket;
+
+    /**
+     * Creates a plain object from a CfgEchoPacket message. Also converts values to other types if specified.
+     * @param message CfgEchoPacket
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: CfgEchoPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this CfgEchoPacket to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for CfgEchoPacket
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a SimpleSensorReading. */
+export class SimpleSensorReading implements ISimpleSensorReading {
+
+    /**
+     * Constructs a new SimpleSensorReading.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: ISimpleSensorReading);
+
+    /** SimpleSensorReading index. */
+    public index: number;
+
+    /** SimpleSensorReading temperature. */
+    public temperature: number;
+
+    /** SimpleSensorReading humidity. */
+    public humidity: number;
+
+    /** SimpleSensorReading pressure. */
+    public pressure: number;
+
+    /** SimpleSensorReading gas. */
+    public gas: number;
+
+    /** SimpleSensorReading pm2_5. */
+    public pm2_5: number;
+
+    /** SimpleSensorReading light. */
+    public light: number;
+
+    /** SimpleSensorReading activity. */
+    public activity: Activity;
+
+    /** SimpleSensorReading steps. */
+    public steps: number;
+
+    /** SimpleSensorReading particulateStaticObstructed. */
+    public particulateStaticObstructed: boolean;
+
+    /** SimpleSensorReading particulateDynamicObstructed. */
+    public particulateDynamicObstructed: boolean;
+
+    /** SimpleSensorReading particulateOutsideDetectionLimits. */
+    public particulateOutsideDetectionLimits: boolean;
+
+    /**
+     * Creates a new SimpleSensorReading instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns SimpleSensorReading instance
+     */
+    public static create(properties?: ISimpleSensorReading): SimpleSensorReading;
+
+    /**
+     * Encodes the specified SimpleSensorReading message. Does not implicitly {@link SimpleSensorReading.verify|verify} messages.
+     * @param message SimpleSensorReading message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: ISimpleSensorReading, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified SimpleSensorReading message, length delimited. Does not implicitly {@link SimpleSensorReading.verify|verify} messages.
+     * @param message SimpleSensorReading message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: ISimpleSensorReading, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a SimpleSensorReading message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns SimpleSensorReading
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): SimpleSensorReading;
+
+    /**
+     * Decodes a SimpleSensorReading message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns SimpleSensorReading
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): SimpleSensorReading;
+
+    /**
+     * Verifies a SimpleSensorReading message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a SimpleSensorReading message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns SimpleSensorReading
+     */
+    public static fromObject(object: { [k: string]: any }): SimpleSensorReading;
+
+    /**
+     * Creates a plain object from a SimpleSensorReading message. Also converts values to other types if specified.
+     * @param message SimpleSensorReading
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: SimpleSensorReading, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this SimpleSensorReading to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for SimpleSensorReading
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a SystemStatePacket. */
+export class SystemStatePacket implements ISystemStatePacket {
+
+    /**
+     * Constructs a new SystemStatePacket.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: ISystemStatePacket);
+
+    /** SystemStatePacket engageState. */
+    public engageState: boolean;
+
+    /** SystemStatePacket battery. */
+    public battery?: (IBatteryState|null);
+
+    /** SystemStatePacket sdcard. */
+    public sdcard?: (ISDCardState|null);
+
+    /** SystemStatePacket gpsData. */
+    public gpsData?: (IGPSData|null);
+
+    /** SystemStatePacket sensors. */
+    public sensors?: (ISimpleSensorReading|null);
+
+    /** SystemStatePacket firmwareVersion. */
+    public firmwareVersion: string;
+
+    /** SystemStatePacket hwDiag. */
+    public hwDiag?: (number|null);
+
+    /** SystemStatePacket _gpsData. */
+    public _gpsData?: "gpsData";
+
+    /** SystemStatePacket _hwDiag. */
+    public _hwDiag?: "hwDiag";
+
+    /**
+     * Creates a new SystemStatePacket instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns SystemStatePacket instance
+     */
+    public static create(properties?: ISystemStatePacket): SystemStatePacket;
+
+    /**
+     * Encodes the specified SystemStatePacket message. Does not implicitly {@link SystemStatePacket.verify|verify} messages.
+     * @param message SystemStatePacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: ISystemStatePacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified SystemStatePacket message, length delimited. Does not implicitly {@link SystemStatePacket.verify|verify} messages.
+     * @param message SystemStatePacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: ISystemStatePacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a SystemStatePacket message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns SystemStatePacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): SystemStatePacket;
+
+    /**
+     * Decodes a SystemStatePacket message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns SystemStatePacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): SystemStatePacket;
+
+    /**
+     * Verifies a SystemStatePacket message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a SystemStatePacket message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns SystemStatePacket
+     */
+    public static fromObject(object: { [k: string]: any }): SystemStatePacket;
+
+    /**
+     * Creates a plain object from a SystemStatePacket message. Also converts values to other types if specified.
+     * @param message SystemStatePacket
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: SystemStatePacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this SystemStatePacket to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for SystemStatePacket
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** PeripheralType enum. */
+export enum PeripheralType {
+    PERIPHERAL_SATCOM = 0,
+    PERIPHERAL_DETACHMENT = 1
+}
+
+/** Represents a PeripheralPacket. */
+export class PeripheralPacket implements IPeripheralPacket {
+
+    /**
+     * Constructs a new PeripheralPacket.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IPeripheralPacket);
+
+    /** PeripheralPacket macAddress. */
+    public macAddress: Uint8Array;
+
+    /** PeripheralPacket type. */
+    public type: PeripheralType;
+
+    /**
+     * Creates a new PeripheralPacket instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns PeripheralPacket instance
+     */
+    public static create(properties?: IPeripheralPacket): PeripheralPacket;
+
+    /**
+     * Encodes the specified PeripheralPacket message. Does not implicitly {@link PeripheralPacket.verify|verify} messages.
+     * @param message PeripheralPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IPeripheralPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified PeripheralPacket message, length delimited. Does not implicitly {@link PeripheralPacket.verify|verify} messages.
+     * @param message PeripheralPacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IPeripheralPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a PeripheralPacket message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns PeripheralPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): PeripheralPacket;
+
+    /**
+     * Decodes a PeripheralPacket message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns PeripheralPacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): PeripheralPacket;
+
+    /**
+     * Verifies a PeripheralPacket message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a PeripheralPacket message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns PeripheralPacket
+     */
+    public static fromObject(object: { [k: string]: any }): PeripheralPacket;
+
+    /**
+     * Creates a plain object from a PeripheralPacket message. Also converts values to other types if specified.
+     * @param message PeripheralPacket
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: PeripheralPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this PeripheralPacket to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for PeripheralPacket
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a PeripheralInfo. */
+export class PeripheralInfo implements IPeripheralInfo {
+
+    /**
+     * Constructs a new PeripheralInfo.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IPeripheralInfo);
+
+    /** PeripheralInfo deviceUids. */
+    public deviceUids: string[];
+
+    /**
+     * Creates a new PeripheralInfo instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns PeripheralInfo instance
+     */
+    public static create(properties?: IPeripheralInfo): PeripheralInfo;
+
+    /**
+     * Encodes the specified PeripheralInfo message. Does not implicitly {@link PeripheralInfo.verify|verify} messages.
+     * @param message PeripheralInfo message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IPeripheralInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified PeripheralInfo message, length delimited. Does not implicitly {@link PeripheralInfo.verify|verify} messages.
+     * @param message PeripheralInfo message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IPeripheralInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a PeripheralInfo message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns PeripheralInfo
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): PeripheralInfo;
+
+    /**
+     * Decodes a PeripheralInfo message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns PeripheralInfo
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): PeripheralInfo;
+
+    /**
+     * Verifies a PeripheralInfo message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a PeripheralInfo message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns PeripheralInfo
+     */
+    public static fromObject(object: { [k: string]: any }): PeripheralInfo;
+
+    /**
+     * Creates a plain object from a PeripheralInfo message. Also converts values to other types if specified.
+     * @param message PeripheralInfo
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: PeripheralInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this PeripheralInfo to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for PeripheralInfo
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a BlePacket. */
+export class BlePacket implements IBlePacket {
+
+    /**
+     * Constructs a new BlePacket.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IBlePacket);
+
+    /** BlePacket header. */
+    public header?: (IPacketHeader|null);
+
+    /** BlePacket scheduleConfigPacket. */
+    public scheduleConfigPacket?: (IScheduleConfigPacket|null);
+
+    /** BlePacket systemStatePacket. */
+    public systemStatePacket?: (ISystemStatePacket|null);
+
+    /** BlePacket radioConfigPacket. */
+    public radioConfigPacket?: (IRadioConfigPacket|null);
+
+    /** BlePacket peripheralPacket. */
+    public peripheralPacket?: (IPeripheralPacket|null);
+
+    /** BlePacket peripheralInfo. */
+    public peripheralInfo?: (IPeripheralInfo|null);
+
+    /** BlePacket payload. */
+    public payload?: ("scheduleConfigPacket"|"systemStatePacket"|"radioConfigPacket"|"peripheralPacket"|"peripheralInfo");
+
+    /**
+     * Creates a new BlePacket instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns BlePacket instance
+     */
+    public static create(properties?: IBlePacket): BlePacket;
+
+    /**
+     * Encodes the specified BlePacket message. Does not implicitly {@link BlePacket.verify|verify} messages.
+     * @param message BlePacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IBlePacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified BlePacket message, length delimited. Does not implicitly {@link BlePacket.verify|verify} messages.
+     * @param message BlePacket message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IBlePacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a BlePacket message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns BlePacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): BlePacket;
+
+    /**
+     * Decodes a BlePacket message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns BlePacket
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): BlePacket;
+
+    /**
+     * Verifies a BlePacket message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a BlePacket message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns BlePacket
+     */
+    public static fromObject(object: { [k: string]: any }): BlePacket;
+
+    /**
+     * Creates a plain object from a BlePacket message. Also converts values to other types if specified.
+     * @param message BlePacket
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: BlePacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this BlePacket to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for BlePacket
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
 /** Represents a PacketHeader. */
@@ -43,8 +2340,26 @@ export class PacketHeader implements IPacketHeader {
     /** PacketHeader requestAck. */
     public requestAck?: (boolean|null);
 
+    /** PacketHeader fwBuild. */
+    public fwBuild?: (number|null);
+
+    /** PacketHeader schedCrc. */
+    public schedCrc?: (number|null);
+
+    /** PacketHeader activeFences. */
+    public activeFences?: (number|null);
+
     /** PacketHeader _requestAck. */
     public _requestAck?: "requestAck";
+
+    /** PacketHeader _fwBuild. */
+    public _fwBuild?: "fwBuild";
+
+    /** PacketHeader _schedCrc. */
+    public _schedCrc?: "schedCrc";
+
+    /** PacketHeader _activeFences. */
+    public _activeFences?: "activeFences";
 
     /**
      * Creates a new PacketHeader instance using the specified properties.
@@ -122,25 +2437,6 @@ export class PacketHeader implements IPacketHeader {
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
-}
-
-/** Properties of a GPSData. */
-export interface IGPSData {
-
-    /** GPSData latitude */
-    latitude?: (number|null);
-
-    /** GPSData longitude */
-    longitude?: (number|null);
-
-    /** GPSData altitude */
-    altitude?: (number|null);
-
-    /** GPSData speed */
-    speed?: (number|null);
-
-    /** GPSData heading */
-    heading?: (number|null);
 }
 
 /** Represents a GPSData. */
@@ -245,19 +2541,6 @@ export class GPSData implements IGPSData {
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Properties of a BatteryState. */
-export interface IBatteryState {
-
-    /** BatteryState charging */
-    charging?: (boolean|null);
-
-    /** BatteryState voltage */
-    voltage?: (number|null);
-
-    /** BatteryState percentage */
-    percentage?: (number|null);
-}
-
 /** Represents a BatteryState. */
 export class BatteryState implements IBatteryState {
 
@@ -355,19 +2638,6 @@ export class BatteryState implements IBatteryState {
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
-}
-
-/** Properties of a SDCardState. */
-export interface ISDCardState {
-
-    /** SDCardState detected */
-    detected?: (boolean|null);
-
-    /** SDCardState spaceRemaining */
-    spaceRemaining?: (number|Long|null);
-
-    /** SDCardState totalSpace */
-    totalSpace?: (number|Long|null);
 }
 
 /** Represents a SDCardState. */
@@ -807,19 +3077,31 @@ export class GPSData_2 implements IGPSData_2 {
     public longitudeE7: number;
 
     /** GPSData_2 altitudeMm. */
-    public altitudeMm: number;
+    public altitudeMm?: (number|null);
 
     /** GPSData_2 timestamp. */
-    public timestamp?: (number|null);
+    public timestamp: number;
 
-    /** GPSData_2 gpsAvgFixTimeMs. */
-    public gpsAvgFixTimeMs?: (number|null);
+    /** GPSData_2 gpsAvgFixTimeS. */
+    public gpsAvgFixTimeS?: (number|null);
 
-    /** GPSData_2 _timestamp. */
-    public _timestamp?: "timestamp";
+    /** GPSData_2 hdop. */
+    public hdop?: (number|null);
 
-    /** GPSData_2 _gpsAvgFixTimeMs. */
-    public _gpsAvgFixTimeMs?: "gpsAvgFixTimeMs";
+    /** GPSData_2 hAccDm. */
+    public hAccDm?: (number|null);
+
+    /** GPSData_2 _altitudeMm. */
+    public _altitudeMm?: "altitudeMm";
+
+    /** GPSData_2 _gpsAvgFixTimeS. */
+    public _gpsAvgFixTimeS?: "gpsAvgFixTimeS";
+
+    /** GPSData_2 _hdop. */
+    public _hdop?: "hdop";
+
+    /** GPSData_2 _hAccDm. */
+    public _hAccDm?: "hAccDm";
 
     /**
      * Creates a new GPSData_2 instance using the specified properties.
@@ -1019,6 +3301,16 @@ export class SystemSensorSummary implements ISystemSensorSummary {
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
+/** ConfigAckStatus enum. */
+export enum ConfigAckStatus {
+    CFG_ACK_NONE = 0,
+    CFG_ACK_APPLIED = 1,
+    CFG_ACK_MISSING_FRAGS = 2,
+    CFG_ACK_RAILS_REJECTED = 3,
+    CFG_ACK_NO_TXN = 4,
+    CFG_ACK_EXPIRED = 5
+}
+
 /** Represents an AckPacket. */
 export class AckPacket implements IAckPacket {
 
@@ -1027,6 +3319,30 @@ export class AckPacket implements IAckPacket {
      * @param [properties] Properties to set
      */
     constructor(properties?: IAckPacket);
+
+    /** AckPacket cfgTxnId. */
+    public cfgTxnId?: (number|null);
+
+    /** AckPacket cfgStatus. */
+    public cfgStatus?: (ConfigAckStatus|null);
+
+    /** AckPacket cfgMissingMask. */
+    public cfgMissingMask?: (number|null);
+
+    /** AckPacket schedCrc. */
+    public schedCrc?: (number|null);
+
+    /** AckPacket _cfgTxnId. */
+    public _cfgTxnId?: "cfgTxnId";
+
+    /** AckPacket _cfgStatus. */
+    public _cfgStatus?: "cfgStatus";
+
+    /** AckPacket _cfgMissingMask. */
+    public _cfgMissingMask?: "cfgMissingMask";
+
+    /** AckPacket _schedCrc. */
+    public _schedCrc?: "schedCrc";
 
     /**
      * Creates a new AckPacket instance using the specified properties.
@@ -1752,10 +4068,13 @@ export class Deployment implements IDeployment {
     public steps?: (number|null);
 
     /** Deployment gpsData. */
-    public gpsData?: (IGPSData_2|null);
+    public gpsData: IGPSData_2[];
 
     /** Deployment errorFlags. */
     public errorFlags?: (IErrorFlags|null);
+
+    /** Deployment addon. */
+    public addon: IAddonReport[];
 
     /** Deployment _particulateData. */
     public _particulateData?: "particulateData";
@@ -1771,9 +4090,6 @@ export class Deployment implements IDeployment {
 
     /** Deployment _steps. */
     public _steps?: "steps";
-
-    /** Deployment _gpsData. */
-    public _gpsData?: "gpsData";
 
     /** Deployment _errorFlags. */
     public _errorFlags?: "errorFlags";
@@ -1856,6 +4172,243 @@ export class Deployment implements IDeployment {
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
+/** Represents an AddonReport. */
+export class AddonReport implements IAddonReport {
+
+    /**
+     * Constructs a new AddonReport.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IAddonReport);
+
+    /** AddonReport uid. */
+    public uid: number;
+
+    /** AddonReport nodeType. */
+    public nodeType: number;
+
+    /** AddonReport lastCheckinEpoch. */
+    public lastCheckinEpoch: number;
+
+    /** AddonReport battMv. */
+    public battMv?: (number|null);
+
+    /** AddonReport detachEpoch. */
+    public detachEpoch?: (number|null);
+
+    /** AddonReport fired. */
+    public fired?: (number|null);
+
+    /** AddonReport motorState. */
+    public motorState?: (number|null);
+
+    /** AddonReport pendingCmd. */
+    public pendingCmd?: (number|null);
+
+    /** AddonReport cmdState. */
+    public cmdState?: (number|null);
+
+    /** AddonReport pendingCmdParam. */
+    public pendingCmdParam?: (number|null);
+
+    /** AddonReport _battMv. */
+    public _battMv?: "battMv";
+
+    /** AddonReport _detachEpoch. */
+    public _detachEpoch?: "detachEpoch";
+
+    /** AddonReport _fired. */
+    public _fired?: "fired";
+
+    /** AddonReport _motorState. */
+    public _motorState?: "motorState";
+
+    /** AddonReport _pendingCmd. */
+    public _pendingCmd?: "pendingCmd";
+
+    /** AddonReport _cmdState. */
+    public _cmdState?: "cmdState";
+
+    /** AddonReport _pendingCmdParam. */
+    public _pendingCmdParam?: "pendingCmdParam";
+
+    /**
+     * Creates a new AddonReport instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns AddonReport instance
+     */
+    public static create(properties?: IAddonReport): AddonReport;
+
+    /**
+     * Encodes the specified AddonReport message. Does not implicitly {@link AddonReport.verify|verify} messages.
+     * @param message AddonReport message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IAddonReport, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified AddonReport message, length delimited. Does not implicitly {@link AddonReport.verify|verify} messages.
+     * @param message AddonReport message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IAddonReport, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes an AddonReport message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns AddonReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): AddonReport;
+
+    /**
+     * Decodes an AddonReport message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns AddonReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): AddonReport;
+
+    /**
+     * Verifies an AddonReport message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates an AddonReport message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns AddonReport
+     */
+    public static fromObject(object: { [k: string]: any }): AddonReport;
+
+    /**
+     * Creates a plain object from an AddonReport message. Also converts values to other types if specified.
+     * @param message AddonReport
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: AddonReport, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this AddonReport to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for AddonReport
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** Represents a ConfigReport. */
+export class ConfigReport implements IConfigReport {
+
+    /**
+     * Constructs a new ConfigReport.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IConfigReport);
+
+    /** ConfigReport schedCrc. */
+    public schedCrc: number;
+
+    /** ConfigReport fragIndex. */
+    public fragIndex: number;
+
+    /** ConfigReport fragTotal. */
+    public fragTotal: number;
+
+    /** ConfigReport frag. */
+    public frag?: (IConfigFragment|null);
+
+    /**
+     * Creates a new ConfigReport instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns ConfigReport instance
+     */
+    public static create(properties?: IConfigReport): ConfigReport;
+
+    /**
+     * Encodes the specified ConfigReport message. Does not implicitly {@link ConfigReport.verify|verify} messages.
+     * @param message ConfigReport message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IConfigReport, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified ConfigReport message, length delimited. Does not implicitly {@link ConfigReport.verify|verify} messages.
+     * @param message ConfigReport message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IConfigReport, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a ConfigReport message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns ConfigReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigReport;
+
+    /**
+     * Decodes a ConfigReport message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns ConfigReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigReport;
+
+    /**
+     * Verifies a ConfigReport message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a ConfigReport message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns ConfigReport
+     */
+    public static fromObject(object: { [k: string]: any }): ConfigReport;
+
+    /**
+     * Creates a plain object from a ConfigReport message. Also converts values to other types if specified.
+     * @param message ConfigReport
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: ConfigReport, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this ConfigReport to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for ConfigReport
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
 /** Represents a MessagePacket. */
 export class MessagePacket implements IMessagePacket {
 
@@ -1883,11 +4436,23 @@ export class MessagePacket implements IMessagePacket {
     /** MessagePacket radioInfo. */
     public radioInfo?: (IRadioInfo|null);
 
+    /** MessagePacket cfgAck. */
+    public cfgAck?: (IAckPacket|null);
+
+    /** MessagePacket cfgReport. */
+    public cfgReport?: (IConfigReport|null);
+
     /** MessagePacket payload. */
     public payload?: ("systemInfoPacket"|"configPacket"|"ackPacket"|"systemDeploymentPacket");
 
     /** MessagePacket _radioInfo. */
     public _radioInfo?: "radioInfo";
+
+    /** MessagePacket _cfgAck. */
+    public _cfgAck?: "cfgAck";
+
+    /** MessagePacket _cfgReport. */
+    public _cfgReport?: "cfgReport";
 
     /**
      * Creates a new MessagePacket instance using the specified properties.
@@ -1967,1986 +4532,1693 @@ export class MessagePacket implements IMessagePacket {
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a TimeWindow. */
-export class TimeWindow implements ITimeWindow {
+/** CommandType enum. */
+export enum CommandType {
+    CMD_NONE = 0,
+    CMD_RESET = 1,
+    CMD_DROP_OFF = 2,
+    CMD_HIGH_FIX_ON = 3,
+    CMD_HIGH_FIX_OFF = 4,
+    CMD_SYNC_TIME = 5,
+    CMD_BUZZ = 6,
+    CMD_ENGAGE = 7,
+    CMD_DISENGAGE = 8,
+    CMD_CONFIG_BEGIN = 9,
+    CMD_CONFIG_COMMIT = 10,
+    CMD_CONFIG_ABORT = 11,
+    CMD_ADDON_ARM = 13,
+    CMD_ADDON_ABORT = 14,
+    CMD_RESEND = 15,
+    CMD_CONFIG_REPORT = 16,
+    CMD_TEST_FIX = 17,
+    CMD_FACTORY_RESET = 18
+}
+
+/** Represents a GeoPoint. */
+export class GeoPoint implements IGeoPoint {
 
     /**
-     * Constructs a new TimeWindow.
+     * Constructs a new GeoPoint.
      * @param [properties] Properties to set
      */
-    constructor(properties?: ITimeWindow);
+    constructor(properties?: IGeoPoint);
 
-    /** TimeWindow startHour. */
-    public startHour: number;
+    /** GeoPoint latitudeE7. */
+    public latitudeE7: number;
 
-    /** TimeWindow endHour. */
-    public endHour: number;
+    /** GeoPoint longitudeE7. */
+    public longitudeE7: number;
 
     /**
-     * Creates a new TimeWindow instance using the specified properties.
+     * Creates a new GeoPoint instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns TimeWindow instance
+     * @returns GeoPoint instance
      */
-    public static create(properties?: ITimeWindow): TimeWindow;
+    public static create(properties?: IGeoPoint): GeoPoint;
 
     /**
-     * Encodes the specified TimeWindow message. Does not implicitly {@link TimeWindow.verify|verify} messages.
-     * @param message TimeWindow message or plain object to encode
+     * Encodes the specified GeoPoint message. Does not implicitly {@link GeoPoint.verify|verify} messages.
+     * @param message GeoPoint message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: ITimeWindow, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IGeoPoint, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified TimeWindow message, length delimited. Does not implicitly {@link TimeWindow.verify|verify} messages.
-     * @param message TimeWindow message or plain object to encode
+     * Encodes the specified GeoPoint message, length delimited. Does not implicitly {@link GeoPoint.verify|verify} messages.
+     * @param message GeoPoint message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: ITimeWindow, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IGeoPoint, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a TimeWindow message from the specified reader or buffer.
+     * Decodes a GeoPoint message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns TimeWindow
+     * @returns GeoPoint
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): TimeWindow;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): GeoPoint;
 
     /**
-     * Decodes a TimeWindow message from the specified reader or buffer, length delimited.
+     * Decodes a GeoPoint message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns TimeWindow
+     * @returns GeoPoint
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): TimeWindow;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): GeoPoint;
 
     /**
-     * Verifies a TimeWindow message.
+     * Verifies a GeoPoint message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a TimeWindow message from a plain object. Also converts values to their respective internal types.
+     * Creates a GeoPoint message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns TimeWindow
+     * @returns GeoPoint
      */
-    public static fromObject(object: { [k: string]: any }): TimeWindow;
+    public static fromObject(object: { [k: string]: any }): GeoPoint;
 
     /**
-     * Creates a plain object from a TimeWindow message. Also converts values to other types if specified.
-     * @param message TimeWindow
+     * Creates a plain object from a GeoPoint message. Also converts values to other types if specified.
+     * @param message GeoPoint
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: TimeWindow, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: GeoPoint, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this TimeWindow to JSON.
+     * Converts this GeoPoint to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for TimeWindow
+     * Gets the default type url for GeoPoint
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a SamplingConfig. */
-export class SamplingConfig implements ISamplingConfig {
+/** Represents a GeofenceData. */
+export class GeofenceData implements IGeofenceData {
 
     /**
-     * Constructs a new SamplingConfig.
+     * Constructs a new GeofenceData.
      * @param [properties] Properties to set
      */
-    constructor(properties?: ISamplingConfig);
+    constructor(properties?: IGeofenceData);
 
-    /** SamplingConfig enabled. */
-    public enabled: boolean;
+    /** GeofenceData fenceId. */
+    public fenceId: number;
 
-    /** SamplingConfig sampleIntervalMin. */
-    public sampleIntervalMin: number;
+    /** GeofenceData vertices. */
+    public vertices: IGeoPoint[];
+
+    /** GeofenceData active. */
+    public active: boolean;
 
     /**
-     * Creates a new SamplingConfig instance using the specified properties.
+     * Creates a new GeofenceData instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns SamplingConfig instance
+     * @returns GeofenceData instance
      */
-    public static create(properties?: ISamplingConfig): SamplingConfig;
+    public static create(properties?: IGeofenceData): GeofenceData;
 
     /**
-     * Encodes the specified SamplingConfig message. Does not implicitly {@link SamplingConfig.verify|verify} messages.
-     * @param message SamplingConfig message or plain object to encode
+     * Encodes the specified GeofenceData message. Does not implicitly {@link GeofenceData.verify|verify} messages.
+     * @param message GeofenceData message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: ISamplingConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IGeofenceData, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified SamplingConfig message, length delimited. Does not implicitly {@link SamplingConfig.verify|verify} messages.
-     * @param message SamplingConfig message or plain object to encode
+     * Encodes the specified GeofenceData message, length delimited. Does not implicitly {@link GeofenceData.verify|verify} messages.
+     * @param message GeofenceData message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: ISamplingConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IGeofenceData, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a SamplingConfig message from the specified reader or buffer.
+     * Decodes a GeofenceData message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns SamplingConfig
+     * @returns GeofenceData
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): SamplingConfig;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): GeofenceData;
 
     /**
-     * Decodes a SamplingConfig message from the specified reader or buffer, length delimited.
+     * Decodes a GeofenceData message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns SamplingConfig
+     * @returns GeofenceData
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): SamplingConfig;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): GeofenceData;
 
     /**
-     * Verifies a SamplingConfig message.
+     * Verifies a GeofenceData message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a SamplingConfig message from a plain object. Also converts values to their respective internal types.
+     * Creates a GeofenceData message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns SamplingConfig
+     * @returns GeofenceData
      */
-    public static fromObject(object: { [k: string]: any }): SamplingConfig;
+    public static fromObject(object: { [k: string]: any }): GeofenceData;
 
     /**
-     * Creates a plain object from a SamplingConfig message. Also converts values to other types if specified.
-     * @param message SamplingConfig
+     * Creates a plain object from a GeofenceData message. Also converts values to other types if specified.
+     * @param message GeofenceData
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: SamplingConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: GeofenceData, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this SamplingConfig to JSON.
+     * Converts this GeofenceData to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for SamplingConfig
+     * Gets the default type url for GeofenceData
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a GPSConfig. */
-export class GPSConfig implements IGPSConfig {
+/** Represents a HighFixParams. */
+export class HighFixParams implements IHighFixParams {
 
     /**
-     * Constructs a new GPSConfig.
+     * Constructs a new HighFixParams.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IGPSConfig);
+    constructor(properties?: IHighFixParams);
 
-    /** GPSConfig enabled. */
-    public enabled: boolean;
+    /** HighFixParams durationHours. */
+    public durationHours: number;
 
-    /** GPSConfig sampleIntervalMin. */
-    public sampleIntervalMin: number;
-
-    /** GPSConfig accuracy. */
-    public accuracy: number;
+    /** HighFixParams sampleIntervalSec. */
+    public sampleIntervalSec: number;
 
     /**
-     * Creates a new GPSConfig instance using the specified properties.
+     * Creates a new HighFixParams instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns GPSConfig instance
+     * @returns HighFixParams instance
      */
-    public static create(properties?: IGPSConfig): GPSConfig;
+    public static create(properties?: IHighFixParams): HighFixParams;
 
     /**
-     * Encodes the specified GPSConfig message. Does not implicitly {@link GPSConfig.verify|verify} messages.
-     * @param message GPSConfig message or plain object to encode
+     * Encodes the specified HighFixParams message. Does not implicitly {@link HighFixParams.verify|verify} messages.
+     * @param message HighFixParams message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IGPSConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IHighFixParams, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified GPSConfig message, length delimited. Does not implicitly {@link GPSConfig.verify|verify} messages.
-     * @param message GPSConfig message or plain object to encode
+     * Encodes the specified HighFixParams message, length delimited. Does not implicitly {@link HighFixParams.verify|verify} messages.
+     * @param message HighFixParams message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IGPSConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IHighFixParams, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a GPSConfig message from the specified reader or buffer.
+     * Decodes a HighFixParams message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns GPSConfig
+     * @returns HighFixParams
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): GPSConfig;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): HighFixParams;
 
     /**
-     * Decodes a GPSConfig message from the specified reader or buffer, length delimited.
+     * Decodes a HighFixParams message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns GPSConfig
+     * @returns HighFixParams
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): GPSConfig;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): HighFixParams;
 
     /**
-     * Verifies a GPSConfig message.
+     * Verifies a HighFixParams message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a GPSConfig message from a plain object. Also converts values to their respective internal types.
+     * Creates a HighFixParams message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns GPSConfig
+     * @returns HighFixParams
      */
-    public static fromObject(object: { [k: string]: any }): GPSConfig;
+    public static fromObject(object: { [k: string]: any }): HighFixParams;
 
     /**
-     * Creates a plain object from a GPSConfig message. Also converts values to other types if specified.
-     * @param message GPSConfig
+     * Creates a plain object from a HighFixParams message. Also converts values to other types if specified.
+     * @param message HighFixParams
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: GPSConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: HighFixParams, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this GPSConfig to JSON.
+     * Converts this HighFixParams to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for GPSConfig
+     * Gets the default type url for HighFixParams
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** RadioRegion enum. */
-export enum RadioRegion {
-    REGION_US915 = 0,
-    REGION_AU915 = 1,
-    REGION_EU868 = 2
-}
-
-/** RadioAuth enum. */
-export enum RadioAuth {
-    AUTH_OTAA = 0,
-    AUTH_ABP = 1
-}
-
-/** Represents a RadioOTAA. */
-export class RadioOTAA implements IRadioOTAA {
+/** Represents a ConfigTimeWindow. */
+export class ConfigTimeWindow implements IConfigTimeWindow {
 
     /**
-     * Constructs a new RadioOTAA.
+     * Constructs a new ConfigTimeWindow.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IRadioOTAA);
+    constructor(properties?: IConfigTimeWindow);
 
-    /** RadioOTAA devEui. */
-    public devEui: Uint8Array;
+    /** ConfigTimeWindow startHour. */
+    public startHour?: (number|null);
 
-    /** RadioOTAA joinEui. */
-    public joinEui: Uint8Array;
+    /** ConfigTimeWindow endHour. */
+    public endHour?: (number|null);
 
-    /** RadioOTAA appKey. */
-    public appKey: Uint8Array;
+    /** ConfigTimeWindow _startHour. */
+    public _startHour?: "startHour";
 
-    /** RadioOTAA nwkKey. */
-    public nwkKey: Uint8Array;
+    /** ConfigTimeWindow _endHour. */
+    public _endHour?: "endHour";
 
     /**
-     * Creates a new RadioOTAA instance using the specified properties.
+     * Creates a new ConfigTimeWindow instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns RadioOTAA instance
+     * @returns ConfigTimeWindow instance
      */
-    public static create(properties?: IRadioOTAA): RadioOTAA;
+    public static create(properties?: IConfigTimeWindow): ConfigTimeWindow;
 
     /**
-     * Encodes the specified RadioOTAA message. Does not implicitly {@link RadioOTAA.verify|verify} messages.
-     * @param message RadioOTAA message or plain object to encode
+     * Encodes the specified ConfigTimeWindow message. Does not implicitly {@link ConfigTimeWindow.verify|verify} messages.
+     * @param message ConfigTimeWindow message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IRadioOTAA, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigTimeWindow, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified RadioOTAA message, length delimited. Does not implicitly {@link RadioOTAA.verify|verify} messages.
-     * @param message RadioOTAA message or plain object to encode
+     * Encodes the specified ConfigTimeWindow message, length delimited. Does not implicitly {@link ConfigTimeWindow.verify|verify} messages.
+     * @param message ConfigTimeWindow message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IRadioOTAA, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigTimeWindow, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a RadioOTAA message from the specified reader or buffer.
+     * Decodes a ConfigTimeWindow message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns RadioOTAA
+     * @returns ConfigTimeWindow
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): RadioOTAA;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigTimeWindow;
 
     /**
-     * Decodes a RadioOTAA message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigTimeWindow message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns RadioOTAA
+     * @returns ConfigTimeWindow
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): RadioOTAA;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigTimeWindow;
 
     /**
-     * Verifies a RadioOTAA message.
+     * Verifies a ConfigTimeWindow message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a RadioOTAA message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigTimeWindow message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns RadioOTAA
+     * @returns ConfigTimeWindow
      */
-    public static fromObject(object: { [k: string]: any }): RadioOTAA;
+    public static fromObject(object: { [k: string]: any }): ConfigTimeWindow;
 
     /**
-     * Creates a plain object from a RadioOTAA message. Also converts values to other types if specified.
-     * @param message RadioOTAA
+     * Creates a plain object from a ConfigTimeWindow message. Also converts values to other types if specified.
+     * @param message ConfigTimeWindow
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: RadioOTAA, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigTimeWindow, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this RadioOTAA to JSON.
+     * Converts this ConfigTimeWindow to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for RadioOTAA
+     * Gets the default type url for ConfigTimeWindow
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a RadioABP. */
-export class RadioABP implements IRadioABP {
+/** Represents a ConfigAccelerometer. */
+export class ConfigAccelerometer implements IConfigAccelerometer {
 
     /**
-     * Constructs a new RadioABP.
+     * Constructs a new ConfigAccelerometer.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IRadioABP);
+    constructor(properties?: IConfigAccelerometer);
 
-    /** RadioABP devAddr. */
-    public devAddr: Uint8Array;
+    /** ConfigAccelerometer enabled. */
+    public enabled?: (boolean|null);
 
-    /** RadioABP nwkSKey. */
-    public nwkSKey: Uint8Array;
+    /** ConfigAccelerometer sampleRate. */
+    public sampleRate?: (number|null);
 
-    /** RadioABP appSKey. */
-    public appSKey: Uint8Array;
+    /** ConfigAccelerometer sensitivity. */
+    public sensitivity?: (number|null);
 
-    /** RadioABP fNwkSIntKey. */
-    public fNwkSIntKey: Uint8Array;
+    /** ConfigAccelerometer _enabled. */
+    public _enabled?: "enabled";
 
-    /** RadioABP sNwkSIntKey. */
-    public sNwkSIntKey: Uint8Array;
+    /** ConfigAccelerometer _sampleRate. */
+    public _sampleRate?: "sampleRate";
+
+    /** ConfigAccelerometer _sensitivity. */
+    public _sensitivity?: "sensitivity";
 
     /**
-     * Creates a new RadioABP instance using the specified properties.
+     * Creates a new ConfigAccelerometer instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns RadioABP instance
+     * @returns ConfigAccelerometer instance
      */
-    public static create(properties?: IRadioABP): RadioABP;
+    public static create(properties?: IConfigAccelerometer): ConfigAccelerometer;
 
     /**
-     * Encodes the specified RadioABP message. Does not implicitly {@link RadioABP.verify|verify} messages.
-     * @param message RadioABP message or plain object to encode
+     * Encodes the specified ConfigAccelerometer message. Does not implicitly {@link ConfigAccelerometer.verify|verify} messages.
+     * @param message ConfigAccelerometer message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IRadioABP, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigAccelerometer, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified RadioABP message, length delimited. Does not implicitly {@link RadioABP.verify|verify} messages.
-     * @param message RadioABP message or plain object to encode
+     * Encodes the specified ConfigAccelerometer message, length delimited. Does not implicitly {@link ConfigAccelerometer.verify|verify} messages.
+     * @param message ConfigAccelerometer message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IRadioABP, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigAccelerometer, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a RadioABP message from the specified reader or buffer.
+     * Decodes a ConfigAccelerometer message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns RadioABP
+     * @returns ConfigAccelerometer
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): RadioABP;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigAccelerometer;
 
     /**
-     * Decodes a RadioABP message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigAccelerometer message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns RadioABP
+     * @returns ConfigAccelerometer
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): RadioABP;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigAccelerometer;
 
     /**
-     * Verifies a RadioABP message.
+     * Verifies a ConfigAccelerometer message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a RadioABP message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigAccelerometer message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns RadioABP
+     * @returns ConfigAccelerometer
      */
-    public static fromObject(object: { [k: string]: any }): RadioABP;
+    public static fromObject(object: { [k: string]: any }): ConfigAccelerometer;
 
     /**
-     * Creates a plain object from a RadioABP message. Also converts values to other types if specified.
-     * @param message RadioABP
+     * Creates a plain object from a ConfigAccelerometer message. Also converts values to other types if specified.
+     * @param message ConfigAccelerometer
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: RadioABP, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigAccelerometer, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this RadioABP to JSON.
+     * Converts this ConfigAccelerometer to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for RadioABP
+     * Gets the default type url for ConfigAccelerometer
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** RadioSpreadingFactor enum. */
-export enum RadioSpreadingFactor {
-    SF7 = 0,
-    SF8 = 1,
-    SF9 = 2,
-    SF10 = 3,
-    SF11 = 4,
-    SF12 = 5
-}
-
-/** RadioBandwidth enum. */
-export enum RadioBandwidth {
-    bw_125 = 0,
-    bw_250 = 1,
-    bw_500 = 2
-}
-
-/** RadioCodingRate enum. */
-export enum RadioCodingRate {
-    cr_4_5 = 0,
-    cr_4_6 = 1,
-    cr_4_7 = 2,
-    cr_4_8 = 3
-}
-
-/** Represents a LoRaWANConfig. */
-export class LoRaWANConfig implements ILoRaWANConfig {
+/** Represents a ConfigMicrophone. */
+export class ConfigMicrophone implements IConfigMicrophone {
 
     /**
-     * Constructs a new LoRaWANConfig.
+     * Constructs a new ConfigMicrophone.
      * @param [properties] Properties to set
      */
-    constructor(properties?: ILoRaWANConfig);
+    constructor(properties?: IConfigMicrophone);
 
-    /** LoRaWANConfig region. */
-    public region: RadioRegion;
+    /** ConfigMicrophone enabled. */
+    public enabled?: (boolean|null);
 
-    /** LoRaWANConfig auth. */
-    public auth: RadioAuth;
+    /** ConfigMicrophone continuousMode. */
+    public continuousMode?: (boolean|null);
 
-    /** LoRaWANConfig otaa. */
-    public otaa?: (IRadioOTAA|null);
+    /** ConfigMicrophone sampleLengthMin. */
+    public sampleLengthMin?: (number|null);
 
-    /** LoRaWANConfig abp. */
-    public abp?: (IRadioABP|null);
+    /** ConfigMicrophone sampleWindowMin. */
+    public sampleWindowMin?: (number|null);
 
-    /** LoRaWANConfig transmitIntervalMin. */
-    public transmitIntervalMin: number;
+    /** ConfigMicrophone sampleRate. */
+    public sampleRate?: (number|null);
 
-    /** LoRaWANConfig txOnlyOnNewGpsFix. */
-    public txOnlyOnNewGpsFix: boolean;
+    /** ConfigMicrophone bitDepth. */
+    public bitDepth?: (number|null);
 
-    /** LoRaWANConfig txPowerDbm. */
-    public txPowerDbm: number;
+    /** ConfigMicrophone _enabled. */
+    public _enabled?: "enabled";
 
-    /** LoRaWANConfig credentials. */
-    public credentials?: ("otaa"|"abp");
+    /** ConfigMicrophone _continuousMode. */
+    public _continuousMode?: "continuousMode";
+
+    /** ConfigMicrophone _sampleLengthMin. */
+    public _sampleLengthMin?: "sampleLengthMin";
+
+    /** ConfigMicrophone _sampleWindowMin. */
+    public _sampleWindowMin?: "sampleWindowMin";
+
+    /** ConfigMicrophone _sampleRate. */
+    public _sampleRate?: "sampleRate";
+
+    /** ConfigMicrophone _bitDepth. */
+    public _bitDepth?: "bitDepth";
 
     /**
-     * Creates a new LoRaWANConfig instance using the specified properties.
+     * Creates a new ConfigMicrophone instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns LoRaWANConfig instance
+     * @returns ConfigMicrophone instance
      */
-    public static create(properties?: ILoRaWANConfig): LoRaWANConfig;
+    public static create(properties?: IConfigMicrophone): ConfigMicrophone;
 
     /**
-     * Encodes the specified LoRaWANConfig message. Does not implicitly {@link LoRaWANConfig.verify|verify} messages.
-     * @param message LoRaWANConfig message or plain object to encode
+     * Encodes the specified ConfigMicrophone message. Does not implicitly {@link ConfigMicrophone.verify|verify} messages.
+     * @param message ConfigMicrophone message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: ILoRaWANConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigMicrophone, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified LoRaWANConfig message, length delimited. Does not implicitly {@link LoRaWANConfig.verify|verify} messages.
-     * @param message LoRaWANConfig message or plain object to encode
+     * Encodes the specified ConfigMicrophone message, length delimited. Does not implicitly {@link ConfigMicrophone.verify|verify} messages.
+     * @param message ConfigMicrophone message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: ILoRaWANConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigMicrophone, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a LoRaWANConfig message from the specified reader or buffer.
+     * Decodes a ConfigMicrophone message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns LoRaWANConfig
+     * @returns ConfigMicrophone
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): LoRaWANConfig;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigMicrophone;
 
     /**
-     * Decodes a LoRaWANConfig message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigMicrophone message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns LoRaWANConfig
+     * @returns ConfigMicrophone
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): LoRaWANConfig;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigMicrophone;
 
     /**
-     * Verifies a LoRaWANConfig message.
+     * Verifies a ConfigMicrophone message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a LoRaWANConfig message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigMicrophone message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns LoRaWANConfig
+     * @returns ConfigMicrophone
      */
-    public static fromObject(object: { [k: string]: any }): LoRaWANConfig;
+    public static fromObject(object: { [k: string]: any }): ConfigMicrophone;
 
     /**
-     * Creates a plain object from a LoRaWANConfig message. Also converts values to other types if specified.
-     * @param message LoRaWANConfig
+     * Creates a plain object from a ConfigMicrophone message. Also converts values to other types if specified.
+     * @param message ConfigMicrophone
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: LoRaWANConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigMicrophone, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this LoRaWANConfig to JSON.
+     * Converts this ConfigMicrophone to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for LoRaWANConfig
+     * Gets the default type url for ConfigMicrophone
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a LoRaConfig. */
-export class LoRaConfig implements ILoRaConfig {
+/** Represents a ConfigGPS. */
+export class ConfigGPS implements IConfigGPS {
 
     /**
-     * Constructs a new LoRaConfig.
+     * Constructs a new ConfigGPS.
      * @param [properties] Properties to set
      */
-    constructor(properties?: ILoRaConfig);
+    constructor(properties?: IConfigGPS);
 
-    /** LoRaConfig radioSpreadingFactor. */
-    public radioSpreadingFactor: RadioSpreadingFactor;
+    /** ConfigGPS enabled. */
+    public enabled?: (boolean|null);
 
-    /** LoRaConfig radioBandwidth. */
-    public radioBandwidth: RadioBandwidth;
+    /** ConfigGPS sampleIntervalMin. */
+    public sampleIntervalMin?: (number|null);
 
-    /** LoRaConfig radioCodingRate. */
-    public radioCodingRate: RadioCodingRate;
+    /** ConfigGPS accuracy. */
+    public accuracy?: (number|null);
 
-    /** LoRaConfig txPowerDbm. */
-    public txPowerDbm: number;
+    /** ConfigGPS _enabled. */
+    public _enabled?: "enabled";
 
-    /** LoRaConfig syncWord. */
-    public syncWord: number;
+    /** ConfigGPS _sampleIntervalMin. */
+    public _sampleIntervalMin?: "sampleIntervalMin";
 
-    /** LoRaConfig frequency. */
-    public frequency: number;
+    /** ConfigGPS _accuracy. */
+    public _accuracy?: "accuracy";
 
     /**
-     * Creates a new LoRaConfig instance using the specified properties.
+     * Creates a new ConfigGPS instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns LoRaConfig instance
+     * @returns ConfigGPS instance
      */
-    public static create(properties?: ILoRaConfig): LoRaConfig;
+    public static create(properties?: IConfigGPS): ConfigGPS;
 
     /**
-     * Encodes the specified LoRaConfig message. Does not implicitly {@link LoRaConfig.verify|verify} messages.
-     * @param message LoRaConfig message or plain object to encode
+     * Encodes the specified ConfigGPS message. Does not implicitly {@link ConfigGPS.verify|verify} messages.
+     * @param message ConfigGPS message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: ILoRaConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigGPS, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified LoRaConfig message, length delimited. Does not implicitly {@link LoRaConfig.verify|verify} messages.
-     * @param message LoRaConfig message or plain object to encode
+     * Encodes the specified ConfigGPS message, length delimited. Does not implicitly {@link ConfigGPS.verify|verify} messages.
+     * @param message ConfigGPS message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: ILoRaConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigGPS, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a LoRaConfig message from the specified reader or buffer.
+     * Decodes a ConfigGPS message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns LoRaConfig
+     * @returns ConfigGPS
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): LoRaConfig;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigGPS;
 
     /**
-     * Decodes a LoRaConfig message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigGPS message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns LoRaConfig
+     * @returns ConfigGPS
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): LoRaConfig;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigGPS;
 
     /**
-     * Verifies a LoRaConfig message.
+     * Verifies a ConfigGPS message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a LoRaConfig message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigGPS message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns LoRaConfig
+     * @returns ConfigGPS
      */
-    public static fromObject(object: { [k: string]: any }): LoRaConfig;
+    public static fromObject(object: { [k: string]: any }): ConfigGPS;
 
     /**
-     * Creates a plain object from a LoRaConfig message. Also converts values to other types if specified.
-     * @param message LoRaConfig
+     * Creates a plain object from a ConfigGPS message. Also converts values to other types if specified.
+     * @param message ConfigGPS
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: LoRaConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigGPS, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this LoRaConfig to JSON.
+     * Converts this ConfigGPS to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for LoRaConfig
+     * Gets the default type url for ConfigGPS
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a LostMode_config. */
-export class LostMode_config implements ILostMode_config {
+/** Represents a ConfigMagnetometer. */
+export class ConfigMagnetometer implements IConfigMagnetometer {
 
     /**
-     * Constructs a new LostMode_config.
+     * Constructs a new ConfigMagnetometer.
      * @param [properties] Properties to set
      */
-    constructor(properties?: ILostMode_config);
+    constructor(properties?: IConfigMagnetometer);
 
-    /** LostMode_config activationEpoch. */
-    public activationEpoch: number;
+    /** ConfigMagnetometer enabled. */
+    public enabled?: (boolean|null);
 
-    /** LostMode_config transmitIntervalMin. */
-    public transmitIntervalMin: number;
+    /** ConfigMagnetometer sampleIntervalS. */
+    public sampleIntervalS?: (number|null);
 
-    /** LostMode_config txPowerDbm. */
-    public txPowerDbm: number;
+    /** ConfigMagnetometer _enabled. */
+    public _enabled?: "enabled";
+
+    /** ConfigMagnetometer _sampleIntervalS. */
+    public _sampleIntervalS?: "sampleIntervalS";
 
     /**
-     * Creates a new LostMode_config instance using the specified properties.
+     * Creates a new ConfigMagnetometer instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns LostMode_config instance
+     * @returns ConfigMagnetometer instance
      */
-    public static create(properties?: ILostMode_config): LostMode_config;
+    public static create(properties?: IConfigMagnetometer): ConfigMagnetometer;
 
     /**
-     * Encodes the specified LostMode_config message. Does not implicitly {@link LostMode_config.verify|verify} messages.
-     * @param message LostMode_config message or plain object to encode
+     * Encodes the specified ConfigMagnetometer message. Does not implicitly {@link ConfigMagnetometer.verify|verify} messages.
+     * @param message ConfigMagnetometer message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: ILostMode_config, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigMagnetometer, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified LostMode_config message, length delimited. Does not implicitly {@link LostMode_config.verify|verify} messages.
-     * @param message LostMode_config message or plain object to encode
+     * Encodes the specified ConfigMagnetometer message, length delimited. Does not implicitly {@link ConfigMagnetometer.verify|verify} messages.
+     * @param message ConfigMagnetometer message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: ILostMode_config, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigMagnetometer, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a LostMode_config message from the specified reader or buffer.
+     * Decodes a ConfigMagnetometer message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns LostMode_config
+     * @returns ConfigMagnetometer
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): LostMode_config;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigMagnetometer;
 
     /**
-     * Decodes a LostMode_config message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigMagnetometer message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns LostMode_config
+     * @returns ConfigMagnetometer
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): LostMode_config;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigMagnetometer;
 
     /**
-     * Verifies a LostMode_config message.
+     * Verifies a ConfigMagnetometer message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a LostMode_config message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigMagnetometer message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns LostMode_config
+     * @returns ConfigMagnetometer
      */
-    public static fromObject(object: { [k: string]: any }): LostMode_config;
+    public static fromObject(object: { [k: string]: any }): ConfigMagnetometer;
 
     /**
-     * Creates a plain object from a LostMode_config message. Also converts values to other types if specified.
-     * @param message LostMode_config
+     * Creates a plain object from a ConfigMagnetometer message. Also converts values to other types if specified.
+     * @param message ConfigMagnetometer
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: LostMode_config, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigMagnetometer, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this LostMode_config to JSON.
+     * Converts this ConfigMagnetometer to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for LostMode_config
+     * Gets the default type url for ConfigMagnetometer
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a RadioConfigPacket. */
-export class RadioConfigPacket implements IRadioConfigPacket {
+/** Represents a ConfigSampling. */
+export class ConfigSampling implements IConfigSampling {
 
     /**
-     * Constructs a new RadioConfigPacket.
+     * Constructs a new ConfigSampling.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IRadioConfigPacket);
+    constructor(properties?: IConfigSampling);
 
-    /** RadioConfigPacket loRaWANConfig. */
-    public loRaWANConfig?: (ILoRaWANConfig|null);
+    /** ConfigSampling enabled. */
+    public enabled?: (boolean|null);
 
-    /** RadioConfigPacket loRaConfig. */
-    public loRaConfig?: (ILoRaConfig|null);
+    /** ConfigSampling sampleIntervalMin. */
+    public sampleIntervalMin?: (number|null);
 
-    /** RadioConfigPacket lostModeEnabled. */
-    public lostModeEnabled: boolean;
+    /** ConfigSampling _enabled. */
+    public _enabled?: "enabled";
 
-    /** RadioConfigPacket lostModeConfig. */
-    public lostModeConfig?: (ILostMode_config|null);
-
-    /** RadioConfigPacket _loRaWANConfig. */
-    public _loRaWANConfig?: "loRaWANConfig";
-
-    /** RadioConfigPacket _loRaConfig. */
-    public _loRaConfig?: "loRaConfig";
+    /** ConfigSampling _sampleIntervalMin. */
+    public _sampleIntervalMin?: "sampleIntervalMin";
 
     /**
-     * Creates a new RadioConfigPacket instance using the specified properties.
+     * Creates a new ConfigSampling instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns RadioConfigPacket instance
+     * @returns ConfigSampling instance
      */
-    public static create(properties?: IRadioConfigPacket): RadioConfigPacket;
+    public static create(properties?: IConfigSampling): ConfigSampling;
 
     /**
-     * Encodes the specified RadioConfigPacket message. Does not implicitly {@link RadioConfigPacket.verify|verify} messages.
-     * @param message RadioConfigPacket message or plain object to encode
+     * Encodes the specified ConfigSampling message. Does not implicitly {@link ConfigSampling.verify|verify} messages.
+     * @param message ConfigSampling message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IRadioConfigPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigSampling, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified RadioConfigPacket message, length delimited. Does not implicitly {@link RadioConfigPacket.verify|verify} messages.
-     * @param message RadioConfigPacket message or plain object to encode
+     * Encodes the specified ConfigSampling message, length delimited. Does not implicitly {@link ConfigSampling.verify|verify} messages.
+     * @param message ConfigSampling message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IRadioConfigPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigSampling, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a RadioConfigPacket message from the specified reader or buffer.
+     * Decodes a ConfigSampling message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns RadioConfigPacket
+     * @returns ConfigSampling
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): RadioConfigPacket;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigSampling;
 
     /**
-     * Decodes a RadioConfigPacket message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigSampling message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns RadioConfigPacket
+     * @returns ConfigSampling
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): RadioConfigPacket;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigSampling;
 
     /**
-     * Verifies a RadioConfigPacket message.
+     * Verifies a ConfigSampling message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a RadioConfigPacket message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigSampling message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns RadioConfigPacket
+     * @returns ConfigSampling
      */
-    public static fromObject(object: { [k: string]: any }): RadioConfigPacket;
+    public static fromObject(object: { [k: string]: any }): ConfigSampling;
 
     /**
-     * Creates a plain object from a RadioConfigPacket message. Also converts values to other types if specified.
-     * @param message RadioConfigPacket
+     * Creates a plain object from a ConfigSampling message. Also converts values to other types if specified.
+     * @param message ConfigSampling
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: RadioConfigPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigSampling, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this RadioConfigPacket to JSON.
+     * Converts this ConfigSampling to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for RadioConfigPacket
+     * Gets the default type url for ConfigSampling
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a MicrophoneConfig. */
-export class MicrophoneConfig implements IMicrophoneConfig {
+/** Represents a ConfigRadioTiming. */
+export class ConfigRadioTiming implements IConfigRadioTiming {
 
     /**
-     * Constructs a new MicrophoneConfig.
+     * Constructs a new ConfigRadioTiming.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IMicrophoneConfig);
+    constructor(properties?: IConfigRadioTiming);
 
-    /** MicrophoneConfig enabled. */
-    public enabled: boolean;
+    /** ConfigRadioTiming lorawanEnabled. */
+    public lorawanEnabled?: (boolean|null);
 
-    /** MicrophoneConfig continuousMode. */
-    public continuousMode: boolean;
+    /** ConfigRadioTiming lorawanSendIntervalMin. */
+    public lorawanSendIntervalMin?: (number|null);
 
-    /** MicrophoneConfig sampleLengthMin. */
-    public sampleLengthMin: number;
+    /** ConfigRadioTiming loraEnabled. */
+    public loraEnabled?: (boolean|null);
 
-    /** MicrophoneConfig sampleWindowMin. */
-    public sampleWindowMin: number;
+    /** ConfigRadioTiming loraSendIntervalMin. */
+    public loraSendIntervalMin?: (number|null);
+
+    /** ConfigRadioTiming txPowerDbm. */
+    public txPowerDbm?: (number|null);
+
+    /** ConfigRadioTiming _lorawanEnabled. */
+    public _lorawanEnabled?: "lorawanEnabled";
+
+    /** ConfigRadioTiming _lorawanSendIntervalMin. */
+    public _lorawanSendIntervalMin?: "lorawanSendIntervalMin";
+
+    /** ConfigRadioTiming _loraEnabled. */
+    public _loraEnabled?: "loraEnabled";
+
+    /** ConfigRadioTiming _loraSendIntervalMin. */
+    public _loraSendIntervalMin?: "loraSendIntervalMin";
+
+    /** ConfigRadioTiming _txPowerDbm. */
+    public _txPowerDbm?: "txPowerDbm";
 
     /**
-     * Creates a new MicrophoneConfig instance using the specified properties.
+     * Creates a new ConfigRadioTiming instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns MicrophoneConfig instance
+     * @returns ConfigRadioTiming instance
      */
-    public static create(properties?: IMicrophoneConfig): MicrophoneConfig;
+    public static create(properties?: IConfigRadioTiming): ConfigRadioTiming;
 
     /**
-     * Encodes the specified MicrophoneConfig message. Does not implicitly {@link MicrophoneConfig.verify|verify} messages.
-     * @param message MicrophoneConfig message or plain object to encode
+     * Encodes the specified ConfigRadioTiming message. Does not implicitly {@link ConfigRadioTiming.verify|verify} messages.
+     * @param message ConfigRadioTiming message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IMicrophoneConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigRadioTiming, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified MicrophoneConfig message, length delimited. Does not implicitly {@link MicrophoneConfig.verify|verify} messages.
-     * @param message MicrophoneConfig message or plain object to encode
+     * Encodes the specified ConfigRadioTiming message, length delimited. Does not implicitly {@link ConfigRadioTiming.verify|verify} messages.
+     * @param message ConfigRadioTiming message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IMicrophoneConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigRadioTiming, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a MicrophoneConfig message from the specified reader or buffer.
+     * Decodes a ConfigRadioTiming message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns MicrophoneConfig
+     * @returns ConfigRadioTiming
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): MicrophoneConfig;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigRadioTiming;
 
     /**
-     * Decodes a MicrophoneConfig message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigRadioTiming message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns MicrophoneConfig
+     * @returns ConfigRadioTiming
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): MicrophoneConfig;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigRadioTiming;
 
     /**
-     * Verifies a MicrophoneConfig message.
+     * Verifies a ConfigRadioTiming message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a MicrophoneConfig message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigRadioTiming message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns MicrophoneConfig
+     * @returns ConfigRadioTiming
      */
-    public static fromObject(object: { [k: string]: any }): MicrophoneConfig;
+    public static fromObject(object: { [k: string]: any }): ConfigRadioTiming;
 
     /**
-     * Creates a plain object from a MicrophoneConfig message. Also converts values to other types if specified.
-     * @param message MicrophoneConfig
+     * Creates a plain object from a ConfigRadioTiming message. Also converts values to other types if specified.
+     * @param message ConfigRadioTiming
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: MicrophoneConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigRadioTiming, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this MicrophoneConfig to JSON.
+     * Converts this ConfigRadioTiming to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for MicrophoneConfig
+     * Gets the default type url for ConfigRadioTiming
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** AccelSampleRate enum. */
-export enum AccelSampleRate {
-    ACCEL_25HZ = 0,
-    ACCEL_50HZ = 1
-}
-
-/** AccelSensitivity enum. */
-export enum AccelSensitivity {
-    ACCEL_2G = 0,
-    ACCEL_4G = 1,
-    ACCEL_8G = 2
-}
-
-/** Represents an AccelerometerConfig. */
-export class AccelerometerConfig implements IAccelerometerConfig {
+/** Represents a ConfigMortality. */
+export class ConfigMortality implements IConfigMortality {
 
     /**
-     * Constructs a new AccelerometerConfig.
+     * Constructs a new ConfigMortality.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IAccelerometerConfig);
+    constructor(properties?: IConfigMortality);
 
-    /** AccelerometerConfig enabled. */
-    public enabled: boolean;
+    /** ConfigMortality enabled. */
+    public enabled?: (boolean|null);
 
-    /** AccelerometerConfig sampleRate. */
-    public sampleRate: AccelSampleRate;
+    /** ConfigMortality triggerDurationHours. */
+    public triggerDurationHours?: (number|null);
 
-    /** AccelerometerConfig sensitivity. */
-    public sensitivity: AccelSensitivity;
+    /** ConfigMortality transmitIntervalMin. */
+    public transmitIntervalMin?: (number|null);
+
+    /** ConfigMortality _enabled. */
+    public _enabled?: "enabled";
+
+    /** ConfigMortality _triggerDurationHours. */
+    public _triggerDurationHours?: "triggerDurationHours";
+
+    /** ConfigMortality _transmitIntervalMin. */
+    public _transmitIntervalMin?: "transmitIntervalMin";
 
     /**
-     * Creates a new AccelerometerConfig instance using the specified properties.
+     * Creates a new ConfigMortality instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns AccelerometerConfig instance
+     * @returns ConfigMortality instance
      */
-    public static create(properties?: IAccelerometerConfig): AccelerometerConfig;
+    public static create(properties?: IConfigMortality): ConfigMortality;
 
     /**
-     * Encodes the specified AccelerometerConfig message. Does not implicitly {@link AccelerometerConfig.verify|verify} messages.
-     * @param message AccelerometerConfig message or plain object to encode
+     * Encodes the specified ConfigMortality message. Does not implicitly {@link ConfigMortality.verify|verify} messages.
+     * @param message ConfigMortality message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IAccelerometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigMortality, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified AccelerometerConfig message, length delimited. Does not implicitly {@link AccelerometerConfig.verify|verify} messages.
-     * @param message AccelerometerConfig message or plain object to encode
+     * Encodes the specified ConfigMortality message, length delimited. Does not implicitly {@link ConfigMortality.verify|verify} messages.
+     * @param message ConfigMortality message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IAccelerometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigMortality, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes an AccelerometerConfig message from the specified reader or buffer.
+     * Decodes a ConfigMortality message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns AccelerometerConfig
+     * @returns ConfigMortality
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): AccelerometerConfig;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigMortality;
 
     /**
-     * Decodes an AccelerometerConfig message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigMortality message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns AccelerometerConfig
+     * @returns ConfigMortality
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): AccelerometerConfig;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigMortality;
 
     /**
-     * Verifies an AccelerometerConfig message.
+     * Verifies a ConfigMortality message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates an AccelerometerConfig message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigMortality message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns AccelerometerConfig
+     * @returns ConfigMortality
      */
-    public static fromObject(object: { [k: string]: any }): AccelerometerConfig;
+    public static fromObject(object: { [k: string]: any }): ConfigMortality;
 
     /**
-     * Creates a plain object from an AccelerometerConfig message. Also converts values to other types if specified.
-     * @param message AccelerometerConfig
+     * Creates a plain object from a ConfigMortality message. Also converts values to other types if specified.
+     * @param message ConfigMortality
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: AccelerometerConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigMortality, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this AccelerometerConfig to JSON.
+     * Converts this ConfigMortality to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for AccelerometerConfig
+     * Gets the default type url for ConfigMortality
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a MagnetometerConfig. */
-export class MagnetometerConfig implements IMagnetometerConfig {
+/** Represents a ConfigSystem. */
+export class ConfigSystem implements IConfigSystem {
 
     /**
-     * Constructs a new MagnetometerConfig.
+     * Constructs a new ConfigSystem.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IMagnetometerConfig);
+    constructor(properties?: IConfigSystem);
 
-    /** MagnetometerConfig enabled. */
-    public enabled: boolean;
+    /** ConfigSystem verboseLogging. */
+    public verboseLogging?: (boolean|null);
 
-    /** MagnetometerConfig sampleIntervalS. */
-    public sampleIntervalS: number;
+    /** ConfigSystem enableResetOnError. */
+    public enableResetOnError?: (boolean|null);
+
+    /** ConfigSystem specialMode. */
+    public specialMode?: (number|null);
+
+    /** ConfigSystem schedulesCount. */
+    public schedulesCount?: (number|null);
+
+    /** ConfigSystem _verboseLogging. */
+    public _verboseLogging?: "verboseLogging";
+
+    /** ConfigSystem _enableResetOnError. */
+    public _enableResetOnError?: "enableResetOnError";
+
+    /** ConfigSystem _specialMode. */
+    public _specialMode?: "specialMode";
+
+    /** ConfigSystem _schedulesCount. */
+    public _schedulesCount?: "schedulesCount";
 
     /**
-     * Creates a new MagnetometerConfig instance using the specified properties.
+     * Creates a new ConfigSystem instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns MagnetometerConfig instance
+     * @returns ConfigSystem instance
      */
-    public static create(properties?: IMagnetometerConfig): MagnetometerConfig;
+    public static create(properties?: IConfigSystem): ConfigSystem;
 
     /**
-     * Encodes the specified MagnetometerConfig message. Does not implicitly {@link MagnetometerConfig.verify|verify} messages.
-     * @param message MagnetometerConfig message or plain object to encode
+     * Encodes the specified ConfigSystem message. Does not implicitly {@link ConfigSystem.verify|verify} messages.
+     * @param message ConfigSystem message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IMagnetometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigSystem, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified MagnetometerConfig message, length delimited. Does not implicitly {@link MagnetometerConfig.verify|verify} messages.
-     * @param message MagnetometerConfig message or plain object to encode
+     * Encodes the specified ConfigSystem message, length delimited. Does not implicitly {@link ConfigSystem.verify|verify} messages.
+     * @param message ConfigSystem message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IMagnetometerConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigSystem, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a MagnetometerConfig message from the specified reader or buffer.
+     * Decodes a ConfigSystem message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns MagnetometerConfig
+     * @returns ConfigSystem
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): MagnetometerConfig;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigSystem;
 
     /**
-     * Decodes a MagnetometerConfig message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigSystem message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns MagnetometerConfig
+     * @returns ConfigSystem
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): MagnetometerConfig;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigSystem;
 
     /**
-     * Verifies a MagnetometerConfig message.
+     * Verifies a ConfigSystem message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a MagnetometerConfig message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigSystem message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns MagnetometerConfig
+     * @returns ConfigSystem
      */
-    public static fromObject(object: { [k: string]: any }): MagnetometerConfig;
+    public static fromObject(object: { [k: string]: any }): ConfigSystem;
 
     /**
-     * Creates a plain object from a MagnetometerConfig message. Also converts values to other types if specified.
-     * @param message MagnetometerConfig
+     * Creates a plain object from a ConfigSystem message. Also converts values to other types if specified.
+     * @param message ConfigSystem
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: MagnetometerConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigSystem, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this MagnetometerConfig to JSON.
+     * Converts this ConfigSystem to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for MagnetometerConfig
+     * Gets the default type url for ConfigSystem
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a ScheduleConfig. */
-export class ScheduleConfig implements IScheduleConfig {
+/** Represents a ConfigGeofence. */
+export class ConfigGeofence implements IConfigGeofence {
 
     /**
-     * Constructs a new ScheduleConfig.
+     * Constructs a new ConfigGeofence.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IScheduleConfig);
+    constructor(properties?: IConfigGeofence);
 
-    /** ScheduleConfig window. */
-    public window?: (ITimeWindow|null);
+    /** ConfigGeofence fenceId. */
+    public fenceId: number;
 
-    /** ScheduleConfig light. */
-    public light?: (ISamplingConfig|null);
+    /** ConfigGeofence action. */
+    public action?: (number|null);
 
-    /** ScheduleConfig environmental. */
-    public environmental?: (ISamplingConfig|null);
+    /** ConfigGeofence zoneSlot. */
+    public zoneSlot?: (number|null);
 
-    /** ScheduleConfig particulate. */
-    public particulate?: (ISamplingConfig|null);
+    /** ConfigGeofence confirmFixes. */
+    public confirmFixes?: (number|null);
 
-    /** ScheduleConfig gps. */
-    public gps?: (IGPSConfig|null);
+    /** ConfigGeofence minDwellMin. */
+    public minDwellMin?: (number|null);
 
-    /** ScheduleConfig microphone. */
-    public microphone?: (IMicrophoneConfig|null);
+    /** ConfigGeofence maxHaccM. */
+    public maxHaccM?: (number|null);
 
-    /** ScheduleConfig accelerometer. */
-    public accelerometer?: (IAccelerometerConfig|null);
+    /** ConfigGeofence startEpoch. */
+    public startEpoch?: (number|null);
 
-    /** ScheduleConfig lorawanEnabled. */
-    public lorawanEnabled: boolean;
+    /** ConfigGeofence expiryEpoch. */
+    public expiryEpoch?: (number|null);
 
-    /** ScheduleConfig lorawanSendIntervalMin. */
-    public lorawanSendIntervalMin: number;
+    /** ConfigGeofence vertexCount. */
+    public vertexCount?: (number|null);
 
-    /** ScheduleConfig loraEnabled. */
-    public loraEnabled: boolean;
+    /** ConfigGeofence vertexIndex. */
+    public vertexIndex?: (number|null);
 
-    /** ScheduleConfig loraSendIntervalMin. */
-    public loraSendIntervalMin: number;
+    /** ConfigGeofence vertex. */
+    public vertex?: (IGeoPoint|null);
 
-    /** ScheduleConfig magnetometer. */
-    public magnetometer?: (IMagnetometerConfig|null);
+    /** ConfigGeofence consumed. */
+    public consumed?: (boolean|null);
+
+    /** ConfigGeofence _action. */
+    public _action?: "action";
+
+    /** ConfigGeofence _zoneSlot. */
+    public _zoneSlot?: "zoneSlot";
+
+    /** ConfigGeofence _confirmFixes. */
+    public _confirmFixes?: "confirmFixes";
+
+    /** ConfigGeofence _minDwellMin. */
+    public _minDwellMin?: "minDwellMin";
+
+    /** ConfigGeofence _maxHaccM. */
+    public _maxHaccM?: "maxHaccM";
+
+    /** ConfigGeofence _startEpoch. */
+    public _startEpoch?: "startEpoch";
+
+    /** ConfigGeofence _expiryEpoch. */
+    public _expiryEpoch?: "expiryEpoch";
+
+    /** ConfigGeofence _vertexCount. */
+    public _vertexCount?: "vertexCount";
+
+    /** ConfigGeofence _vertexIndex. */
+    public _vertexIndex?: "vertexIndex";
+
+    /** ConfigGeofence _vertex. */
+    public _vertex?: "vertex";
+
+    /** ConfigGeofence _consumed. */
+    public _consumed?: "consumed";
 
     /**
-     * Creates a new ScheduleConfig instance using the specified properties.
+     * Creates a new ConfigGeofence instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns ScheduleConfig instance
+     * @returns ConfigGeofence instance
      */
-    public static create(properties?: IScheduleConfig): ScheduleConfig;
+    public static create(properties?: IConfigGeofence): ConfigGeofence;
 
     /**
-     * Encodes the specified ScheduleConfig message. Does not implicitly {@link ScheduleConfig.verify|verify} messages.
-     * @param message ScheduleConfig message or plain object to encode
+     * Encodes the specified ConfigGeofence message. Does not implicitly {@link ConfigGeofence.verify|verify} messages.
+     * @param message ConfigGeofence message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IScheduleConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigGeofence, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified ScheduleConfig message, length delimited. Does not implicitly {@link ScheduleConfig.verify|verify} messages.
-     * @param message ScheduleConfig message or plain object to encode
+     * Encodes the specified ConfigGeofence message, length delimited. Does not implicitly {@link ConfigGeofence.verify|verify} messages.
+     * @param message ConfigGeofence message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IScheduleConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigGeofence, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a ScheduleConfig message from the specified reader or buffer.
+     * Decodes a ConfigGeofence message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns ScheduleConfig
+     * @returns ConfigGeofence
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ScheduleConfig;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigGeofence;
 
     /**
-     * Decodes a ScheduleConfig message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigGeofence message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns ScheduleConfig
+     * @returns ConfigGeofence
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ScheduleConfig;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigGeofence;
 
     /**
-     * Verifies a ScheduleConfig message.
+     * Verifies a ConfigGeofence message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a ScheduleConfig message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigGeofence message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns ScheduleConfig
+     * @returns ConfigGeofence
      */
-    public static fromObject(object: { [k: string]: any }): ScheduleConfig;
+    public static fromObject(object: { [k: string]: any }): ConfigGeofence;
 
     /**
-     * Creates a plain object from a ScheduleConfig message. Also converts values to other types if specified.
-     * @param message ScheduleConfig
+     * Creates a plain object from a ConfigGeofence message. Also converts values to other types if specified.
+     * @param message ConfigGeofence
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: ScheduleConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigGeofence, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this ScheduleConfig to JSON.
+     * Converts this ConfigGeofence to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for ScheduleConfig
+     * Gets the default type url for ConfigGeofence
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a ScheduleConfigPacket. */
-export class ScheduleConfigPacket implements IScheduleConfigPacket {
+/** Represents a ConfigFragment. */
+export class ConfigFragment implements IConfigFragment {
 
     /**
-     * Constructs a new ScheduleConfigPacket.
+     * Constructs a new ConfigFragment.
      * @param [properties] Properties to set
      */
-    constructor(properties?: IScheduleConfigPacket);
+    constructor(properties?: IConfigFragment);
 
-    /** ScheduleConfigPacket engaged. */
-    public engaged: boolean;
+    /** ConfigFragment scheduleIndex. */
+    public scheduleIndex: number;
 
-    /** ScheduleConfigPacket schedules. */
-    public schedules: IScheduleConfig[];
+    /** ConfigFragment fragmentIndex. */
+    public fragmentIndex: number;
 
-    /** ScheduleConfigPacket specialMode. */
-    public specialMode: number;
+    /** ConfigFragment fragmentTotal. */
+    public fragmentTotal: number;
+
+    /** ConfigFragment cfgTimeWindow. */
+    public cfgTimeWindow?: (IConfigTimeWindow|null);
+
+    /** ConfigFragment cfgAccelerometer. */
+    public cfgAccelerometer?: (IConfigAccelerometer|null);
+
+    /** ConfigFragment cfgMicrophone. */
+    public cfgMicrophone?: (IConfigMicrophone|null);
+
+    /** ConfigFragment cfgGps. */
+    public cfgGps?: (IConfigGPS|null);
+
+    /** ConfigFragment cfgMagnetometer. */
+    public cfgMagnetometer?: (IConfigMagnetometer|null);
+
+    /** ConfigFragment cfgLight. */
+    public cfgLight?: (IConfigSampling|null);
+
+    /** ConfigFragment cfgEnvironmental. */
+    public cfgEnvironmental?: (IConfigSampling|null);
+
+    /** ConfigFragment cfgParticulate. */
+    public cfgParticulate?: (IConfigSampling|null);
+
+    /** ConfigFragment cfgRadioTiming. */
+    public cfgRadioTiming?: (IConfigRadioTiming|null);
+
+    /** ConfigFragment cfgSystem. */
+    public cfgSystem?: (IConfigSystem|null);
+
+    /** ConfigFragment cfgMortality. */
+    public cfgMortality?: (IConfigMortality|null);
+
+    /** ConfigFragment cfgGeofence. */
+    public cfgGeofence?: (IConfigGeofence|null);
+
+    /** ConfigFragment setting. */
+    public setting?: ("cfgTimeWindow"|"cfgAccelerometer"|"cfgMicrophone"|"cfgGps"|"cfgMagnetometer"|"cfgLight"|"cfgEnvironmental"|"cfgParticulate"|"cfgRadioTiming"|"cfgSystem"|"cfgMortality"|"cfgGeofence");
 
     /**
-     * Creates a new ScheduleConfigPacket instance using the specified properties.
+     * Creates a new ConfigFragment instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns ScheduleConfigPacket instance
+     * @returns ConfigFragment instance
      */
-    public static create(properties?: IScheduleConfigPacket): ScheduleConfigPacket;
+    public static create(properties?: IConfigFragment): ConfigFragment;
 
     /**
-     * Encodes the specified ScheduleConfigPacket message. Does not implicitly {@link ScheduleConfigPacket.verify|verify} messages.
-     * @param message ScheduleConfigPacket message or plain object to encode
+     * Encodes the specified ConfigFragment message. Does not implicitly {@link ConfigFragment.verify|verify} messages.
+     * @param message ConfigFragment message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: IScheduleConfigPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IConfigFragment, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified ScheduleConfigPacket message, length delimited. Does not implicitly {@link ScheduleConfigPacket.verify|verify} messages.
-     * @param message ScheduleConfigPacket message or plain object to encode
+     * Encodes the specified ConfigFragment message, length delimited. Does not implicitly {@link ConfigFragment.verify|verify} messages.
+     * @param message ConfigFragment message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: IScheduleConfigPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IConfigFragment, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a ScheduleConfigPacket message from the specified reader or buffer.
+     * Decodes a ConfigFragment message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns ScheduleConfigPacket
+     * @returns ConfigFragment
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ScheduleConfigPacket;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ConfigFragment;
 
     /**
-     * Decodes a ScheduleConfigPacket message from the specified reader or buffer, length delimited.
+     * Decodes a ConfigFragment message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns ScheduleConfigPacket
+     * @returns ConfigFragment
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ScheduleConfigPacket;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ConfigFragment;
 
     /**
-     * Verifies a ScheduleConfigPacket message.
+     * Verifies a ConfigFragment message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a ScheduleConfigPacket message from a plain object. Also converts values to their respective internal types.
+     * Creates a ConfigFragment message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns ScheduleConfigPacket
+     * @returns ConfigFragment
      */
-    public static fromObject(object: { [k: string]: any }): ScheduleConfigPacket;
+    public static fromObject(object: { [k: string]: any }): ConfigFragment;
 
     /**
-     * Creates a plain object from a ScheduleConfigPacket message. Also converts values to other types if specified.
-     * @param message ScheduleConfigPacket
+     * Creates a plain object from a ConfigFragment message. Also converts values to other types if specified.
+     * @param message ConfigFragment
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: ScheduleConfigPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: ConfigFragment, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this ScheduleConfigPacket to JSON.
+     * Converts this ConfigFragment to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for ScheduleConfigPacket
+     * Gets the default type url for ConfigFragment
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
     public static getTypeUrl(typeUrlPrefix?: string): string;
 }
 
-/** Represents a SimpleSensorReading. */
-export class SimpleSensorReading implements ISimpleSensorReading {
+/** Represents a DownlinkPacket. */
+export class DownlinkPacket implements IDownlinkPacket {
 
     /**
-     * Constructs a new SimpleSensorReading.
+     * Constructs a new DownlinkPacket.
      * @param [properties] Properties to set
      */
-    constructor(properties?: ISimpleSensorReading);
+    constructor(properties?: IDownlinkPacket);
 
-    /** SimpleSensorReading index. */
-    public index: number;
+    /** DownlinkPacket epoch. */
+    public epoch: number;
 
-    /** SimpleSensorReading temperature. */
-    public temperature: number;
+    /** DownlinkPacket command. */
+    public command: CommandType;
 
-    /** SimpleSensorReading humidity. */
-    public humidity: number;
+    /** DownlinkPacket highFixParams. */
+    public highFixParams?: (IHighFixParams|null);
 
-    /** SimpleSensorReading pressure. */
-    public pressure: number;
+    /** DownlinkPacket geofence. */
+    public geofence?: (IGeofenceData|null);
 
-    /** SimpleSensorReading gas. */
-    public gas: number;
+    /** DownlinkPacket config. */
+    public config?: (IConfigFragment|null);
 
-    /** SimpleSensorReading pm2_5. */
-    public pm2_5: number;
+    /** DownlinkPacket addonArmEpoch. */
+    public addonArmEpoch?: (number|null);
 
-    /** SimpleSensorReading light. */
-    public light: number;
+    /** DownlinkPacket resendFrom. */
+    public resendFrom?: (number|null);
 
-    /** SimpleSensorReading activity. */
-    public activity: Activity;
+    /** DownlinkPacket resendMask. */
+    public resendMask?: (number|null);
 
-    /** SimpleSensorReading steps. */
-    public steps: number;
+    /** DownlinkPacket cfgTxnId. */
+    public cfgTxnId?: (number|null);
 
-    /** SimpleSensorReading particulateStaticObstructed. */
-    public particulateStaticObstructed: boolean;
+    /** DownlinkPacket _highFixParams. */
+    public _highFixParams?: "highFixParams";
 
-    /** SimpleSensorReading particulateDynamicObstructed. */
-    public particulateDynamicObstructed: boolean;
+    /** DownlinkPacket _geofence. */
+    public _geofence?: "geofence";
 
-    /** SimpleSensorReading particulateOutsideDetectionLimits. */
-    public particulateOutsideDetectionLimits: boolean;
+    /** DownlinkPacket _config. */
+    public _config?: "config";
+
+    /** DownlinkPacket _addonArmEpoch. */
+    public _addonArmEpoch?: "addonArmEpoch";
+
+    /** DownlinkPacket _resendFrom. */
+    public _resendFrom?: "resendFrom";
+
+    /** DownlinkPacket _resendMask. */
+    public _resendMask?: "resendMask";
+
+    /** DownlinkPacket _cfgTxnId. */
+    public _cfgTxnId?: "cfgTxnId";
 
     /**
-     * Creates a new SimpleSensorReading instance using the specified properties.
+     * Creates a new DownlinkPacket instance using the specified properties.
      * @param [properties] Properties to set
-     * @returns SimpleSensorReading instance
+     * @returns DownlinkPacket instance
      */
-    public static create(properties?: ISimpleSensorReading): SimpleSensorReading;
+    public static create(properties?: IDownlinkPacket): DownlinkPacket;
 
     /**
-     * Encodes the specified SimpleSensorReading message. Does not implicitly {@link SimpleSensorReading.verify|verify} messages.
-     * @param message SimpleSensorReading message or plain object to encode
+     * Encodes the specified DownlinkPacket message. Does not implicitly {@link DownlinkPacket.verify|verify} messages.
+     * @param message DownlinkPacket message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encode(message: ISimpleSensorReading, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encode(message: IDownlinkPacket, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Encodes the specified SimpleSensorReading message, length delimited. Does not implicitly {@link SimpleSensorReading.verify|verify} messages.
-     * @param message SimpleSensorReading message or plain object to encode
+     * Encodes the specified DownlinkPacket message, length delimited. Does not implicitly {@link DownlinkPacket.verify|verify} messages.
+     * @param message DownlinkPacket message or plain object to encode
      * @param [writer] Writer to encode to
      * @returns Writer
      */
-    public static encodeDelimited(message: ISimpleSensorReading, writer?: $protobuf.Writer): $protobuf.Writer;
+    public static encodeDelimited(message: IDownlinkPacket, writer?: $protobuf.Writer): $protobuf.Writer;
 
     /**
-     * Decodes a SimpleSensorReading message from the specified reader or buffer.
+     * Decodes a DownlinkPacket message from the specified reader or buffer.
      * @param reader Reader or buffer to decode from
      * @param [length] Message length if known beforehand
-     * @returns SimpleSensorReading
+     * @returns DownlinkPacket
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): SimpleSensorReading;
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): DownlinkPacket;
 
     /**
-     * Decodes a SimpleSensorReading message from the specified reader or buffer, length delimited.
+     * Decodes a DownlinkPacket message from the specified reader or buffer, length delimited.
      * @param reader Reader or buffer to decode from
-     * @returns SimpleSensorReading
+     * @returns DownlinkPacket
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): SimpleSensorReading;
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): DownlinkPacket;
 
     /**
-     * Verifies a SimpleSensorReading message.
+     * Verifies a DownlinkPacket message.
      * @param message Plain object to verify
      * @returns `null` if valid, otherwise the reason why it is not
      */
     public static verify(message: { [k: string]: any }): (string|null);
 
     /**
-     * Creates a SimpleSensorReading message from a plain object. Also converts values to their respective internal types.
+     * Creates a DownlinkPacket message from a plain object. Also converts values to their respective internal types.
      * @param object Plain object
-     * @returns SimpleSensorReading
+     * @returns DownlinkPacket
      */
-    public static fromObject(object: { [k: string]: any }): SimpleSensorReading;
+    public static fromObject(object: { [k: string]: any }): DownlinkPacket;
 
     /**
-     * Creates a plain object from a SimpleSensorReading message. Also converts values to other types if specified.
-     * @param message SimpleSensorReading
+     * Creates a plain object from a DownlinkPacket message. Also converts values to other types if specified.
+     * @param message DownlinkPacket
      * @param [options] Conversion options
      * @returns Plain object
      */
-    public static toObject(message: SimpleSensorReading, options?: $protobuf.IConversionOptions): { [k: string]: any };
+    public static toObject(message: DownlinkPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
     /**
-     * Converts this SimpleSensorReading to JSON.
+     * Converts this DownlinkPacket to JSON.
      * @returns JSON object
      */
     public toJSON(): { [k: string]: any };
 
     /**
-     * Gets the default type url for SimpleSensorReading
-     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-     * @returns The default type url
-     */
-    public static getTypeUrl(typeUrlPrefix?: string): string;
-}
-
-/** Represents a SystemStatePacket. */
-export class SystemStatePacket implements ISystemStatePacket {
-
-    /**
-     * Constructs a new SystemStatePacket.
-     * @param [properties] Properties to set
-     */
-    constructor(properties?: ISystemStatePacket);
-
-    /** SystemStatePacket engageState. */
-    public engageState: boolean;
-
-    /** SystemStatePacket battery. */
-    public battery?: (IBatteryState|null);
-
-    /** SystemStatePacket sdcard. */
-    public sdcard?: (ISDCardState|null);
-
-    /** SystemStatePacket gpsData. */
-    public gpsData?: (IGPSData|null);
-
-    /** SystemStatePacket sensors. */
-    public sensors?: (ISimpleSensorReading|null);
-
-    /** SystemStatePacket firmwareVersion. */
-    public firmwareVersion: string;
-
-    /** SystemStatePacket _gpsData. */
-    public _gpsData?: "gpsData";
-
-    /**
-     * Creates a new SystemStatePacket instance using the specified properties.
-     * @param [properties] Properties to set
-     * @returns SystemStatePacket instance
-     */
-    public static create(properties?: ISystemStatePacket): SystemStatePacket;
-
-    /**
-     * Encodes the specified SystemStatePacket message. Does not implicitly {@link SystemStatePacket.verify|verify} messages.
-     * @param message SystemStatePacket message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encode(message: ISystemStatePacket, writer?: $protobuf.Writer): $protobuf.Writer;
-
-    /**
-     * Encodes the specified SystemStatePacket message, length delimited. Does not implicitly {@link SystemStatePacket.verify|verify} messages.
-     * @param message SystemStatePacket message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encodeDelimited(message: ISystemStatePacket, writer?: $protobuf.Writer): $protobuf.Writer;
-
-    /**
-     * Decodes a SystemStatePacket message from the specified reader or buffer.
-     * @param reader Reader or buffer to decode from
-     * @param [length] Message length if known beforehand
-     * @returns SystemStatePacket
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): SystemStatePacket;
-
-    /**
-     * Decodes a SystemStatePacket message from the specified reader or buffer, length delimited.
-     * @param reader Reader or buffer to decode from
-     * @returns SystemStatePacket
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): SystemStatePacket;
-
-    /**
-     * Verifies a SystemStatePacket message.
-     * @param message Plain object to verify
-     * @returns `null` if valid, otherwise the reason why it is not
-     */
-    public static verify(message: { [k: string]: any }): (string|null);
-
-    /**
-     * Creates a SystemStatePacket message from a plain object. Also converts values to their respective internal types.
-     * @param object Plain object
-     * @returns SystemStatePacket
-     */
-    public static fromObject(object: { [k: string]: any }): SystemStatePacket;
-
-    /**
-     * Creates a plain object from a SystemStatePacket message. Also converts values to other types if specified.
-     * @param message SystemStatePacket
-     * @param [options] Conversion options
-     * @returns Plain object
-     */
-    public static toObject(message: SystemStatePacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-    /**
-     * Converts this SystemStatePacket to JSON.
-     * @returns JSON object
-     */
-    public toJSON(): { [k: string]: any };
-
-    /**
-     * Gets the default type url for SystemStatePacket
-     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-     * @returns The default type url
-     */
-    public static getTypeUrl(typeUrlPrefix?: string): string;
-}
-
-/** PeripheralType enum. */
-export enum PeripheralType {
-    PERIPHERAL_SATCOM = 0,
-    PERIPHERAL_DETACHMENT = 1
-}
-
-/** Represents a PeripheralPacket. */
-export class PeripheralPacket implements IPeripheralPacket {
-
-    /**
-     * Constructs a new PeripheralPacket.
-     * @param [properties] Properties to set
-     */
-    constructor(properties?: IPeripheralPacket);
-
-    /** PeripheralPacket macAddress. */
-    public macAddress: Uint8Array;
-
-    /** PeripheralPacket type. */
-    public type: PeripheralType;
-
-    /**
-     * Creates a new PeripheralPacket instance using the specified properties.
-     * @param [properties] Properties to set
-     * @returns PeripheralPacket instance
-     */
-    public static create(properties?: IPeripheralPacket): PeripheralPacket;
-
-    /**
-     * Encodes the specified PeripheralPacket message. Does not implicitly {@link PeripheralPacket.verify|verify} messages.
-     * @param message PeripheralPacket message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encode(message: IPeripheralPacket, writer?: $protobuf.Writer): $protobuf.Writer;
-
-    /**
-     * Encodes the specified PeripheralPacket message, length delimited. Does not implicitly {@link PeripheralPacket.verify|verify} messages.
-     * @param message PeripheralPacket message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encodeDelimited(message: IPeripheralPacket, writer?: $protobuf.Writer): $protobuf.Writer;
-
-    /**
-     * Decodes a PeripheralPacket message from the specified reader or buffer.
-     * @param reader Reader or buffer to decode from
-     * @param [length] Message length if known beforehand
-     * @returns PeripheralPacket
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): PeripheralPacket;
-
-    /**
-     * Decodes a PeripheralPacket message from the specified reader or buffer, length delimited.
-     * @param reader Reader or buffer to decode from
-     * @returns PeripheralPacket
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): PeripheralPacket;
-
-    /**
-     * Verifies a PeripheralPacket message.
-     * @param message Plain object to verify
-     * @returns `null` if valid, otherwise the reason why it is not
-     */
-    public static verify(message: { [k: string]: any }): (string|null);
-
-    /**
-     * Creates a PeripheralPacket message from a plain object. Also converts values to their respective internal types.
-     * @param object Plain object
-     * @returns PeripheralPacket
-     */
-    public static fromObject(object: { [k: string]: any }): PeripheralPacket;
-
-    /**
-     * Creates a plain object from a PeripheralPacket message. Also converts values to other types if specified.
-     * @param message PeripheralPacket
-     * @param [options] Conversion options
-     * @returns Plain object
-     */
-    public static toObject(message: PeripheralPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-    /**
-     * Converts this PeripheralPacket to JSON.
-     * @returns JSON object
-     */
-    public toJSON(): { [k: string]: any };
-
-    /**
-     * Gets the default type url for PeripheralPacket
-     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-     * @returns The default type url
-     */
-    public static getTypeUrl(typeUrlPrefix?: string): string;
-}
-
-/** Represents a PeripheralInfo. */
-export class PeripheralInfo implements IPeripheralInfo {
-
-    /**
-     * Constructs a new PeripheralInfo.
-     * @param [properties] Properties to set
-     */
-    constructor(properties?: IPeripheralInfo);
-
-    /** PeripheralInfo deviceUids. */
-    public deviceUids: string[];
-
-    /**
-     * Creates a new PeripheralInfo instance using the specified properties.
-     * @param [properties] Properties to set
-     * @returns PeripheralInfo instance
-     */
-    public static create(properties?: IPeripheralInfo): PeripheralInfo;
-
-    /**
-     * Encodes the specified PeripheralInfo message. Does not implicitly {@link PeripheralInfo.verify|verify} messages.
-     * @param message PeripheralInfo message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encode(message: IPeripheralInfo, writer?: $protobuf.Writer): $protobuf.Writer;
-
-    /**
-     * Encodes the specified PeripheralInfo message, length delimited. Does not implicitly {@link PeripheralInfo.verify|verify} messages.
-     * @param message PeripheralInfo message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encodeDelimited(message: IPeripheralInfo, writer?: $protobuf.Writer): $protobuf.Writer;
-
-    /**
-     * Decodes a PeripheralInfo message from the specified reader or buffer.
-     * @param reader Reader or buffer to decode from
-     * @param [length] Message length if known beforehand
-     * @returns PeripheralInfo
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): PeripheralInfo;
-
-    /**
-     * Decodes a PeripheralInfo message from the specified reader or buffer, length delimited.
-     * @param reader Reader or buffer to decode from
-     * @returns PeripheralInfo
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): PeripheralInfo;
-
-    /**
-     * Verifies a PeripheralInfo message.
-     * @param message Plain object to verify
-     * @returns `null` if valid, otherwise the reason why it is not
-     */
-    public static verify(message: { [k: string]: any }): (string|null);
-
-    /**
-     * Creates a PeripheralInfo message from a plain object. Also converts values to their respective internal types.
-     * @param object Plain object
-     * @returns PeripheralInfo
-     */
-    public static fromObject(object: { [k: string]: any }): PeripheralInfo;
-
-    /**
-     * Creates a plain object from a PeripheralInfo message. Also converts values to other types if specified.
-     * @param message PeripheralInfo
-     * @param [options] Conversion options
-     * @returns Plain object
-     */
-    public static toObject(message: PeripheralInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-    /**
-     * Converts this PeripheralInfo to JSON.
-     * @returns JSON object
-     */
-    public toJSON(): { [k: string]: any };
-
-    /**
-     * Gets the default type url for PeripheralInfo
-     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-     * @returns The default type url
-     */
-    public static getTypeUrl(typeUrlPrefix?: string): string;
-}
-
-/** Represents a BlePacket. */
-export class BlePacket implements IBlePacket {
-
-    /**
-     * Constructs a new BlePacket.
-     * @param [properties] Properties to set
-     */
-    constructor(properties?: IBlePacket);
-
-    /** BlePacket header. */
-    public header?: (IPacketHeader|null);
-
-    /** BlePacket scheduleConfigPacket. */
-    public scheduleConfigPacket?: (IScheduleConfigPacket|null);
-
-    /** BlePacket systemStatePacket. */
-    public systemStatePacket?: (ISystemStatePacket|null);
-
-    /** BlePacket radioConfigPacket. */
-    public radioConfigPacket?: (IRadioConfigPacket|null);
-
-    /** BlePacket peripheralPacket. */
-    public peripheralPacket?: (IPeripheralPacket|null);
-
-    /** BlePacket peripheralInfo. */
-    public peripheralInfo?: (IPeripheralInfo|null);
-
-    /** BlePacket payload. */
-    public payload?: ("scheduleConfigPacket"|"systemStatePacket"|"radioConfigPacket"|"peripheralPacket"|"peripheralInfo");
-
-    /**
-     * Creates a new BlePacket instance using the specified properties.
-     * @param [properties] Properties to set
-     * @returns BlePacket instance
-     */
-    public static create(properties?: IBlePacket): BlePacket;
-
-    /**
-     * Encodes the specified BlePacket message. Does not implicitly {@link BlePacket.verify|verify} messages.
-     * @param message BlePacket message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encode(message: IBlePacket, writer?: $protobuf.Writer): $protobuf.Writer;
-
-    /**
-     * Encodes the specified BlePacket message, length delimited. Does not implicitly {@link BlePacket.verify|verify} messages.
-     * @param message BlePacket message or plain object to encode
-     * @param [writer] Writer to encode to
-     * @returns Writer
-     */
-    public static encodeDelimited(message: IBlePacket, writer?: $protobuf.Writer): $protobuf.Writer;
-
-    /**
-     * Decodes a BlePacket message from the specified reader or buffer.
-     * @param reader Reader or buffer to decode from
-     * @param [length] Message length if known beforehand
-     * @returns BlePacket
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): BlePacket;
-
-    /**
-     * Decodes a BlePacket message from the specified reader or buffer, length delimited.
-     * @param reader Reader or buffer to decode from
-     * @returns BlePacket
-     * @throws {Error} If the payload is not a reader or valid buffer
-     * @throws {$protobuf.util.ProtocolError} If required fields are missing
-     */
-    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): BlePacket;
-
-    /**
-     * Verifies a BlePacket message.
-     * @param message Plain object to verify
-     * @returns `null` if valid, otherwise the reason why it is not
-     */
-    public static verify(message: { [k: string]: any }): (string|null);
-
-    /**
-     * Creates a BlePacket message from a plain object. Also converts values to their respective internal types.
-     * @param object Plain object
-     * @returns BlePacket
-     */
-    public static fromObject(object: { [k: string]: any }): BlePacket;
-
-    /**
-     * Creates a plain object from a BlePacket message. Also converts values to other types if specified.
-     * @param message BlePacket
-     * @param [options] Conversion options
-     * @returns Plain object
-     */
-    public static toObject(message: BlePacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-    /**
-     * Converts this BlePacket to JSON.
-     * @returns JSON object
-     */
-    public toJSON(): { [k: string]: any };
-
-    /**
-     * Gets the default type url for BlePacket
+     * Gets the default type url for DownlinkPacket
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */

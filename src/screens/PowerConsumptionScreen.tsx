@@ -7,6 +7,7 @@ import {
   estimateScheduleSolarHours,
   estimateMicBytesPerDay,
   MIC_UNAPPROVED_POWER_RATIO,
+  SOLAR_CONDITIONS,
 } from '../utils/powerEstimator';
 
 function badgeColor(solarHours: number): string {
@@ -75,7 +76,7 @@ export default function PowerConsumptionScreen() {
     },
     { label: 'GPS acquisition', value: components.gps, color: '#3CB371' },
     { label: 'Microphone', value: components.microphone, color: '#E0478A' },
-    { label: 'LoRaWAN', value: components.lora, color: '#9B6DD6' },
+    { label: 'Radio (LoRaWAN / LoRa)', value: components.lora, color: '#9B6DD6' },
   ];
 
   return (
@@ -107,36 +108,56 @@ export default function PowerConsumptionScreen() {
         </Text>
       </View>
 
-      {/* IRRADIANCE CONDITIONS */}
+      {/* CLIMATE VIABILITY LADDER — shared SOLAR_CONDITIONS (power model) */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Daylight Required by Condition</Text>
-        {[
-          { label: 'Direct sunlight (STC)', fraction: 1.0 },
-          { label: 'Typical clear-sky average', fraction: 0.5 },
-          { label: 'Bright overcast', fraction: 0.3 },
-          { label: 'Open shade, clear sky', fraction: 0.15 },
-          { label: 'Forest canopy', fraction: 0.05 },
-        ].map(({ label, fraction }) => {
+        {SOLAR_CONDITIONS.map(({ label, fraction, typicalMaxH }) => {
           const required = totalSolarHours / fraction;
-          const infeasible = required > 16;
+          // Load vs a realistic day of that condition: green ≤60%, amber ≤
+          // a full day, red = not viable in that climate.
+          const load = required / typicalMaxH;
+          const color =
+            load <= 0.6 ? '#3CB371' : load <= 1 ? '#F2A900' : '#D9534F';
           return (
-            <View key={label} style={styles.row}>
-              <Text
-                style={[styles.rowLabel, infeasible && styles.infeasibleText]}
-              >
+            <View key={label} style={styles.conditionRow}>
+              <Text style={[styles.rowLabel, styles.conditionLabel]}>
                 {label}
               </Text>
+              <View style={styles.conditionBarTrack}>
+                <View
+                  style={[
+                    styles.conditionBarFill,
+                    {
+                      width: `${Math.min(load, 1) * 100}%` as any,
+                      backgroundColor: color,
+                    },
+                  ]}
+                />
+              </View>
               <Text
-                style={[styles.rowValue, infeasible && styles.infeasibleText]}
+                style={[
+                  styles.rowValue,
+                  styles.conditionValue,
+                  load > 1 && styles.infeasibleText,
+                ]}
               >
-                {infeasible ? '>16 h' : `${required.toFixed(1)} h`}
+                {required > 24 ? '>24' : required.toFixed(1)} h/day
               </Text>
             </View>
           );
         })}
         <Text style={styles.cardNote}>
-          Hours of that condition needed per day for net-zero energy.
+          Hours of that condition needed per day for net-zero energy. A full
+          bar means more than a typical day of that light — not viable there.
         </Text>
+        {schedules.some(
+          s => s.gps?.enabled && s.gps?.dynamicSamplingMode,
+        ) && (
+          <Text style={styles.cardNote}>
+            Dynamic GPS assumes a 70% resting / 20% medium / 10% high activity
+            split — size with headroom for a more active animal.
+          </Text>
+        )}
       </View>
 
       {/* PER SCHEDULE */}
@@ -329,6 +350,23 @@ const styles = StyleSheet.create({
   empty: { fontSize: 14, color: '#666', textAlign: 'center' },
 
   infeasibleText: { color: '#D9534F' },
+
+  conditionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 5,
+    gap: 8,
+  },
+  conditionLabel: { width: 96 },
+  conditionValue: { width: 76, textAlign: 'right' },
+  conditionBarTrack: {
+    flex: 1,
+    height: 5,
+    backgroundColor: '#E8E8E8',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  conditionBarFill: { height: 5, borderRadius: 3 },
 
   scrollContent: {
     paddingBottom: 20,

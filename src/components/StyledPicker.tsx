@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View,
   Text,
   TouchableOpacity,
-  Platform,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 
 export type PickerValue = string | number;
 
@@ -26,6 +23,10 @@ type Props = {
   enabled?: boolean;
 };
 
+// One tap-to-open modal select on BOTH platforms. The old iOS branch used a
+// native wheel Picker inline, which captured page swipes — scrolling the
+// form could silently spin a value. The modal list can't be changed by a
+// scroll gesture and shows the current value at a glance.
 export default function StyledPicker({
   selectedValue,
   onValueChange,
@@ -35,29 +36,6 @@ export default function StyledPicker({
 }: Props) {
   const [open, setOpen] = useState(false);
   const selectedItem = items.find(item => item.value === selectedValue);
-
-  if (Platform.OS === 'ios') {
-    return (
-      <View style={!enabled ? styles.disabledInput : undefined}>
-        <Picker
-          selectedValue={selectedValue}
-          onValueChange={value => onValueChange(value)}
-          enabled={enabled}
-          style={styles.pickerIOS}
-          itemStyle={styles.pickerItemIOS}
-        >
-          {items.map(item => (
-            <Picker.Item
-              key={String(item.value)}
-              label={item.label}
-              value={item.value}
-              color="#111"
-            />
-          ))}
-        </Picker>
-      </View>
-    );
-  }
 
   return (
     <>
@@ -131,23 +109,6 @@ export default function StyledPicker({
 }
 
 const styles = StyleSheet.create({
-  pickerWrapper: {
-    borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 10,
-    backgroundColor: '#FFF',
-    marginBottom: 6,
-    overflow: 'hidden',
-  },
-
-  pickerIOS: {
-    color: '#111',
-  },
-
-  pickerItemIOS: {
-    color: '#111',
-  },
-
   androidSelect: {
     borderWidth: 1,
     borderColor: '#DDD',

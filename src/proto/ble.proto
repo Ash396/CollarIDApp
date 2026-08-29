@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "nanopb.proto";
+import "nanopb.proto"; 
 import "common.proto";
 option (nanopb_fileopt).packed_struct = false;
 
@@ -19,6 +19,13 @@ message GPSConfig {
   bool   enabled              = 1;
   uint32 sample_interval_min  = 2;
   uint32 accuracy = 3;        // 1 to 10
+  bool   dynamic_sampling_mode                  = 4;
+  uint32 medium_motion_vedba_threshold_x100     = 5;
+  uint32 medium_motion_gps_interval_min         = 6;
+  uint32 high_motion_vedba_threshold_x100       = 7;
+  uint32 high_motion_gps_interval_min           = 8;
+  bool   lorawan_tx_on_gps_fix                  = 9;
+  bool   lora_tx_on_gps_fix                     = 10;
 }
 enum RadioRegion {
   REGION_US915 = 0;
@@ -81,6 +88,14 @@ message LoRaConfig {
   int32  tx_power_dbm                           = 4;
   uint32 sync_word			        = 5; //byte value
   uint32 frequency				= 6;
+  // Post-TX receive window ("rx listen"). When true, the collar opens a
+  // short RX window immediately after every raw-LoRa transmission (both the
+  // deployment packet and the lost-mode beacon) so a nearby handheld can
+  // answer it — the raw-LoRa analogue of a LoRaWAN Class A RX slot. The
+  // radio still never listens at any other time; the cost is bounded by the
+  // window (~250 ms per TX). proto3 default false = OFF, so every existing
+  // config, CSV, and fielded collar keeps today's TX-then-sleep behavior.
+  bool rx_listen				= 7;
 }
 
 message LostMode_config{
@@ -89,11 +104,55 @@ message LostMode_config{
   int32  tx_power_dbm                           = 3;
 }
 
+// Mortality detection (P5). When the collar's accelerometer activity
+// (VeDBA) stays below a fixed firmware threshold for trigger_duration_hours,
+// it flags every uplink and additionally transmits every
+// transmit_interval_min. Alert-only: the configured schedule is unchanged,
+// and the state clears by itself if the animal moves again.
+//
+// Detection rides the accelerometer windows the schedule already provides
+// (the accel is powered down outside them), so this does nothing useful
+// unless at least one schedule enables the accelerometer. The near-zero
+// VeDBA threshold is deliberately NOT exposed: it is the easiest value to
+// get wrong and is tuned in firmware.
+message Mortality_config{
+  uint32 trigger_duration_hours                 = 1;  // 0 = firmware default (48)
+  uint32 transmit_interval_min                  = 2;  // 0 = firmware default (240)
+}
+
 message RadioConfigPacket {
   optional LoRaWANConfig    loRaWAN_config	   = 1;
   optional LoRaConfig       loRa_config		   = 2;
   bool 		   lostMode_enabled        = 3;
   LostMode_config  lostMode_config	   = 4;
+  bool             mortality_enabled       = 5;
+  Mortality_config mortality_config        = 6;
+}
+
+// Microphone acquisition format.
+//
+// These are enums, not raw Hz/bit counts, because the ADF can only produce
+// rates of 3.072 MHz / (decimation x 4 x 4) and each one needs its own
+// bench-calibrated filter gain (the SINC5 CIC's DC gain scales as
+// decimation^5). A rate is therefore a firmware-supported format, not a free
+// parameter — adding one means adding a calibrated table entry, so it also
+// means adding an enum value here.
+//
+// Value 0 is the historical behaviour on purpose. Collars, configs, and
+// clients predating these fields decode as 16 kHz / 16-bit, which is exactly
+// what every deployed unit already records.
+enum MicSampleRate {
+  MIC_RATE_16KHZ = 0;  // legacy default: ADF decimation 12
+  MIC_RATE_8KHZ  = 1;  // ADF decimation 24
+  // Room to grow: 32 kHz (decimation 6), 48 kHz (decimation 4), 4 kHz
+  // (decimation 48). Each needs a calibrated gain before it is offered.
+}
+
+enum MicBitDepth {
+  MIC_DEPTH_16BIT = 0;  // legacy default: signed 16-bit PCM
+  MIC_DEPTH_8BIT  = 1;  // unsigned 8-bit PCM (WAV stores 8-bit as offset binary)
+  // Note: 12-bit is deliberately absent — it is not a representable WAV
+  // sample format, so no standard tool would read the resulting files.
 }
 
 message MicrophoneConfig {
@@ -101,6 +160,8 @@ message MicrophoneConfig {
   bool            continuous_mode    = 2; // on if true
   uint32          sample_length_min  = 3;
   uint32          sample_window_min  = 4;
+  MicSampleRate   sample_rate        = 5; // 0 = 16 kHz (pre-field default)
+  MicBitDepth     bit_depth          = 6; // 0 = 16-bit (pre-field default)
 }
 enum AccelSampleRate {
   ACCEL_25HZ = 0;
@@ -147,6 +208,75 @@ message ScheduleConfigPacket {
   bool engaged = 1;
   repeated ScheduleConfig schedules = 2; // capped to 5 schedules in options
   uint32 special_mode = 3;
+
+  // ---- BLE config tunnel (fw 305+) ----
+  // Carries one serialized DownlinkPacket (downlink.proto) over the BLE
+  // settings characteristic, giving collars WITHOUT LoRaWAN the full remote
+  // config vocabulary (config transactions, geofences, CMD_TEST_FIX) through
+  // the same rails/verification engine as the radio path.
+  //
+  // Deliberately `bytes`, not a typed import: ble.proto stays self-contained
+  // (the Swift/WB toolchains never see downlink.proto), and both deployed WB
+  // chips (WB5M + frozen WB15) tag-gate writes on THIS payload arm before
+  // storing the raw blob — riding the schedule arm is what makes the tunnel
+  // work with zero WB firmware changes. Their stale schemas skip these
+  // unknown fields by standard protobuf rules.
+  //
+  // Receiver contract: when cfg_downlink is non-empty, `schedules`/`engaged`
+  // are IGNORED (this packet is a tunnel frame, not a schedule write).
+  // Old firmware (< 305) would misread a tunnel frame as an empty schedule,
+  // so the webapp hard-gates tunnel writes on the reported fw build.
+  bytes cfg_downlink = 4;   // one serialized DownlinkPacket (max 96 B)
+
+  // BLE-native read-back requests (no radio involved). The collar answers by
+  // pushing an echo packet (cfg_echo below) into the settings blob for the
+  // webapp to poll.
+  //   0        = none
+  //   1        = echo status only (masks, last verdict)
+  //   2|(N<<8) = echo geofence slot N (0..3) as a binary record
+  uint32 ble_query = 5;
+
+  // Collar -> webapp echo. Pushed after a tunnel frame that produced a
+  // verdict, and after every ble_query. Deliberately a FIELD on this message,
+  // not its own BlePacket arm: the WB chips refresh the readable
+  // characteristic value only for blobs that decode to the schedule arm
+  // (system_schedule_updated is set inside their tag check) — an unknown arm
+  // would reach the blob store but never the characteristic. The collar
+  // re-pushes the canonical schedule blob ~10 s later so the resting value
+  // an old webapp reads is always a real schedule.
+  CfgEchoPacket cfg_echo = 6;
+}
+
+// The BLE tunnel echo body. fence_report (ble_query=2 responses) is a
+// version-tagged fixed binary record, NOT ConfigFragment framing: GeoPoint
+// coordinates are plain int32, so a negative (western/southern) coordinate
+// encodes as a 10-byte varint and a fragment-framed 8-vertex fence (~330 B)
+// would blow the 350 B characteristic cap the deployed WB chips enforce.
+// Layout (little-endian): [0]=0x01 format version, then
+//   [1]=fence_id [2]=action [3]=zone_slot [4]=confirm_fixes [5]=min_dwell_min
+//   [6]=max_hacc_m [7]=n_verts [8]=flags(bit0=consumed)
+//   [9..12]=start_epoch [13..16]=expiry_epoch
+//   then n_verts × (int32 lat_e7, int32 lon_e7) pairs = 8 B/vertex.
+message CfgEchoPacket {
+  uint32 txn_id = 1;            // echoes DownlinkPacket.cfg_txn_id
+  uint32 ack_status = 2;        // ConfigAckStatus values (message.proto)
+  uint32 missing_mask = 3;      // missing-fragment bitmask / rails reason code
+  uint32 fence_used_mask = 4;   // bit N: fence slot N holds a definition
+  uint32 fence_active_mask = 5; // bit N: collar is currently inside fence N+1
+  uint32 fence_fired_mask = 6;  // bit N: detach fence N+1 has fired (consumed)
+  uint32 sched_crc = 7;         // current config identity (schedule+mortality+fences)
+  bytes fence_report = 8;       // one fence slot, binary record above (max 88 B)
+  // Bumps on every echo push. The webapp paces the tunnel on it: each frame
+  // is written only after the previous frame's echo shows a new echo_seq —
+  // the settings blob is a single mailbox, so an unpaced second write would
+  // overwrite a frame the collar hadn't drained yet.
+  uint32 echo_seq = 9;
+  // CMD_FACTORY_RESET outcome, so the webapp reports what actually happened
+  // instead of assuming the command's delivery meant success:
+  // 0 none, 1 contents deleted, 2 error, 3 SD not mounted, 4 timed out,
+  // 5 card reformatted (the clean outcome).
+  uint32 wipe_status = 10;
+  uint32 wipe_removed = 11;     // files/directories removed on the delete path
 }
 
 
@@ -172,6 +302,14 @@ message SystemStatePacket {
   optional GPSData  gps_data  = 4;
   SimpleSensorReading sensors = 5;
   string firmware_version = 6;
+  // Boot hardware-diagnostic bitmask (HW_RunDiagnostics, hw_diag.h).
+  // Bit SET = FAULT: 0 accelerometer, 1 magnetometer, 2 light sensor,
+  // 3 BME688, 4 GPS, 5 particulate, 6 LoRa radio, 8 microphone (PDM
+  // capture flat/silent — bit 7 was already the validity flag when the
+  // mic check arrived, so mic jumps over it). Bit 7 = diagnostics ran
+  // (validity). Same layout mirrored into Deployment.errorFlags.flag
+  // on LoRaWAN uplinks. Absent on older firmware.
+  optional uint32 hw_diag = 7;
 }
 
 // ================== PERIPHERAL CONNECTION ==================

@@ -3,6 +3,7 @@ syntax = "proto3";
 import "common.proto";
 
 //import "nanopb.proto";
+import "downlink.proto";
 //option (nanopb_fileopt).packed_struct = true;
 //python generator/nanopb_generator.py ../buzzcam/protobuf/message.proto -I ../buzzcam/protobuf
 //protoc message.proto --python_out=./ -I=./
@@ -39,9 +40,11 @@ message ConfigPacket{
 message GPSData_2{
     int32 latitude_e7 = 1;
     int32 longitude_e7 = 2;
-    uint32 altitude_mm = 3;
-    optional uint32 timestamp = 4;
-    optional uint32 gps_avg_fix_time_ms = 5;
+    optional uint32 altitude_mm = 3;
+    uint32 timestamp = 4;
+    optional uint32 gps_avg_fix_time_s = 5;
+    optional uint32 hdop = 6;
+    optional uint32 h_acc_dm = 7;
 }
 
 
@@ -62,12 +65,31 @@ message SystemSensorSummary{
     bool particulate_obstructed = 10;
     bool particulate_outside_detection_limits = 11;
 }
+				
 
 
 
+// Outcome of a config transaction (remote schedule push). Uplinked once
+// after CMD_CONFIG_COMMIT is processed — the server's only visibility into
+// whether a push landed; without it, NACKs died in METADATA.CSV.
+enum ConfigAckStatus {
+  CFG_ACK_NONE            = 0;
+  CFG_ACK_APPLIED         = 1;  // staged config applied + persisted
+  CFG_ACK_MISSING_FRAGS   = 2;  // commit rejected; see cfg_missing_mask
+  CFG_ACK_RAILS_REJECTED  = 3;  // schedule would silence the device (floor/radio rails)
+  CFG_ACK_NO_TXN          = 4;  // commit with no open transaction
+  CFG_ACK_EXPIRED         = 5;  // staging expired before commit arrived
+}
 
 message AckPacket{
-
+  optional uint32 cfg_txn_id       = 1;  // echoes DownlinkPacket.cfg_txn_id
+  optional ConfigAckStatus cfg_status = 2;
+  // For MISSING_FRAGS: bit i = fragment_index i missing.
+  // For RAILS_REJECTED (fw 301+): the SCHED_RAIL_* code of the refusing
+  // rule (1 slot-count, 2 grown-slot-bare, 3 radio-off, 4 cadence-floor,
+  // 5 both-radios, 6 window-overlap). 0 = firmware predating the field.
+  optional uint32 cfg_missing_mask = 3;
+  optional uint32 sched_crc        = 4;  // schedule identity AFTER the verdict
 }
 
 message RadioInfo{
@@ -107,6 +129,15 @@ message ParticulateData{
     optional uint32 timestamp = 4;
 }
 
+// Bitmask carried on uplinks while a condition persists.
+//   bits 0-6  boot hardware diagnostics, bit set = FAULT (hw_diag.h):
+//             0 accel, 1 mag, 2 light, 3 BME688, 4 GPS, 5 particulate, 6 LoRa
+//   bit  7    diagnostics ran (validity bit for 0-6)
+//   bit  8    MORTALITY: VeDBA has stayed near zero past the configured
+//             trigger duration. Not a hardware fault — consumers must mask
+//             bits 0-7 before reporting hardware health, or a mortality
+//             flag will read as a broken collar.
+//   bits 9-31 free
 message ErrorFlags{
     uint32 flag = 1;
 }
@@ -124,9 +155,48 @@ message Deployment{
 
     optional uint32 steps = 6;
 
-    optional GPSData_2 gps_data = 7;
+    repeated GPSData_2 gps_data = 7;
 
     optional ErrorFlags errorFlags = 8;
+
+    // Add-on (detachment/SatCom) relay — empty when the collar has no
+    // paired add-on or nothing new to report. Repeated: one entry per
+    // add-on in the Thread rendezvous seen-nodes report (up to 4; see
+    // DESIGN_detachment_thread.md §7.1 multi-add-on policy).
+    repeated AddonReport addon = 9;
+}
+
+message AddonReport {
+    uint32 uid = 1;               // add-on die UID
+    uint32 node_type = 2;         // AddonNodeType (addon.proto)
+    uint32 last_checkin_epoch = 3;// UTC s of the last completed rendezvous
+    optional uint32 batt_mv = 4;
+    optional uint32 detach_epoch = 5;  // armed drop-off time, 0/absent = none
+    optional uint32 fired = 6;         // 1 = scheduled detach already fired
+    optional uint32 motor_state = 7;   // AddonMotorState
+    // 7.1 durable command queue: the collar's queued command for this add-on,
+    // so the dashboard renders pending/delivered/confirmed truthfully.
+    optional uint32 pending_cmd = 8;   // DtCmd_t numbering; absent = none
+    optional uint32 cmd_state = 9;     // 1 pending, 2 delivered, 3 confirmed
+    // The queued command's parameter — for an arm (pending_cmd=1) this is the
+    // target detach epoch, so the dashboard shows the datetime while the arm
+    // is still in flight (before the node confirms it in detach_epoch).
+    optional uint32 pending_cmd_param = 10;
+}
+
+// Schedule self-report: the device describes its RUNNING config to the
+// server in the same fragment vocabulary the server pushes with
+// (downlink.proto ConfigFragment) — one small fragment per uplink, absolute
+// values (every field present), not deltas. Sent on CMD_CONFIG_REPORT, after
+// a config commit, and when sched_crc changes out-of-band (SD/BLE edit).
+// frag_index/frag_total let the server assemble and detect gaps; sched_crc
+// binds every fragment to the identity it describes, so a mid-report edit
+// invalidates the batch instead of splicing two configs together.
+message ConfigReport {
+    uint32 sched_crc  = 1;
+    uint32 frag_index = 2;
+    uint32 frag_total = 3;
+    ConfigFragment frag = 4;
 }
 
 message MessagePacket {
@@ -140,6 +210,15 @@ message MessagePacket {
     }
 
     optional RadioInfo radio_info = 6;
+
+    // Piggybacked config-transaction verdict / schedule self-report. Sibling
+    // fields, NOT oneof members: they ride whatever uplink goes out next
+    // (deployment, system info), costing no extra airtime windows. At most
+    // one of each per uplink; the sender strips them if the encoded packet
+    // would exceed the region's payload budget and retries on the next one.
+    optional AckPacket    cfg_ack    = 9;
+    optional ConfigReport cfg_report = 10;
 }
+
 
 

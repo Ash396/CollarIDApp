@@ -74,6 +74,8 @@ export default function SchedulesScreen() {
     draftEngaged,
     collarEngaged,
     setDraftEngaged,
+    discardDraft,
+    isDirty,
   } = useSchedules();
 
   // Switch always needs a boolean
@@ -111,16 +113,41 @@ export default function SchedulesScreen() {
     })();
   }, [device?.id]);
 
+  // Capped at 4 (not the firmware's 5) so a fully-loaded config stays under
+  // the WB15's ~300-byte ATT value cap — same limit as the website
+  // configurator; a 5th schedule forces a fragile long/prepared write.
+  const MAX_SCHEDULES = 4;
+
   const handleAddSchedule = () => {
+    if (draftSchedules.length >= MAX_SCHEDULES) {
+      Alert.alert(
+        'Maximum 4 schedules',
+        'A fully-loaded config with more than 4 schedules exceeds what deployed collars can accept in a single Bluetooth write.',
+      );
+      return;
+    }
+
+    // Defaults match the website configurator's defaultSchedule().
     const newSchedule = {
       id: Date.now().toString(),
       name: `Schedule ${draftSchedules.length + 1}`,
       window: { startHour: 0, endHour: 23 },
 
-      gps: { enabled: false, sampleIntervalMin: 10, accuracy: 5 },
+      gps: {
+        enabled: false,
+        sampleIntervalMin: 20,
+        accuracy: 5,
+        dynamicSamplingMode: false,
+        mediumMotionVedbaThresholdX100: 20,
+        mediumMotionGpsIntervalMin: 10,
+        highMotionVedbaThresholdX100: 100,
+        highMotionGpsIntervalMin: 5,
+        lorawanTxOnGpsFix: false,
+        loraTxOnGpsFix: false,
+      },
       light: { enabled: false, sampleIntervalMin: 10 },
-      environmental: { enabled: false, sampleIntervalMin: 10 },
-      particulate: { enabled: false, sampleIntervalMin: 10 },
+      environmental: { enabled: false, sampleIntervalMin: 5 },
+      particulate: { enabled: false, sampleIntervalMin: 15 },
       microphone: {
         enabled: false,
         continuousMode: false,
@@ -134,15 +161,15 @@ export default function SchedulesScreen() {
       },
       lorawan: {
         enabled: false,
-        sendIntervalMin: 10,
+        sendIntervalMin: 60,
       },
       lora: {
         enabled: false,
-        sendIntervalMin: 10,
+        sendIntervalMin: 60,
       },
       magnetometer: {
         enabled: false,
-        sampleIntervalS: 10,
+        sampleIntervalS: 60,
       },
     };
 
@@ -214,10 +241,50 @@ export default function SchedulesScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>SCHEDULES</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>SCHEDULES</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('SavedSchedules' as any)}
+        >
+          <Text style={styles.savedLink}>💾 Saved</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.sub}>
         Configure sampling and time windows for {device?.name ?? 'Collar'}
       </Text>
+
+      {/* Unsaved-draft indicator — the draft (persisted across restarts)
+          differs from what the collar last reported. */}
+      {isDirty && (
+        <View style={styles.draftBox}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.draftTitle}>Unsent changes</Text>
+            <Text style={styles.draftText}>
+              This draft differs from the collar's stored config. Send to
+              apply, or discard to go back to what the collar holds.
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.discardBtn}
+            onPress={() =>
+              Alert.alert(
+                'Discard draft?',
+                "Throw away local edits and reload the collar's config?",
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Discard',
+                    style: 'destructive',
+                    onPress: discardDraft,
+                  },
+                ],
+              )
+            }
+          >
+            <Text style={styles.discardText}>Discard</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={styles.engagedRow}>
         <View style={{ flex: 1 }}>
@@ -310,6 +377,7 @@ export default function SchedulesScreen() {
                   <Text style={styles.cardDetail}>
                     📍 GPS: every {s.gps.sampleIntervalMin} min (accuracy{' '}
                     {s.gps.accuracy ?? 'N/A'})
+                    {s.gps.dynamicSamplingMode ? ' · dynamic' : ''}
                   </Text>
                 )}
                 {s.light?.enabled && (
@@ -342,18 +410,25 @@ export default function SchedulesScreen() {
                 )}
                 {s.lorawan?.enabled && (
                   <Text style={styles.cardDetail}>
-                    📡 LoRaWAN: every {s.lorawan.sendIntervalMin ?? '?'} min
+                    📡 LoRaWAN:{' '}
+                    {s.gps?.enabled && s.gps?.lorawanTxOnGpsFix
+                      ? 'on every GPS fix'
+                      : `every ${s.lorawan.sendIntervalMin ?? '?'} min`}
                   </Text>
                 )}
                 {s.lora?.enabled && (
                   <Text style={styles.cardDetail}>
-                    📡 LoRa: every {s.lora.sendIntervalMin ?? '?'} min
+                    📡 LoRa:{' '}
+                    {s.gps?.enabled && s.gps?.loraTxOnGpsFix
+                      ? 'on every GPS fix'
+                      : `every ${s.lora.sendIntervalMin ?? '?'} min`}
                   </Text>
                 )}
                 {s.magnetometer?.enabled && (
                   <Text style={styles.cardDetail}>
                     🧲 Magnetometer: every{' '}
-                    {s.magnetometer.sampleIntervalS ?? '?'} s
+                    {Math.max(1, Math.round((s.magnetometer.sampleIntervalS ?? 60) / 60))}{' '}
+                    min
                   </Text>
                 )}
 
@@ -384,6 +459,11 @@ export default function SchedulesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#FFFFFF' },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   header: {
     fontSize: 28,
     fontWeight: '700',
@@ -391,6 +471,28 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 0.5,
   },
+  savedLink: { fontSize: 15, color: '#4A90D9', fontWeight: '600' },
+
+  draftBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  draftTitle: { fontSize: 14, fontWeight: '700', color: '#1D4ED8' },
+  draftText: { fontSize: 12, color: '#1E40AF', marginTop: 2 },
+  discardBtn: {
+    backgroundColor: '#DBEAFE',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  discardText: { color: '#1D4ED8', fontWeight: '700', fontSize: 13 },
   sub: {
     fontSize: 16,
     color: '#555',

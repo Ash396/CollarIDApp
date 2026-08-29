@@ -27,8 +27,13 @@ export default function RadioScreen() {
   const navigation = useNavigation<any>();
   const { device } = useDevice();
 
-  const { deviceRadioConfig, draftRadioConfig, loadRadioFromDevice } =
-    useRadioConfig();
+  const {
+    deviceRadioConfig,
+    draftRadioConfig,
+    loadRadioFromDevice,
+    discardRadioDraft,
+    isDirty,
+  } = useRadioConfig();
 
   useEffect(() => {
     if (!device) return;
@@ -116,6 +121,36 @@ export default function RadioScreen() {
         Configure radio settings for {device?.name ?? 'Collar'}
       </Text>
 
+      {isDirty && (
+        <View style={styles.draftBox}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.draftTitle}>Unsent changes</Text>
+            <Text style={styles.draftText}>
+              The draft differs from the radio config on the device.
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.discardBtn}
+            onPress={() =>
+              Alert.alert(
+                'Discard draft?',
+                "Throw away local edits and go back to the device's radio config?",
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Discard',
+                    style: 'destructive',
+                    onPress: discardRadioDraft,
+                  },
+                ],
+              )
+            }
+          >
+            <Text style={styles.discardText}>Discard</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.card}>
         <Text style={styles.cardTitle}>On Device</Text>
 
@@ -134,6 +169,11 @@ export default function RadioScreen() {
             <View style={styles.subCard}>
               <Text style={styles.subCardTitle}>Lost Mode</Text>
               <Text style={styles.mono}>{deviceSections.lost}</Text>
+            </View>
+
+            <View style={styles.subCard}>
+              <Text style={styles.subCardTitle}>Mortality Detection</Text>
+              <Text style={styles.mono}>{deviceSections.mortality}</Text>
             </View>
           </>
         ) : (
@@ -160,6 +200,11 @@ export default function RadioScreen() {
               <Text style={styles.subCardTitle}>Lost Mode</Text>
               <Text style={styles.mono}>{draftSections.lost}</Text>
             </View>
+
+            <View style={styles.subCard}>
+              <Text style={styles.subCardTitle}>Mortality Detection</Text>
+              <Text style={styles.mono}>{draftSections.mortality}</Text>
+            </View>
           </>
         ) : (
           <Text style={styles.muted}>
@@ -183,13 +228,16 @@ function formatRadioSections(cfg: PB.RadioConfigPacket | null): {
   lorawan: string;
   lora: string;
   lost: string;
+  mortality: string;
 } {
-  if (!cfg) return { lorawan: '', lora: '', lost: '' };
+  if (!cfg) return { lorawan: '', lora: '', lost: '', mortality: '' };
 
   const lorawan = (cfg as any).loRaWANConfig;
   const lora = (cfg as any).loRaConfig;
   const lostEnabled = Boolean((cfg as any).lostModeEnabled);
   const lostCfg = (cfg as any).lostModeConfig;
+  const mortEnabled = Boolean((cfg as any).mortalityEnabled);
+  const mortCfg = (cfg as any).mortalityConfig;
 
   const regionLabel = (n: number) =>
     (({ 0: 'US915', 1: 'AU915', 2: 'EU868' } as any)[n] ?? `Unknown(${n})`);
@@ -220,13 +268,7 @@ function formatRadioSections(cfg: PB.RadioConfigPacket | null): {
   if (lorawanEnabled) {
     lorawanLines.push(`Region: ${regionLabel(lorawan.region ?? 0)}`);
     lorawanLines.push(`Auth: ${authLabel(lorawan.auth ?? 0)}`);
-    lorawanLines.push(
-      `Tx only on new GPS fix: ${lorawan.txOnlyOnNewGpsFix ? 'ON' : 'OFF'}`,
-    );
-    lorawanLines.push(
-      `Transmit interval (min): ${lorawan.transmitIntervalMin ?? 0}`,
-    );
-    lorawanLines.push(`TX power (dBm): ${lorawan.txPowerDbm ?? 0}`);
+    lorawanLines.push(`TX power (dBm): ${lorawan.txPowerDbm ?? 0} (fixed)`);
 
     const otaa = lorawan.otaa;
     const abp = lorawan.abp;
@@ -264,24 +306,41 @@ function formatRadioSections(cfg: PB.RadioConfigPacket | null): {
     );
     loraLines.push(`Bandwidth: ${bwLabel(lora.radioBandwidth ?? 0)}`);
     loraLines.push(`Coding rate: ${crLabel(lora.radioCodingRate ?? 0)}`);
-    loraLines.push(`TX power (dBm): ${lora.txPowerDbm ?? 0}`);
+    loraLines.push(`TX power (dBm): ${lora.txPowerDbm ?? 0} (fixed)`);
     loraLines.push(`Sync word: 0x${pad2(Number(lora.syncWord ?? 0))}`);
     loraLines.push(`Frequency (MHz): ${lora.frequency ?? 0}`);
+    loraLines.push(`Listen after transmit: ${lora.rxListen ? 'ON' : 'OFF'}`);
   }
 
   // ---------------- Lost section ----------------
   const lostLines: string[] = [];
   lostLines.push(`Enabled: ${lostEnabled ? 'ON' : 'OFF'}`);
   if (lostEnabled && lostCfg) {
-    lostLines.push(`Activation epoch: ${lostCfg.activationEpoch}`);
+    const epoch = Number(lostCfg.activationEpoch ?? 0);
+    lostLines.push(
+      `Activates: ${epoch > 0 ? new Date(epoch * 1000).toLocaleString() : 'immediately'}`,
+    );
     lostLines.push(`Transmit interval (min): ${lostCfg.transmitIntervalMin}`);
-    lostLines.push(`TX power (dBm): ${lostCfg.txPowerDbm}`);
+    lostLines.push(`TX power (dBm): ${lostCfg.txPowerDbm} (fixed)`);
+  }
+
+  // ---------------- Mortality section ----------------
+  const mortalityLines: string[] = [];
+  mortalityLines.push(`Enabled: ${mortEnabled ? 'ON' : 'OFF'}`);
+  if (mortEnabled) {
+    mortalityLines.push(
+      `Trigger: ${mortCfg?.triggerDurationHours || 48} h motionless`,
+    );
+    mortalityLines.push(
+      `Report every: ${mortCfg?.transmitIntervalMin || 240} min`,
+    );
   }
 
   return {
     lorawan: lorawanLines.join('\n'),
     lora: loraLines.join('\n'),
     lost: lostLines.join('\n'),
+    mortality: mortalityLines.join('\n'),
   };
 }
 
@@ -364,4 +423,25 @@ const styles = StyleSheet.create({
     color: '#111',
     marginBottom: 6,
   },
+
+  draftBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  draftTitle: { fontSize: 14, fontWeight: '700', color: '#1D4ED8' },
+  draftText: { fontSize: 12, color: '#1E40AF', marginTop: 2 },
+  discardBtn: {
+    backgroundColor: '#DBEAFE',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  discardText: { color: '#1D4ED8', fontWeight: '700', fontSize: 13 },
 });
