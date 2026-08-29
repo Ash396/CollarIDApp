@@ -3344,11 +3344,17 @@ $root.RadioConfigPacket = (function() {
  * @enum {number}
  * @property {number} MIC_RATE_16KHZ=0 MIC_RATE_16KHZ value
  * @property {number} MIC_RATE_8KHZ=1 MIC_RATE_8KHZ value
+ * @property {number} MIC_RATE_48KHZ=2 MIC_RATE_48KHZ value
+ * @property {number} MIC_RATE_96KHZ=3 MIC_RATE_96KHZ value
+ * @property {number} MIC_RATE_192KHZ=4 MIC_RATE_192KHZ value
  */
 $root.MicSampleRate = (function() {
     var valuesById = {}, values = Object.create(valuesById);
     values[valuesById[0] = "MIC_RATE_16KHZ"] = 0;
     values[valuesById[1] = "MIC_RATE_8KHZ"] = 1;
+    values[valuesById[2] = "MIC_RATE_48KHZ"] = 2;
+    values[valuesById[3] = "MIC_RATE_96KHZ"] = 3;
+    values[valuesById[4] = "MIC_RATE_192KHZ"] = 4;
     return values;
 })();
 
@@ -3592,6 +3598,9 @@ $root.MicrophoneConfig = (function() {
                 return "sampleRate: enum value expected";
             case 0:
             case 1:
+            case 2:
+            case 3:
+            case 4:
                 break;
             }
         if (message.bitDepth != null && message.hasOwnProperty("bitDepth"))
@@ -3639,6 +3648,18 @@ $root.MicrophoneConfig = (function() {
         case "MIC_RATE_8KHZ":
         case 1:
             message.sampleRate = 1;
+            break;
+        case "MIC_RATE_48KHZ":
+        case 2:
+            message.sampleRate = 2;
+            break;
+        case "MIC_RATE_96KHZ":
+        case 3:
+            message.sampleRate = 3;
+            break;
+        case "MIC_RATE_192KHZ":
+        case 4:
+            message.sampleRate = 4;
             break;
         }
         switch (object.bitDepth) {

@@ -1118,7 +1118,10 @@ export class RadioConfigPacket implements IRadioConfigPacket {
 /** MicSampleRate enum. */
 export enum MicSampleRate {
     MIC_RATE_16KHZ = 0,
-    MIC_RATE_8KHZ = 1
+    MIC_RATE_8KHZ = 1,
+    MIC_RATE_48KHZ = 2,
+    MIC_RATE_96KHZ = 3,
+    MIC_RATE_192KHZ = 4
 }
 
 /** MicBitDepth enum. */

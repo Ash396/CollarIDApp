@@ -30,7 +30,7 @@ const POWER_MW = {
   // original characterization figure, kept for headroom. Far from the 0.5 a
   // byte-proportional model would give, because most of the cost of recording
   // is rate-independent — being awake with the card powered, not the bytes.
-  micRateScale:     [1.00, 0.893],
+  micRateScale:     [1.00, 0.893, 1.55, 2.25, 3.55],
   gpsAcqDelta:     36.3,   // GPS acquisition incremental above baseline
   loraPower:       40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
   loraDur:          6.3,   // Duration of TX + RX event (s), 100-byte payload
@@ -233,7 +233,7 @@ export function estimateScheduleSolarHours(s: Schedule): number {
 // Unlike power, storage scales exactly with the byte rate: 8 kHz really does
 // halve it. (Bit depth is not user-selectable — recordings are always
 // 16-bit — but the table stays general because the firmware supports it.)
-const MIC_RATE_HZ = [16000, 8000];
+const MIC_RATE_HZ = [16000, 8000, 48000, 96000, 192000];
 const MIC_SAMPLE_BYTES = [2, 1];
 
 /** SD-card bytes/day written by a schedule's microphone (0 if mic off). */

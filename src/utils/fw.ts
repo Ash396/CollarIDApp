@@ -25,6 +25,9 @@ export function bleFeatureGates(fwBuild: number, caps: number) {
     /** Microphone sample rate / bit depth — fw 338+. Older collars have no
      *  field for it and record 16 kHz / 16-bit unconditionally. */
     micFormat: fwBuild >= 338,
+    /** The extended rates (48/96/192 kHz) — fw 341+. A b338-340 collar
+     *  decodes the values but clamps them to 16 kHz at init. */
+    micRateExt: fwBuild >= 341,
     /** Thread add-on relay (local device list + DT forward commands).
      *  Gated on the capability characteristic, not the build: WB5M-era
      *  firmware exposes the caps char with bit 0 set; frozen WB15 builds

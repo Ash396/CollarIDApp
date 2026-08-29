@@ -164,7 +164,9 @@ export default function EditScheduleScreen() {
      out-of-date collar) and the value is forced to 0 on save.
      Bit depth is deliberately not offered — recordings are always 16-bit. */
   const { fwBuild, caps } = useDevice();
-  const micFormatCapable = bleFeatureGates(fwBuild, caps).micFormat;
+  const gates = bleFeatureGates(fwBuild, caps);
+  const micFormatCapable = gates.micFormat;
+  const micRateExtCapable = gates.micRateExt;
 
   /* Accelerometer */
   const [accelEnabled, setAccelEnabled] = useState(
@@ -250,9 +252,20 @@ export default function EditScheduleScreen() {
 
   // Wording mirrors VOCAB.micSampleRate / micBitDepth in the website's
   // js/collar-vocab.js — the two editors describe the same firmware fields.
+  // Wording mirrors VOCAB.micSampleRate on the website. StyledPicker has no
+  // per-item disable, so on fw 338-340 the extended rates are filtered out of
+  // the list rather than greyed; the collar cannot honour them and the save
+  // path clamps them anyway.
   const micRateOptions = [
     { label: '16 kHz', value: 0 },
     { label: '8 kHz', value: 1 },
+    ...(micRateExtCapable
+      ? [
+          { label: '48 kHz', value: 2 },
+          { label: '96 kHz (ultrasonic)', value: 3 },
+          { label: '192 kHz (ultrasonic)', value: 4 },
+        ]
+      : []),
   ];
 
 
@@ -306,7 +319,9 @@ export default function EditScheduleScreen() {
       // Forced to the reference format on a collar that cannot honour
       // anything else, so the saved draft matches what the collar will
       // actually record and the verify-after-write comparison holds.
-      sampleRate: micFormatCapable ? micRate : 0,
+      // Clamp to what this collar honours: no format field below 338, and
+      // the extended rates (>= 2) need 341.
+      sampleRate: !micFormatCapable ? 0 : (micRate >= 2 && !micRateExtCapable ? 0 : micRate),
       bitDepth: 0,   // always 16-bit; not user-selectable
     },
     accelerometer: {
