@@ -25,12 +25,11 @@ export function bleFeatureGates(fwBuild: number, caps: number) {
     /** Microphone sample rate / bit depth — fw 338+. Older collars have no
      *  field for it and record 16 kHz / 16-bit unconditionally. */
     micFormat: fwBuild >= 338,
-    /** The extended rates (48/96/192 kHz) are supported by NO firmware:
-     *  b341 shipped them with clocks violating RM0456's f_proc > 4 x f_CCK
-     *  and watchdog-crashed; b342 clamps them to 16 kHz. The sentinel keeps
-     *  the gate closed until the PLL3 kernel redesign lands with a real
-     *  build number (mirror the website's VOCAB.micSampleRate minBuild). */
-    micRateExt: fwBuild >= 999999,
+    /** The extended rates (48/96/192 kHz) — fw 343+, which clocks the ADF
+     *  from a PLL3 kernel at RM0456-legal ratios. 338-342 decode the values
+     *  but record 16 kHz (b341's illegal-divider attempt watchdog-crashed;
+     *  b342 clamped). Mirror the website's VOCAB.micSampleRate minBuild. */
+    micRateExt: fwBuild >= 343,
     /** Thread add-on relay (local device list + DT forward commands).
      *  Gated on the capability characteristic, not the build: WB5M-era
      *  firmware exposes the caps char with bit 0 set; frozen WB15 builds
