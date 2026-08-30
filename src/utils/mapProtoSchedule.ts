@@ -64,6 +64,7 @@ export function mapProtoSchedule(p: PB.ScheduleConfig, index: number): Schedule 
         sampleWindowMin: p.microphone.sampleWindowMin ?? undefined,
         sampleRate: p.microphone.sampleRate ?? 0,
         bitDepth: p.microphone.bitDepth ?? 0,
+        sensitivity: p.microphone.sensitivity ?? 0,
         }
     : undefined,
 

@@ -157,6 +157,7 @@ export default function EditScheduleScreen() {
     String(schedule.microphone?.sampleWindowMin ?? 10),
   );
   const [micRate, setMicRate] = useState(schedule.microphone?.sampleRate ?? 0);
+  const [micSens, setMicSens] = useState(schedule.microphone?.sensitivity ?? 0);
 
   /* A selectable sample rate exists only on fw 338+. Older collars record at
      16 kHz unconditionally, so the picker stays visible but disabled (a
@@ -167,6 +168,7 @@ export default function EditScheduleScreen() {
   const gates = bleFeatureGates(fwBuild, caps);
   const micFormatCapable = gates.micFormat;
   const micRateExtCapable = gates.micRateExt;
+  const micSensCapable = gates.micSens;
 
   /* Accelerometer */
   const [accelEnabled, setAccelEnabled] = useState(
@@ -258,6 +260,18 @@ export default function EditScheduleScreen() {
   // path clamps them anyway.
   // Ascending Hz for display; the values are wire values and not in display
   // order (0 = 16 kHz is the historical default).
+  // Mirrors VOCAB.micSensitivity on the website. Filtered below 349 like
+  // the extended rates (StyledPicker has no per-item disable); save clamps.
+  const micSensOptions = [
+    { label: 'Low (default)', value: 0 },
+    ...(micSensCapable
+      ? [
+          { label: 'Medium (+6 dB)', value: 1 },
+          { label: 'High (+12 dB)', value: 2 },
+        ]
+      : []),
+  ];
+
   const micRateOptions = [
     { label: '8 kHz', value: 1 },
     { label: '16 kHz', value: 0 },
@@ -325,6 +339,7 @@ export default function EditScheduleScreen() {
       // the extended rates (>= 2) need 341.
       sampleRate: !micFormatCapable ? 0 : (micRate >= 2 && !micRateExtCapable ? 0 : micRate),
       bitDepth: 0,   // always 16-bit; not user-selectable
+      sensitivity: micSensCapable ? micSens : 0,
     },
     accelerometer: {
       enabled: accelEnabled,
@@ -352,7 +367,7 @@ export default function EditScheduleScreen() {
       startHour, endHour, gpsEnabled, gpsInterval, gpsAccuracy, gpsDynamic,
       gpsMedVedba, gpsMedInt, gpsHighVedba, gpsHighInt, lightEnabled,
       lightInterval, envEnabled, envInterval, micEnabled, micContinuous,
-      micLength, micWindow, micRate, micFormatCapable,
+      micLength, micWindow, micRate, micSens, micSensCapable, micFormatCapable,
       accelEnabled, accelRate, accelSensitivity,
       lorawanEnabled, lorawanInterval, lorawanTxOnFix, loraEnabled,
       loraInterval, loraTxOnFix, magEnabled, magIntervalMin,
@@ -726,6 +741,15 @@ export default function EditScheduleScreen() {
             items={micRateOptions}
             placeholder="Select sample rate"
             enabled={micEnabled && micFormatCapable}
+          />
+
+          <Text style={styles.label}>Sensitivity</Text>
+          <StyledPicker
+            selectedValue={micSens}
+            onValueChange={setMicSens}
+            items={micSensOptions}
+            placeholder="Select sensitivity"
+            enabled={micEnabled}
           />
 
           {/* Only the firmware-gating message — no explainer when usable. */}

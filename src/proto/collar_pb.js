@@ -3372,6 +3372,22 @@ $root.MicBitDepth = (function() {
     return values;
 })();
 
+/**
+ * MicSensitivity enum.
+ * @exports MicSensitivity
+ * @enum {number}
+ * @property {number} MIC_SENS_LOW=0 MIC_SENS_LOW value
+ * @property {number} MIC_SENS_MEDIUM=1 MIC_SENS_MEDIUM value
+ * @property {number} MIC_SENS_HIGH=2 MIC_SENS_HIGH value
+ */
+$root.MicSensitivity = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "MIC_SENS_LOW"] = 0;
+    values[valuesById[1] = "MIC_SENS_MEDIUM"] = 1;
+    values[valuesById[2] = "MIC_SENS_HIGH"] = 2;
+    return values;
+})();
+
 $root.MicrophoneConfig = (function() {
 
     /**
@@ -3384,6 +3400,7 @@ $root.MicrophoneConfig = (function() {
      * @property {number|null} [sampleWindowMin] MicrophoneConfig sampleWindowMin
      * @property {MicSampleRate|null} [sampleRate] MicrophoneConfig sampleRate
      * @property {MicBitDepth|null} [bitDepth] MicrophoneConfig bitDepth
+     * @property {MicSensitivity|null} [sensitivity] MicrophoneConfig sensitivity
      */
 
     /**
@@ -3450,6 +3467,14 @@ $root.MicrophoneConfig = (function() {
     MicrophoneConfig.prototype.bitDepth = 0;
 
     /**
+     * MicrophoneConfig sensitivity.
+     * @member {MicSensitivity} sensitivity
+     * @memberof MicrophoneConfig
+     * @instance
+     */
+    MicrophoneConfig.prototype.sensitivity = 0;
+
+    /**
      * Creates a new MicrophoneConfig instance using the specified properties.
      * @function create
      * @memberof MicrophoneConfig
@@ -3485,6 +3510,8 @@ $root.MicrophoneConfig = (function() {
             writer.uint32(/* id 5, wireType 0 =*/40).int32(message.sampleRate);
         if (message.bitDepth != null && Object.hasOwnProperty.call(message, "bitDepth"))
             writer.uint32(/* id 6, wireType 0 =*/48).int32(message.bitDepth);
+        if (message.sensitivity != null && Object.hasOwnProperty.call(message, "sensitivity"))
+            writer.uint32(/* id 7, wireType 0 =*/56).int32(message.sensitivity);
         return writer;
     };
 
@@ -3543,6 +3570,10 @@ $root.MicrophoneConfig = (function() {
                 }
             case 6: {
                     message.bitDepth = reader.int32();
+                    break;
+                }
+            case 7: {
+                    message.sensitivity = reader.int32();
                     break;
                 }
             default:
@@ -3609,6 +3640,15 @@ $root.MicrophoneConfig = (function() {
                 return "bitDepth: enum value expected";
             case 0:
             case 1:
+                break;
+            }
+        if (message.sensitivity != null && message.hasOwnProperty("sensitivity"))
+            switch (message.sensitivity) {
+            default:
+                return "sensitivity: enum value expected";
+            case 0:
+            case 1:
+            case 2:
                 break;
             }
         return null;
@@ -3678,6 +3718,26 @@ $root.MicrophoneConfig = (function() {
             message.bitDepth = 1;
             break;
         }
+        switch (object.sensitivity) {
+        default:
+            if (typeof object.sensitivity === "number") {
+                message.sensitivity = object.sensitivity;
+                break;
+            }
+            break;
+        case "MIC_SENS_LOW":
+        case 0:
+            message.sensitivity = 0;
+            break;
+        case "MIC_SENS_MEDIUM":
+        case 1:
+            message.sensitivity = 1;
+            break;
+        case "MIC_SENS_HIGH":
+        case 2:
+            message.sensitivity = 2;
+            break;
+        }
         return message;
     };
 
@@ -3701,6 +3761,7 @@ $root.MicrophoneConfig = (function() {
             object.sampleWindowMin = 0;
             object.sampleRate = options.enums === String ? "MIC_RATE_16KHZ" : 0;
             object.bitDepth = options.enums === String ? "MIC_DEPTH_16BIT" : 0;
+            object.sensitivity = options.enums === String ? "MIC_SENS_LOW" : 0;
         }
         if (message.enabled != null && message.hasOwnProperty("enabled"))
             object.enabled = message.enabled;
@@ -3714,6 +3775,8 @@ $root.MicrophoneConfig = (function() {
             object.sampleRate = options.enums === String ? $root.MicSampleRate[message.sampleRate] === undefined ? message.sampleRate : $root.MicSampleRate[message.sampleRate] : message.sampleRate;
         if (message.bitDepth != null && message.hasOwnProperty("bitDepth"))
             object.bitDepth = options.enums === String ? $root.MicBitDepth[message.bitDepth] === undefined ? message.bitDepth : $root.MicBitDepth[message.bitDepth] : message.bitDepth;
+        if (message.sensitivity != null && message.hasOwnProperty("sensitivity"))
+            object.sensitivity = options.enums === String ? $root.MicSensitivity[message.sensitivity] === undefined ? message.sensitivity : $root.MicSensitivity[message.sensitivity] : message.sensitivity;
         return object;
     };
 
@@ -15881,6 +15944,7 @@ $root.ConfigMicrophone = (function() {
      * @property {number|null} [sampleWindowMin] ConfigMicrophone sampleWindowMin
      * @property {number|null} [sampleRate] ConfigMicrophone sampleRate
      * @property {number|null} [bitDepth] ConfigMicrophone bitDepth
+     * @property {number|null} [sensitivity] ConfigMicrophone sensitivity
      */
 
     /**
@@ -15945,6 +16009,14 @@ $root.ConfigMicrophone = (function() {
      * @instance
      */
     ConfigMicrophone.prototype.bitDepth = null;
+
+    /**
+     * ConfigMicrophone sensitivity.
+     * @member {number|null|undefined} sensitivity
+     * @memberof ConfigMicrophone
+     * @instance
+     */
+    ConfigMicrophone.prototype.sensitivity = null;
 
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
@@ -16016,6 +16088,17 @@ $root.ConfigMicrophone = (function() {
     });
 
     /**
+     * ConfigMicrophone _sensitivity.
+     * @member {"sensitivity"|undefined} _sensitivity
+     * @memberof ConfigMicrophone
+     * @instance
+     */
+    Object.defineProperty(ConfigMicrophone.prototype, "_sensitivity", {
+        get: $util.oneOfGetter($oneOfFields = ["sensitivity"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
      * Creates a new ConfigMicrophone instance using the specified properties.
      * @function create
      * @memberof ConfigMicrophone
@@ -16051,6 +16134,8 @@ $root.ConfigMicrophone = (function() {
             writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.sampleRate);
         if (message.bitDepth != null && Object.hasOwnProperty.call(message, "bitDepth"))
             writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.bitDepth);
+        if (message.sensitivity != null && Object.hasOwnProperty.call(message, "sensitivity"))
+            writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.sensitivity);
         return writer;
     };
 
@@ -16109,6 +16194,10 @@ $root.ConfigMicrophone = (function() {
                 }
             case 6: {
                     message.bitDepth = reader.uint32();
+                    break;
+                }
+            case 7: {
+                    message.sensitivity = reader.uint32();
                     break;
                 }
             default:
@@ -16177,6 +16266,11 @@ $root.ConfigMicrophone = (function() {
             if (!$util.isInteger(message.bitDepth))
                 return "bitDepth: integer expected";
         }
+        if (message.sensitivity != null && message.hasOwnProperty("sensitivity")) {
+            properties._sensitivity = 1;
+            if (!$util.isInteger(message.sensitivity))
+                return "sensitivity: integer expected";
+        }
         return null;
     };
 
@@ -16204,6 +16298,8 @@ $root.ConfigMicrophone = (function() {
             message.sampleRate = object.sampleRate >>> 0;
         if (object.bitDepth != null)
             message.bitDepth = object.bitDepth >>> 0;
+        if (object.sensitivity != null)
+            message.sensitivity = object.sensitivity >>> 0;
         return message;
     };
 
@@ -16249,6 +16345,11 @@ $root.ConfigMicrophone = (function() {
             object.bitDepth = message.bitDepth;
             if (options.oneofs)
                 object._bitDepth = "bitDepth";
+        }
+        if (message.sensitivity != null && message.hasOwnProperty("sensitivity")) {
+            object.sensitivity = message.sensitivity;
+            if (options.oneofs)
+                object._sensitivity = "sensitivity";
         }
         return object;
     };

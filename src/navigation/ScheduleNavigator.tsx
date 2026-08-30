@@ -42,6 +42,8 @@ export type Schedule = {
     sampleRate?: number;
     /** MicBitDepth: 0 = 16-bit (default), 1 = 8-bit. Needs fw 338+. */
     bitDepth?: number;
+    /** MicSensitivity: 0 = Low (baseline), 1 = +6 dB, 2 = +12 dB. Fw 349+. */
+    sensitivity?: number;
   };
   accelerometer?: {
     enabled: boolean;

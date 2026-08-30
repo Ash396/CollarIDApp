@@ -48,6 +48,7 @@ function normalizeScheduleApp(s: Schedule) {
       // failure.
       sampleRate: s.microphone?.enabled ? s.microphone?.sampleRate ?? 0 : 0,
       bitDepth: s.microphone?.enabled ? s.microphone?.bitDepth ?? 0 : 0,
+      sensitivity: s.microphone?.enabled ? s.microphone?.sensitivity ?? 0 : 0,
     },
     accelerometer: {
       enabled: !!s.accelerometer?.enabled,

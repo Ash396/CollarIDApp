@@ -51,6 +51,7 @@ export function appToPresetSchedule(s: Schedule): any {
       // saved in one editor keeps its audio format when loaded in the other.
       sample_rate: s.microphone?.sampleRate ?? 0,
       bit_depth: s.microphone?.bitDepth ?? 0,
+      sensitivity: s.microphone?.sensitivity ?? 0,
     },
     accelerometer: {
       enabled: !!s.accelerometer?.enabled,
@@ -118,6 +119,7 @@ export function presetToAppSchedule(x: any, index: number): Schedule {
       sampleWindowMin: Number(x?.microphone?.sample_window_min ?? 10),
       sampleRate: Number(x?.microphone?.sample_rate ?? 0),
       bitDepth: Number(x?.microphone?.bit_depth ?? 0),
+      sensitivity: Number(x?.microphone?.sensitivity ?? 0),
     },
     accelerometer: {
       enabled: !!x?.accelerometer?.enabled,

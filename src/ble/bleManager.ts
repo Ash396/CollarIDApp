@@ -464,6 +464,7 @@ export function buildSchedulePacketFromAppState(
         // predates the fields ignores it.
         sampleRate: Number(s.microphone?.sampleRate ?? 0),
         bitDepth: Number(s.microphone?.bitDepth ?? 0),
+        sensitivity: Number(s.microphone?.sensitivity ?? 0),
       });
     }
     if (s.accelerometer?.enabled) {

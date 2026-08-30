@@ -1130,6 +1130,13 @@ export enum MicBitDepth {
     MIC_DEPTH_8BIT = 1
 }
 
+/** MicSensitivity enum. */
+export enum MicSensitivity {
+    MIC_SENS_LOW = 0,
+    MIC_SENS_MEDIUM = 1,
+    MIC_SENS_HIGH = 2
+}
+
 /** Represents a MicrophoneConfig. */
 export class MicrophoneConfig implements IMicrophoneConfig {
 
@@ -1156,6 +1163,9 @@ export class MicrophoneConfig implements IMicrophoneConfig {
 
     /** MicrophoneConfig bitDepth. */
     public bitDepth: MicBitDepth;
+
+    /** MicrophoneConfig sensitivity. */
+    public sensitivity: MicSensitivity;
 
     /**
      * Creates a new MicrophoneConfig instance using the specified properties.
@@ -5070,6 +5080,9 @@ export class ConfigMicrophone implements IConfigMicrophone {
     /** ConfigMicrophone bitDepth. */
     public bitDepth?: (number|null);
 
+    /** ConfigMicrophone sensitivity. */
+    public sensitivity?: (number|null);
+
     /** ConfigMicrophone _enabled. */
     public _enabled?: "enabled";
 
@@ -5087,6 +5100,9 @@ export class ConfigMicrophone implements IConfigMicrophone {
 
     /** ConfigMicrophone _bitDepth. */
     public _bitDepth?: "bitDepth";
+
+    /** ConfigMicrophone _sensitivity. */
+    public _sensitivity?: "sensitivity";
 
     /**
      * Creates a new ConfigMicrophone instance using the specified properties.

@@ -30,6 +30,8 @@ export function bleFeatureGates(fwBuild: number, caps: number) {
      *  but record 16 kHz (b341's illegal-divider attempt watchdog-crashed;
      *  b342 clamped). Mirror the website's VOCAB.micSampleRate minBuild. */
     micRateExt: fwBuild >= 343,
+    /** Microphone sensitivity ladder (+6/+12 dB) — fw 349+. */
+    micSens: fwBuild >= 349,
     /** Thread add-on relay (local device list + DT forward commands).
      *  Gated on the capability characteristic, not the build: WB5M-era
      *  firmware exposes the caps char with bit 0 set; frozen WB15 builds
