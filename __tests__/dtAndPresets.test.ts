@@ -166,6 +166,7 @@ describe('firmware gating', () => {
       threadAddons: true,
       micFormat: false,
       micRateExt: false,
+      micSens: false,
     });
     expect(bleFeatureGates(304, 0)).toEqual({
       cfgTunnel: false,
@@ -173,6 +174,7 @@ describe('firmware gating', () => {
       threadAddons: false,
       micFormat: false,
       micRateExt: false,
+      micSens: false,
     });
   });
   it('opens the extended-rate gate exactly at build 343', () => {
@@ -182,6 +184,10 @@ describe('firmware gating', () => {
     expect(bleFeatureGates(341, 0)).toMatchObject({ micFormat: true, micRateExt: false });
     expect(bleFeatureGates(342, 0)).toMatchObject({ micFormat: true, micRateExt: false });
     expect(bleFeatureGates(343, 0)).toMatchObject({ micFormat: true, micRateExt: true });
+  });
+  it('opens the sensitivity gate exactly at build 349', () => {
+    expect(bleFeatureGates(348, 0).micSens).toBe(false);
+    expect(bleFeatureGates(349, 0).micSens).toBe(true);
   });
   it('opens the microphone format gate exactly at build 338', () => {
     expect(bleFeatureGates(337, 0).micFormat).toBe(false);
