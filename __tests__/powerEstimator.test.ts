@@ -1,4 +1,4 @@
-import { estimateMicBytesPerDay, micCodecRatio, MIC_CODEC_RATIO, micCodecPowerScale, estimatePower } from '../src/utils/powerEstimator';
+import { estimateMicBytesPerDay, micCodecRatio, MIC_CODEC_RATIO, micFlacSavingMw, estimatePower } from '../src/utils/powerEstimator';
 
 // Compression on the card estimate (fw 380+). Mirrors the website's
 // js/power-model.js pins: 3:1 planning for lossless FLAC, 6:1 with two low
@@ -7,15 +7,30 @@ const mic = (over: Record<string, unknown> = {}) =>
   ({ microphone: { enabled: true, continuousMode: true, sampleRate: 0, ...over } } as any);
 
 describe('power estimate with compression', () => {
-  // Measured 2026-09-22 (build 382, 16 kHz continuous, other sensors off):
-  // 6.8 mW total as WAV, 6.3 mW as FLAC; the ratio of the increments is 0.917.
-  it('FLAC prices the mic increment at 0.917 of WAV, only where honoured', () => {
-    expect(micCodecPowerScale({ codec: 1 } as any)).toBe(0.917);
-    expect(micCodecPowerScale({ codec: 0 } as any)).toBe(1);
-    expect(micCodecPowerScale({ codec: 1, sampleRate: 2 } as any)).toBe(1);
-    const wav = estimatePower([mic({ codec: 0 })]).components.microphone;
-    const flac = estimatePower([mic({ codec: 1 })]).components.microphone;
-    expect(flac).toBeCloseTo(0.917 * wav, 9);
+  // Measured 2026-09-22 (build 382, continuous, other sensors off), WAV then
+  // FLAC: 6.8 -> 6.3 mW at 16 kHz, 6.1 -> 5.85 mW at 8 kHz. The saving scales
+  // with the sample rate (0.50 / 0.25 mW), so it is subtracted, not a ratio.
+  it('FLAC takes the measured saving off the mic increment: 0.50 mW at 16 kHz, 0.25 mW at 8 kHz', () => {
+    expect(micFlacSavingMw({ codec: 1 } as any)).toBe(0.5);
+    expect(micFlacSavingMw({ codec: 1, sampleRate: 1 } as any)).toBe(0.25);
+    expect(micFlacSavingMw({ codec: 0 } as any)).toBe(0);
+    expect(micFlacSavingMw({ codec: 1, sampleRate: 2 } as any)).toBe(0);
+    expect(micFlacSavingMw({ codec: 1, bitDepth: 1 } as any)).toBe(0);
+    // Components come back in solar hours, not mW: WAV at 16 kHz continuous
+    // is the 7.60 mW increment, so that reading is the unit for one mW.
+    const at = (over: Record<string, unknown>) => estimatePower([mic(over)]).components.microphone;
+    const perMw = at({ codec: 0 }) / 7.6;
+    expect(at({ codec: 1 })).toBeCloseTo(at({ codec: 0 }) - 0.5 * perMw, 9);
+    expect(at({ codec: 1, sampleRate: 1 })).toBeCloseTo(at({ codec: 0, sampleRate: 1 }) - 0.25 * perMw, 9);
+    expect(at({ codec: 1, sampleRate: 2 })).toBeCloseTo(at({ codec: 0, sampleRate: 2 }), 9);
+    // A take that runs 1 minute in 10 saves a tenth of a continuous one.
+    const duty = (over: Record<string, unknown>) =>
+      estimatePower([mic({ continuousMode: false, sampleLengthMin: 1, sampleWindowMin: 10, ...over })]).components.microphone;
+    expect(duty({ codec: 1 })).toBeCloseTo(duty({ codec: 0 }) - 0.05 * perMw, 9);
+  });
+  it('8 kHz WAV is 0.884 of 16 kHz, from the same bench pair', () => {
+    const at = (over: Record<string, unknown>) => estimatePower([mic(over)]).components.microphone;
+    expect(at({ sampleRate: 1 })).toBeCloseTo(0.884 * at({}), 9);
   });
 });
 

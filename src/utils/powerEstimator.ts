@@ -25,20 +25,25 @@ const POWER_MW = {
   // (0 = 16 kHz, 1 = 8 kHz). Mirrors POWER_MW.mic_rate_scale in the website's
   // js/power-model.js — keep the two in step.
   //
-  // Ratio measured on the bench 2026-08-29 (6.62 mW at 16 kHz vs 5.91 mW at
-  // 8 kHz, both at 3.85 V). Only the ratio is used; the 7.60 absolute is the
-  // original characterization figure, kept for headroom. Far from the 0.5 a
-  // byte-proportional model would give, because most of the cost of recording
-  // is rate-independent — being awake with the card powered, not the bytes.
-  micRateScale:     [1.00, 0.893, 1.55, 2.25, 3.55],
-  // Recording format (fw 380+): the mic increment scaled by codec, indexed by
-  // the wire value (0 = WAV, 1 = FLAC). Measured 2026-09-22 on build 382,
-  // 16 kHz continuous, other sensors off: 6.8 mW total as WAV, 6.3 mW as
-  // FLAC (increments 6.06 / 5.56 mW above the 0.74 mW base), ratio 0.917.
-  // Ratio only, like 0.893. Applied only where the collar honours the codec
-  // (16-bit at 8/16 kHz). Mirrors POWER_MW.mic_codec_scale in the website's
-  // js/power-model.js — keep the two in step.
-  micCodecScale:    [1.00, 0.917],
+  // Ratio from the 2026-09-22 bench (build 382, other sensors off): 6.8 mW
+  // at 16 kHz vs 6.1 mW at 8 kHz, increments 6.06 / 5.36 mW above the 0.74 mW
+  // base. A 2026-08-29 run gave 0.893. Only the ratio is used; the 7.60
+  // absolute is the original characterization figure, kept for headroom. Far
+  // from the 0.5 a byte-proportional model would give, because most of the
+  // cost of recording is rate-independent — being awake with the card
+  // powered, not the bytes.
+  micRateScale:     [1.00, 0.884, 1.55, 2.25, 3.55],
+  // Recording format (fw 380+): what FLAC SAVES off the mic increment, in mW
+  // at 16 kHz continuous, scaled by the sample rate. Measured 2026-09-22 on
+  // build 382, other sensors off, WAV then FLAC: 6.8 -> 6.3 mW at 16 kHz
+  // (saving 0.50), 6.1 -> 5.85 mW at 8 kHz (saving 0.25). The saving halves
+  // with the rate while the WAV increment drops only 12 %, so it is a
+  // subtraction scaled by rate, not a ratio (a 0.917 ratio predicted 5.66 mW
+  // at 8 kHz against the 5.85 measured). Applied only where the collar
+  // honours the codec (16-bit at 8/16 kHz). Mirrors
+  // POWER_MW.mic_flac_saving_16k in the website's js/power-model.js — keep
+  // the two in step.
+  micFlacSaving16k: 0.50,
   gpsAcqDelta:     36.3,   // GPS acquisition incremental above baseline
   loraPower:       40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
   loraDur:          6.3,   // Duration of TX + RX event (s), 100-byte payload
@@ -126,16 +131,17 @@ function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gp
   let mic = 0, gps = 0, lora = 0;
 
   if (s.microphone?.enabled) {
-    const rateScale =
-      (POWER_MW.micRateScale[s.microphone.sampleRate ?? 0] ?? POWER_MW.micRateScale[0]) *
-      micCodecPowerScale(s.microphone);
+    // Increment for the rate, less what compression saves at that rate, at
+    // the take's duty cycle. The saving can never exceed the increment.
+    const rateScale = POWER_MW.micRateScale[s.microphone.sampleRate ?? 0] ?? POWER_MW.micRateScale[0];
+    const perTake = Math.max(0, POWER_MW.micDelta * rateScale - micFlacSavingMw(s.microphone));
     if (s.microphone.continuousMode) {
-      mic = frac * POWER_MW.micDelta * rateScale;
+      mic = frac * perTake;
     } else {
       const duty = clamp(
         (s.microphone.sampleLengthMin ?? 1) / (s.microphone.sampleWindowMin ?? 10), 0, 1
       );
-      mic = frac * POWER_MW.micDelta * rateScale * duty;
+      mic = frac * perTake * duty;
     }
   }
 
@@ -285,11 +291,14 @@ export function micCodecRatio(m: Schedule['microphone'] | undefined): number {
   return MIC_CODEC_RATIO[drop];
 }
 
-/** The measured codec power ratio, where the collar honours the codec. */
-export function micCodecPowerScale(m: Schedule['microphone'] | undefined): number {
+/** What FLAC saves off the continuous mic increment, in mW: the measured
+ *  16 kHz saving scaled by the sample rate, and 0 wherever the collar would
+ *  record WAV anyway. */
+export function micFlacSavingMw(m: Schedule['microphone'] | undefined): number {
   const rate = m?.sampleRate ?? 0;
   const honoured = (m?.codec ?? 0) === 1 && (m?.bitDepth ?? 0) === 0 && (rate === 0 || rate === 1);
-  return honoured ? POWER_MW.micCodecScale[1] : POWER_MW.micCodecScale[0];
+  if (!honoured) return 0;
+  return POWER_MW.micFlacSaving16k * (MIC_RATE_HZ[rate] / 16000);
 }
 
 /** SD-card bytes/day written by a schedule's microphone (0 if mic off). */
