@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,30 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSchedules } from '../context/SchedulesContext';
 import { useDevice } from '../context/DeviceContext';
-import { bleFeatureGates, ENV_INTERVAL_FIXED_MIN, MIC_CODEC_MIN_FW_BUILD } from '../utils/fw';
+import {
+  ENV_INTERVAL_FIXED_MIN,
+  MIC_CODEC_MIN_FW_BUILD,
+  editorFeatureGates,
+  fwGateNote,
+  fwOptionsLine,
+  micFieldsForGates,
+} from '../utils/fw';
 import type { Schedule } from '../navigation/ScheduleNavigator';
 import StyledPicker from '../components/StyledPicker';
 import { estimateScheduleSolarHours } from '../utils/powerEstimator';
+import {
+  SCHEDULE_PRESETS,
+  applySchedulePreset,
+  matchingSchedulePreset,
+} from '../utils/schedulePresets';
+import type { ScheduleSlot } from '../utils/schedulePresets';
+import { scheduleConsequences } from '../utils/scheduleSummary';
+import {
+  defaultAdvancedPrefs,
+  loadAdvancedPrefs,
+  saveAdvancedPrefs,
+} from '../utils/editorPrefs';
+import type { AdvancedPrefs, AdvancedSection } from '../utils/editorPrefs';
 
 // "Active HH:00–HH:00 · N hours" readout for a time window. end_hour is
 // inclusive, so the window covers [start, end+1) and its length is
@@ -52,7 +72,7 @@ function hoursBitmap(startHour: number, endHour: number): number {
   return bits;
 }
 
-// VeDBA behaviour reference shown under the dynamic-sampling toggle —
+// VeDBA behaviour reference shown under the dynamic-sampling thresholds —
 // same table as the website configurator.
 const VEDBA_ROWS: [string, string, string][] = [
   ['Resting / standing', '< 0.05 g', '< 5'],
@@ -163,13 +183,11 @@ export default function EditScheduleScreen() {
   const [micCodec, setMicCodec] = useState(schedule.microphone?.codec ?? 0);
   const [micLsbDrop, setMicLsbDrop] = useState(schedule.microphone?.lsbDrop ?? 0);
 
-  /* A selectable sample rate exists only on fw 338+. Older collars record at
-     16 kHz unconditionally, so the picker stays visible but disabled (a
-     control that vanishes reads as a missing feature rather than an
-     out-of-date collar) and the value is forced to 0 on save.
+  /* Firmware gates. A connected collar's build decides what it can honour;
+     with no collar every option is offered and the line at the top says so.
      Bit depth is deliberately not offered — recordings are always 16-bit. */
   const { fwBuild, caps } = useDevice();
-  const gates = bleFeatureGates(fwBuild, caps);
+  const gates = editorFeatureGates(fwBuild, caps);
   const micFormatCapable = gates.micFormat;
   const micRateExtCapable = gates.micRateExt;
   const micSensCapable = gates.micSens;
@@ -237,6 +255,62 @@ export default function EditScheduleScreen() {
     String(Math.max(1, Math.round((schedule.magnetometer?.sampleIntervalS ?? 60) / 60))),
   );
 
+  /* Advanced groups — collapsed by default, remembered across sessions. */
+  const [advanced, setAdvanced] = useState<AdvancedPrefs>(defaultAdvancedPrefs);
+  useEffect(() => {
+    let alive = true;
+    loadAdvancedPrefs().then(p => {
+      if (alive) setAdvanced(p);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const toggleAdvanced = (k: AdvancedSection) =>
+    setAdvanced(prev => {
+      const next = { ...prev, [k]: !prev[k] };
+      saveAdvancedPrefs(next);
+      return next;
+    });
+
+  /* ---------------- PRESETS ---------------- */
+  // Fill every control from a complete slot; the hours are the operator's.
+  const applySlot = (s: ScheduleSlot) => {
+    setGpsEnabled(!!s.gps?.enabled);
+    setGpsInterval(String(s.gps?.sampleIntervalMin ?? 20));
+    setGpsAccuracy(s.gps?.accuracy ?? 5);
+    setGpsDynamic(!!s.gps?.dynamicSamplingMode);
+    setGpsMedVedba(String(s.gps?.mediumMotionVedbaThresholdX100 ?? 20));
+    setGpsMedInt(String(s.gps?.mediumMotionGpsIntervalMin ?? 10));
+    setGpsHighVedba(String(s.gps?.highMotionVedbaThresholdX100 ?? 100));
+    setGpsHighInt(String(s.gps?.highMotionGpsIntervalMin ?? 5));
+    setLightEnabled(!!s.light?.enabled);
+    setLightInterval(String(s.light?.sampleIntervalMin ?? 10));
+    setEnvEnabled(!!s.environmental?.enabled);
+    setPartInterval(String(s.particulate?.sampleIntervalMin ?? 15));
+    setMicEnabled(!!s.microphone?.enabled);
+    setMicContinuous(!!s.microphone?.continuousMode);
+    setMicLength(String(s.microphone?.sampleLengthMin ?? 1));
+    setMicWindow(String(s.microphone?.sampleWindowMin ?? 10));
+    setMicRate(s.microphone?.sampleRate ?? 0);
+    setMicSens(s.microphone?.sensitivity ?? 0);
+    setMicCodec(s.microphone?.codec ?? 0);
+    setMicLsbDrop(s.microphone?.lsbDrop ?? 0);
+    setAccelEnabled(!!s.accelerometer?.enabled);
+    setAccelRate(s.accelerometer?.sampleRate ?? 0);
+    setAccelSensitivity(s.accelerometer?.sensitivity ?? 0);
+    setLorawanEnabled(!!s.lorawan?.enabled);
+    setLorawanInterval(String(s.lorawan?.sendIntervalMin ?? 60));
+    setLorawanTxOnFix(!!s.gps?.lorawanTxOnGpsFix);
+    setLoraEnabled(!!s.lora?.enabled);
+    setLoraInterval(String(s.lora?.sendIntervalMin ?? 60));
+    setLoraTxOnFix(!!s.gps?.loraTxOnGpsFix);
+    setMagEnabled(!!s.magnetometer?.enabled);
+    setMagIntervalMin(
+      String(Math.max(1, Math.round((s.magnetometer?.sampleIntervalS ?? 60) / 60))),
+    );
+  };
+
   /* ---------------- PICKER OPTIONS ---------------- */
 
   const hourOptions = [...Array(24).keys()].map(h => ({
@@ -247,9 +321,9 @@ export default function EditScheduleScreen() {
   // Wire values + labels from the shared field vocabulary
   // (js/collar-vocab.js on the website).
   const gpsAccuracyOptions = [
-    { label: 'Low (fastest, least power)', value: 1 },
+    { label: 'Low (fastest fix, least power)', value: 1 },
     { label: 'Medium', value: 5 },
-    { label: 'High (slowest, most power)', value: 10 },
+    { label: 'High (slowest fix, most power)', value: 10 },
   ];
 
   const accelRateOptions = [
@@ -257,26 +331,24 @@ export default function EditScheduleScreen() {
     { label: '50 Hz', value: 1 },
   ];
 
-  // Wording mirrors VOCAB.micSampleRate / micBitDepth in the website's
-  // js/collar-vocab.js — the two editors describe the same firmware fields.
-  // Wording mirrors VOCAB.micSampleRate on the website. StyledPicker has no
-  // per-item disable, so on fw 338-340 the extended rates are filtered out of
-  // the list rather than greyed; the collar cannot honour them and the save
-  // path clamps them anyway.
-  // Ascending Hz for display; the values are wire values and not in display
-  // order (0 = 16 kHz is the historical default).
-  // Mirrors VOCAB.micSensitivity on the website. Filtered below 349 like
-  // the extended rates (StyledPicker has no per-item disable); save clamps.
+  // Mirrors VOCAB.micSensitivity on the website, labelled as what it is: a
+  // gain step over the calibrated baseline. Filtered below 349 like the
+  // extended rates (StyledPicker has no per-item disable); save clamps.
   const micSensOptions = [
-    { label: 'Low (default)', value: 0 },
+    { label: 'Default', value: 0 },
     ...(micSensCapable
       ? [
-          { label: 'Medium (+6 dB)', value: 1 },
-          { label: 'High (+12 dB)', value: 2 },
+          { label: '+6 dB', value: 1 },
+          { label: '+12 dB', value: 2 },
         ]
       : []),
   ];
 
+  // Wording mirrors VOCAB.micSampleRate on the website. StyledPicker has no
+  // per-item disable, so on fw 338-342 the extended rates are filtered out of
+  // the list rather than greyed; the collar cannot honour them and the save
+  // path clamps them anyway. Ascending Hz for display; the values are wire
+  // values and not in display order (0 = 16 kHz is the historical default).
   const micRateOptions = [
     { label: '8 kHz', value: 1 },
     { label: '16 kHz', value: 0 },
@@ -289,41 +361,46 @@ export default function EditScheduleScreen() {
       : []),
   ];
 
-  // Mirrors VOCAB.micCodec / micLsbDrop on the website (fw 380). Filtered
-  // below 380 like the sensitivity ladder (StyledPicker has no per-item
-  // disable); save clamps to WAV / 0 regardless. The drop picker only shows
-  // under FLAC — it does nothing on a WAV take.
+  // Mirrors VOCAB.micCodec / micLsbDrop on the website (fw 380), in the
+  // operator's words: what the file IS, not the codec name. Both options are
+  // always listed — below 380 the picker is greyed, not emptied. The drop
+  // picker only shows under compressed storage — it does nothing on a WAV
+  // take. No compression ratios in the drop labels: dB is what the bits
+  // cost; the card estimate says what they save.
   const micCodecOptions = [
-    { label: 'WAV', value: 0 },
-    ...(micCodecCapable ? [{ label: 'FLAC (lossless, ~3x smaller)', value: 1 }] : []),
+    { label: 'Standard (WAV)', value: 0 },
+    { label: 'Compressed (lossless, about 3× smaller)', value: 1 },
   ];
   const micLsbDropOptions = [
     { label: '0 (none)', value: 0 },
-    { label: '1 bit (~6 dB)', value: 1 },
-    { label: '2 bits (~12 dB, FLAC ~6:1)', value: 2 },
-    { label: '3 bits (~18 dB)', value: 3 },
-    { label: '4 bits (~24 dB)', value: 4 },
+    { label: '1 bit (about 6 dB)', value: 1 },
+    { label: '2 bits (about 12 dB)', value: 2 },
+    { label: '3 bits (about 18 dB)', value: 3 },
+    { label: '4 bits (about 24 dB)', value: 4 },
   ];
-  // FLAC is honoured at 8 and 16 kHz (wire 1 / 0) only; the collar records
-  // WAV at 48 kHz and above and says so in its log. Same rule as the
-  // website's micCodecRateOk.
+  // Compressed storage is honoured at 8 and 16 kHz (wire 1 / 0) only; the
+  // collar records WAV at 48 kHz and above and says so in its log. Same rule
+  // as the website's micCodecRateOk.
   const micCodecRateOk = micRate === 0 || micRate === 1;
-  // What the collar will actually store, given its build: the value the save
-  // path writes and the one the pickers are held to.
-  const micCodecEffective = micCodecCapable ? micCodec : 0;
-  const micLsbDropEffective = micCodecEffective === 1 ? micLsbDrop : 0;
-
+  // What the collar will actually store, given its build: the values the save
+  // path writes and the ones the pickers are held to.
+  const micEffective = micFieldsForGates(
+    { enabled: micEnabled, sampleRate: micRate, sensitivity: micSens, codec: micCodec, lsbDrop: micLsbDrop },
+    gates,
+  );
+  const micCodecEffective = micEffective.codec;
+  const micLsbDropEffective = micEffective.lsbDrop;
 
   const accelSensitivityOptions = [
-    { label: '±2g (most sensitive)', value: 0 },
-    { label: '±4g', value: 1 },
-    { label: '±8g', value: 2 },
+    { label: '±2 g (most sensitive)', value: 0 },
+    { label: '±4 g', value: 1 },
+    { label: '±8 g', value: 2 },
   ];
 
   /* ---------------- DERIVED ---------------- */
 
-  // Live draft of this schedule from the current inputs — feeds the solar
-  // estimate in the header and the save handler.
+  // Live draft of this schedule from the current inputs — feeds the
+  // estimates in the header and the save handler.
   const buildDraft = (): Schedule => ({
     ...schedule,
     window: {
@@ -361,16 +438,12 @@ export default function EditScheduleScreen() {
       // length/window pair is fixed at 60/60 (matches the website).
       sampleLengthMin: micContinuous ? 60 : clamp(micLength, 1, 60),
       sampleWindowMin: micContinuous ? 60 : clamp(micWindow, 1, 60),
-      // Forced to the reference format on a collar that cannot honour
-      // anything else, so the saved draft matches what the collar will
-      // actually record and the verify-after-write comparison holds.
-      // Clamp to what this collar honours: no format field below 338, and
-      // the extended rates (>= 2) need 341.
-      sampleRate: !micFormatCapable ? 0 : (micRate >= 2 && !micRateExtCapable ? 0 : micRate),
-      bitDepth: 0,   // always 16-bit; not user-selectable
-      sensitivity: micSensCapable ? micSens : 0,
-      // fw 380: WAV / 0 below the recorder build, and the drop is 0 unless
-      // the codec resolves to FLAC (it only applies to FLAC takes).
+      // Held to what this collar honours (micFieldsForGates), so the saved
+      // draft matches what the collar will actually record and the
+      // verify-after-write comparison holds.
+      sampleRate: micEffective.sampleRate,
+      bitDepth: 0, // always 16-bit; not user-selectable
+      sensitivity: micEffective.sensitivity,
       codec: micCodecEffective,
       lsbDrop: micLsbDropEffective,
     },
@@ -393,20 +466,28 @@ export default function EditScheduleScreen() {
     },
   });
 
-  const solarEstimate = useMemo(
-    () => estimateScheduleSolarHours(buildDraft()),
+  const draft = useMemo(
+    () => buildDraft(),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       startHour, endHour, gpsEnabled, gpsInterval, gpsAccuracy, gpsDynamic,
       gpsMedVedba, gpsMedInt, gpsHighVedba, gpsHighInt, lightEnabled,
       lightInterval, envEnabled, envInterval, micEnabled, micContinuous,
-      micLength, micWindow, micRate, micSens, micSensCapable, micFormatCapable,
+      micLength, micWindow, micEffective.sampleRate, micEffective.sensitivity,
       micCodecEffective, micLsbDropEffective,
       accelEnabled, accelRate, accelSensitivity,
       lorawanEnabled, lorawanInterval, lorawanTxOnFix, loraEnabled,
       loraInterval, loraTxOnFix, magEnabled, magIntervalMin,
     ],
   );
+
+  const solarEstimate = useMemo(() => estimateScheduleSolarHours(draft), [draft]);
+  // Consequences, not parameters: what this schedule does to the battery
+  // and the card, live as the knobs move.
+  const consequences = useMemo(() => scheduleConsequences(draft), [draft]);
+  // Which quick setup the draft currently is (hours aside), if any. Four
+  // normalized compares — cheap enough to run every render.
+  const presetMatch = matchingSchedulePreset(draft, gates);
 
   // 1-based labels of other draft schedules whose hours overlap the window
   // currently being edited. The firmware resolves overlap by first-match,
@@ -458,7 +539,7 @@ export default function EditScheduleScreen() {
     );
   };
 
-  /* ---------------- CARD HELPER ---------------- */
+  /* ---------------- CARD HELPERS ---------------- */
   // `locked` greys the card out and disables its toggle — used for sensors
   // that aren't present on this hardware.
   const renderCard = (
@@ -481,12 +562,52 @@ export default function EditScheduleScreen() {
             />
           )}
         </View>
-        <View style={{ opacity: dim ? 0.5 : 1 }}>{children}</View>
+        <View style={dim ? styles.cardBodyDim : undefined}>{children}</View>
       </View>
     );
   };
 
+  // The collapsible "Advanced" group at the foot of a card. Collapsed by
+  // default; the choice is remembered per section.
+  const renderAdvanced = (section: AdvancedSection, children: React.ReactNode) => {
+    const open = advanced[section];
+    return (
+      <View style={styles.advancedWrap}>
+        <TouchableOpacity
+          style={styles.advancedToggle}
+          onPress={() => toggleAdvanced(section)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.advancedToggleText}>Advanced</Text>
+          <Text style={styles.advancedChevron}>{open ? '▾' : '▸'}</Text>
+        </TouchableOpacity>
+        {open && <View>{children}</View>}
+      </View>
+    );
+  };
+
+  // One switch row inside a card (the "other sensors" list).
+  const renderSwitchRow = (
+    label: string,
+    value: boolean,
+    onChange?: (v: boolean) => void,
+    disabled?: boolean,
+    sub?: string,
+  ) => (
+    <View style={styles.row}>
+      <View style={styles.rowLabelWrap}>
+        <Text style={disabled ? styles.rowLabelDim : styles.rowLabel}>{label}</Text>
+        {!!sub && <Text style={styles.helperSmall}>{sub}</Text>}
+      </View>
+      <Switch value={value} onValueChange={onChange} disabled={disabled} />
+    </View>
+  );
+
   /* ---------------- RENDER ---------------- */
+  const fwLine = fwOptionsLine(fwBuild, gates);
+  const fwAllOk =
+    fwBuild > 0 && micFormatCapable && micRateExtCapable && micSensCapable && micCodecCapable;
+
   return (
     <ScrollView
       style={styles.container}
@@ -502,12 +623,65 @@ export default function EditScheduleScreen() {
         <Text style={styles.solarEstimate}>{solarEstimate.toFixed(2)} sh</Text>
       </View>
 
+      {/* QUICK SETUPS — pick one, then set the hours. Everything below is
+          filled in; every knob stays reachable under Advanced. */}
+      {renderCard(
+        '✨ Quick setups',
+        <>
+          <View style={styles.presetList}>
+            {SCHEDULE_PRESETS.map(p => {
+              const on = presetMatch === p.key;
+              return (
+                <TouchableOpacity
+                  key={p.key}
+                  style={[styles.presetBtn, on && styles.presetBtnOn]}
+                  onPress={() => applySlot(applySchedulePreset(draft, p))}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.presetLabel, on && styles.presetLabelOn]}>
+                    {on ? '● ' : ''}
+                    {p.label}
+                  </Text>
+                  <Text style={styles.presetDescription}>{p.description}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text style={styles.helperSmall}>
+            Pick a setup, then set the hours below. Every setting stays
+            reachable under Advanced.
+          </Text>
+
+          <View style={styles.consequences}>
+            <Text style={styles.consequenceLine}>{consequences.batteryText}</Text>
+            <Text style={styles.consequenceLine}>{consequences.cardText}</Text>
+            <Text style={styles.helperSmall}>
+              From a full charge with 1 hour of sun a day, running only this
+              schedule. The card figure is audio only.
+            </Text>
+          </View>
+
+          <Text
+            style={[
+              styles.fwLine,
+              fwBuild === 0
+                ? styles.fwLineNone
+                : fwAllOk
+                ? styles.fwLineOk
+                : styles.fwLineWarn,
+            ]}
+          >
+            {fwLine}
+          </Text>
+        </>,
+      )}
+
       {/* TIME WINDOW */}
       {renderCard(
         '🕓 Time Window',
         <>
           <View style={styles.row}>
-            <Text style={{ color: '#333' }}>Run 24/7 (all day)</Text>
+            <Text style={styles.rowLabel}>Run 24/7 (all day)</Text>
             <Switch value={is247} onValueChange={toggle247} />
           </View>
 
@@ -554,7 +728,7 @@ export default function EditScheduleScreen() {
       {renderCard(
         '📍 GPS',
         <>
-          <Text style={styles.label}>Interval (minutes)</Text>
+          <Text style={styles.label}>Position every (minutes)</Text>
           <TextInput
             style={styles.input}
             keyboardType="numeric"
@@ -564,173 +738,156 @@ export default function EditScheduleScreen() {
             placeholderTextColor="#999"
           />
 
-          <Text style={styles.label}>Accuracy</Text>
-          <StyledPicker
-            selectedValue={gpsAccuracy}
-            onValueChange={setGpsAccuracy}
-            items={gpsAccuracyOptions}
-            placeholder="Select accuracy"
-            enabled={gpsEnabled}
-          />
-
           <View style={styles.row}>
-            <Text style={{ color: '#333', flexShrink: 1 }}>
-              Dynamic sampling (activity-based)
-            </Text>
+            <Text style={styles.rowLabel}>Faster when the animal moves</Text>
             <Switch
               value={gpsDynamic}
               onValueChange={setGpsDynamic}
               disabled={!gpsEnabled}
             />
           </View>
-
           {gpsDynamic && (
-            <View style={styles.dynamicWrap}>
-              <Text style={styles.helper}>
-                Adjusts fix rate by movement intensity. The interval above is
-                used when the animal is still. Enter thresholds in{' '}
-                <Text style={{ fontWeight: '700' }}>0.01 g units</Text> (e.g.
-                20 = 0.20 g).
-              </Text>
+            <Text style={styles.helper}>
+              Every {gpsInterval || '?'} min when still, {gpsMedInt || '?'} min
+              when walking, {gpsHighInt || '?'} min when running. The
+              thresholds are under Advanced.
+            </Text>
+          )}
 
-              <View style={styles.vedbaTable}>
-                <View style={[styles.vedbaRow, styles.vedbaHeadRow]}>
-                  <Text style={[styles.vedbaCell, styles.vedbaHead, { flex: 1.4 }]}>
-                    Behaviour
+          {renderAdvanced(
+            'gps',
+            <>
+              <Text style={styles.label}>Accuracy</Text>
+              <StyledPicker
+                selectedValue={gpsAccuracy}
+                onValueChange={setGpsAccuracy}
+                items={gpsAccuracyOptions}
+                placeholder="Select accuracy"
+                enabled={gpsEnabled}
+              />
+
+              {gpsDynamic && (
+                <View style={styles.dynamicWrap}>
+                  <Text style={styles.helper}>
+                    Movement thresholds in{' '}
+                    <Text style={styles.bold}>0.01 g units</Text> of VeDBA
+                    (e.g. 20 = 0.20 g).
                   </Text>
-                  <Text style={[styles.vedbaCell, styles.vedbaHead]}>
-                    Typical VeDBA (g)
-                  </Text>
-                  <Text style={[styles.vedbaCell, styles.vedbaHead]}>
-                    Threshold value
-                  </Text>
-                </View>
-                {VEDBA_ROWS.map(([b, g, t]) => (
-                  <View key={b} style={styles.vedbaRow}>
-                    <Text style={[styles.vedbaCell, { flex: 1.4 }]}>{b}</Text>
-                    <Text style={styles.vedbaCell}>{g}</Text>
-                    <Text style={styles.vedbaCell}>{t}</Text>
+
+                  <View style={styles.vedbaTable}>
+                    <View style={[styles.vedbaRow, styles.vedbaHeadRow]}>
+                      <Text style={[styles.vedbaCell, styles.vedbaHead, styles.vedbaWide]}>
+                        Behaviour
+                      </Text>
+                      <Text style={[styles.vedbaCell, styles.vedbaHead]}>
+                        Typical VeDBA (g)
+                      </Text>
+                      <Text style={[styles.vedbaCell, styles.vedbaHead]}>
+                        Threshold value
+                      </Text>
+                    </View>
+                    {VEDBA_ROWS.map(([b, g, t]) => (
+                      <View key={b} style={styles.vedbaRow}>
+                        <Text style={[styles.vedbaCell, styles.vedbaWide]}>{b}</Text>
+                        <Text style={styles.vedbaCell}>{g}</Text>
+                        <Text style={styles.vedbaCell}>{t}</Text>
+                      </View>
+                    ))}
                   </View>
-                ))}
-              </View>
-              <Text style={styles.helperSmall}>
-                Values vary by species and collar placement — calibrate against
-                a short accelerometer recording of known behaviours.
-              </Text>
+                  <Text style={styles.helperSmall}>
+                    Values vary by species and collar placement — calibrate
+                    against a short accelerometer recording of known
+                    behaviours.
+                  </Text>
 
-              <View style={styles.dynGrid}>
-                <View style={styles.dynGridItem}>
-                  <Text style={styles.label}>Medium VeDBA threshold</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={gpsMedVedba}
-                    onChangeText={setGpsMedVedba}
-                    placeholder="20"
-                    placeholderTextColor="#999"
-                  />
+                  <View style={styles.dynGrid}>
+                    <View style={styles.dynGridItem}>
+                      <Text style={styles.label}>Walking threshold</Text>
+                      <TextInput
+                        style={styles.input}
+                        keyboardType="numeric"
+                        value={gpsMedVedba}
+                        onChangeText={setGpsMedVedba}
+                        placeholder="20"
+                        placeholderTextColor="#999"
+                      />
+                    </View>
+                    <View style={styles.dynGridItem}>
+                      <Text style={styles.label}>Walking: every (min)</Text>
+                      <TextInput
+                        style={styles.input}
+                        keyboardType="numeric"
+                        value={gpsMedInt}
+                        onChangeText={setGpsMedInt}
+                        placeholder="10"
+                        placeholderTextColor="#999"
+                      />
+                    </View>
+                    <View style={styles.dynGridItem}>
+                      <Text style={styles.label}>Running threshold</Text>
+                      <TextInput
+                        style={styles.input}
+                        keyboardType="numeric"
+                        value={gpsHighVedba}
+                        onChangeText={setGpsHighVedba}
+                        placeholder="100"
+                        placeholderTextColor="#999"
+                      />
+                    </View>
+                    <View style={styles.dynGridItem}>
+                      <Text style={styles.label}>Running: every (min)</Text>
+                      <TextInput
+                        style={styles.input}
+                        keyboardType="numeric"
+                        value={gpsHighInt}
+                        onChangeText={setGpsHighInt}
+                        placeholder="5"
+                        placeholderTextColor="#999"
+                      />
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.dynGridItem}>
-                  <Text style={styles.label}>Medium interval (min)</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={gpsMedInt}
-                    onChangeText={setGpsMedInt}
-                    placeholder="10"
-                    placeholderTextColor="#999"
-                  />
-                </View>
-                <View style={styles.dynGridItem}>
-                  <Text style={styles.label}>High VeDBA threshold</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={gpsHighVedba}
-                    onChangeText={setGpsHighVedba}
-                    placeholder="100"
-                    placeholderTextColor="#999"
-                  />
-                </View>
-                <View style={styles.dynGridItem}>
-                  <Text style={styles.label}>High motion interval (min)</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={gpsHighInt}
-                    onChangeText={setGpsHighInt}
-                    placeholder="5"
-                    placeholderTextColor="#999"
-                  />
-                </View>
-              </View>
-            </View>
+              )}
+            </>,
           )}
         </>,
         gpsEnabled,
         handleGpsToggle,
       )}
 
-      {/* LIGHT */}
+      {/* ACCELEROMETER */}
       {renderCard(
-        '💡 Light',
-        <>
-          <Text style={styles.label}>Interval (minutes)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={lightInterval}
-            onChangeText={setLightInterval}
-            placeholder="1–720 min"
-            placeholderTextColor="#999"
-          />
-        </>,
-        lightEnabled,
-        setLightEnabled,
-      )}
-
-      {/* ENVIRONMENTAL */}
-      {renderCard(
-        '🌡️ Environmental',
+        '🏃 Movement (accelerometer)',
         <>
           <Text style={styles.helper}>
-            Sampling is fixed at 5 minutes — the sensor's BSEC library
-            supports only that cadence.
+            Continuous movement sensing — activity tracking and mortality
+            detection. Small, steady battery cost.
           </Text>
-          <Text style={styles.label}>Interval (minutes)</Text>
-          <TextInput
-            style={[styles.input, styles.inputDisabled]}
-            keyboardType="numeric"
-            value={envInterval}
-            placeholderTextColor="#999"
-            editable={false}
-          />
-        </>,
-        envEnabled,
-        setEnvEnabled,
-      )}
+          {renderAdvanced(
+            'accelerometer',
+            <>
+              <Text style={styles.label}>Sample rate</Text>
+              <StyledPicker
+                selectedValue={accelRate}
+                onValueChange={setAccelRate}
+                items={accelRateOptions}
+                placeholder="Select sample rate"
+                enabled={accelEnabled}
+              />
 
-      {/* PARTICULATE — sensor not installed on this hardware */}
-      {renderCard(
-        '💨 Particulate',
-        <>
-          <Text style={styles.helper}>
-            Particulate sensor is not installed on this device.
-          </Text>
-          <Text style={styles.label}>Interval (minutes)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={partInterval}
-            onChangeText={setPartInterval}
-            placeholder="1–720 min"
-            placeholderTextColor="#999"
-            editable={false}
-          />
+              <Text style={styles.label}>Range</Text>
+              <StyledPicker
+                selectedValue={accelSensitivity}
+                onValueChange={setAccelSensitivity}
+                items={accelSensitivityOptions}
+                placeholder="Select range"
+                enabled={accelEnabled}
+              />
+            </>,
+          )}
         </>,
-        false,
-        undefined,
-        true,
+        accelEnabled,
+        setAccelEnabled,
       )}
 
       {/* MICROPHONE */}
@@ -738,174 +895,216 @@ export default function EditScheduleScreen() {
         '🎙️ Microphone',
         <>
           <View style={styles.row}>
-            <Text style={{ color: '#333' }}>Continuous Mode</Text>
+            <Text style={styles.rowLabel}>Record continuously</Text>
             <Switch value={micContinuous} onValueChange={setMicContinuous} />
           </View>
 
           {micContinuous ? (
-            <Text style={styles.noteAmber}>
-              In continuous mode, recordings are split into separate files on
-              60-minute boundaries.
+            <Text style={styles.helper}>
+              Recordings are split into separate files on 60-minute
+              boundaries.
             </Text>
           ) : (
             <>
-              <Text style={styles.label}>Sample Window (minutes)</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                value={micWindow}
-                onChangeText={setMicWindow}
-                placeholder="1–60 min"
-                placeholderTextColor="#999"
-              />
-
-              <Text style={styles.label}>Sample Length (minutes)</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                value={micLength}
-                onChangeText={setMicLength}
-                placeholder={`1–${micWindow || '60'} min`}
-                placeholderTextColor="#999"
-              />
+              <View style={styles.inlinePair}>
+                <Text style={styles.inlineWord}>Record</Text>
+                <TextInput
+                  style={[styles.input, styles.inlineInput]}
+                  keyboardType="numeric"
+                  value={micLength}
+                  onChangeText={setMicLength}
+                  placeholder={`1–${micWindow || '60'}`}
+                  placeholderTextColor="#999"
+                />
+                <Text style={styles.inlineWord}>min every</Text>
+                <TextInput
+                  style={[styles.input, styles.inlineInput]}
+                  keyboardType="numeric"
+                  value={micWindow}
+                  onChangeText={setMicWindow}
+                  placeholder="1–60"
+                  placeholderTextColor="#999"
+                />
+                <Text style={styles.inlineWord}>min</Text>
+              </View>
             </>
           )}
 
-          <Text style={styles.label}>Sample Rate</Text>
-          <StyledPicker
-            selectedValue={micRate}
-            onValueChange={setMicRate}
-            items={micRateOptions}
-            placeholder="Select sample rate"
-            enabled={micEnabled && micFormatCapable}
-          />
-
-          <Text style={styles.label}>Sensitivity</Text>
-          <StyledPicker
-            selectedValue={micSens}
-            onValueChange={setMicSens}
-            items={micSensOptions}
-            placeholder="Select sensitivity"
-            enabled={micEnabled}
-          />
-
-          {/* Only the firmware-gating message — no explainer when usable. */}
-          {!micFormatCapable && (
-            <Text style={styles.noteAmber}>
-              {fwBuild
-                ? `This collar’s firmware (build ${fwBuild}) records at 16 kHz only — a selectable sample rate needs build 338+.`
-                : 'Selecting the sample rate needs firmware build 338+. Connect to a collar to check.'}
-            </Text>
-          )}
-
-          {/* Recording format (fw 380). Unlike the sample rate this one DOES
-              carry an explainer: what FLAC costs is nothing and what the bit
-              drop costs is permanent, neither obvious from the label. The
-              picker stays visible below 380 — disabled with the gating note,
-              so it reads as an out-of-date collar, not a missing feature. */}
-          <Text style={styles.label}>Recording format</Text>
-          <StyledPicker
-            selectedValue={micCodecEffective}
-            onValueChange={setMicCodec}
-            items={micCodecOptions}
-            placeholder="Select recording format"
-            enabled={micEnabled && micCodecCapable}
-          />
-          {!micCodecCapable ? (
-            <Text style={styles.noteAmber}>
-              {fwBuild
-                ? `FLAC recording needs firmware build ${MIC_CODEC_MIN_FW_BUILD}+ (this collar reports ${fwBuild}) — it records WAV until updated.`
-                : `FLAC recording needs firmware build ${MIC_CODEC_MIN_FW_BUILD}+. Connect to a collar to check.`}
-            </Text>
-          ) : micCodecEffective === 1 && !micCodecRateOk ? (
-            <Text style={styles.noteAmber}>
-              FLAC is honoured at 8 and 16 kHz only — at this sample rate the
-              collar records WAV.
-            </Text>
-          ) : (
-            <Text style={styles.helper}>
-              FLAC is lossless — the same samples in about a third of the
-              space. The collar honours it at 8 and 16 kHz only; at 48 kHz and
-              above it records WAV regardless.
-            </Text>
-          )}
-
-          {micCodecEffective === 1 && (
+          {/* Storage lives in the simple view while the collar can use it
+              (or no collar is connected); a collar that cannot moves it
+              under Advanced, greyed, with the firmware note. */}
+          {micCodecCapable && (
             <>
-              <Text style={styles.label}>Low bits dropped</Text>
+              <Text style={styles.label}>Storage</Text>
               <StyledPicker
-                selectedValue={micLsbDropEffective}
-                onValueChange={setMicLsbDrop}
-                items={micLsbDropOptions}
-                placeholder="Select bits to drop"
+                selectedValue={micCodecEffective}
+                onValueChange={setMicCodec}
+                items={micCodecOptions}
+                placeholder="Select storage"
                 enabled={micEnabled}
               />
-              <Text style={styles.helper}>
-                Removes the lowest bits of every sample before it is stored:
-                about 6 dB of noise floor per bit, and not reversible. Only
-                affects FLAC recordings — 2 bits takes FLAC to about 6:1.
-              </Text>
+              {micCodecEffective === 1 && !micCodecRateOk && (
+                <Text style={styles.noteAmber}>
+                  Compressed storage works at 8 and 16 kHz only — at this
+                  sample rate the collar records standard WAV.
+                </Text>
+              )}
             </>
+          )}
+
+          {renderAdvanced(
+            'microphone',
+            <>
+              <Text style={styles.label}>Sample rate</Text>
+              <StyledPicker
+                selectedValue={micEffective.sampleRate}
+                onValueChange={setMicRate}
+                items={micRateOptions}
+                placeholder="Select sample rate"
+                enabled={micEnabled && micFormatCapable}
+              />
+              {!micFormatCapable ? (
+                <Text style={styles.noteAmber}>
+                  {fwGateNote(fwBuild, 338)} It records at 16 kHz.
+                </Text>
+              ) : !micRateExtCapable ? (
+                <Text style={styles.helper}>
+                  Rates above 16 kHz: {fwGateNote(fwBuild, 343).toLowerCase()}
+                </Text>
+              ) : null}
+
+              <Text style={styles.label}>Microphone gain</Text>
+              <StyledPicker
+                selectedValue={micEffective.sensitivity}
+                onValueChange={setMicSens}
+                items={micSensOptions}
+                placeholder="Select gain"
+                enabled={micEnabled && micSensCapable}
+              />
+              {!micSensCapable && (
+                <Text style={styles.noteAmber}>{fwGateNote(fwBuild, 349)}</Text>
+              )}
+
+              {!micCodecCapable && (
+                <>
+                  <Text style={styles.label}>Storage</Text>
+                  <StyledPicker
+                    selectedValue={micCodecEffective}
+                    onValueChange={setMicCodec}
+                    items={micCodecOptions}
+                    placeholder="Select storage"
+                    enabled={false}
+                  />
+                  <Text style={styles.noteAmber}>
+                    {fwGateNote(fwBuild, MIC_CODEC_MIN_FW_BUILD)} It records
+                    standard WAV.
+                  </Text>
+                </>
+              )}
+
+              {micCodecEffective === 1 && (
+                <>
+                  <Text style={styles.label}>Low bits dropped</Text>
+                  <StyledPicker
+                    selectedValue={micLsbDropEffective}
+                    onValueChange={setMicLsbDrop}
+                    items={micLsbDropOptions}
+                    placeholder="Select bits to drop"
+                    enabled={micEnabled}
+                  />
+                  <Text style={styles.helper}>
+                    Removes the lowest bits of every sample before it is
+                    stored: about 6 dB of noise floor per bit. Lossy and not
+                    reversible. Only affects compressed recordings.
+                  </Text>
+                </>
+              )}
+            </>,
           )}
         </>,
         micEnabled,
         setMicEnabled,
       )}
 
-      {/* ACCEL */}
+      {/* OTHER SENSORS — one card, four switches; intervals under Advanced */}
       {renderCard(
-        '🏃 Accelerometer',
+        '🌡️ Other sensors',
         <>
-          <Text style={styles.label}>Sample Rate</Text>
-          <StyledPicker
-            selectedValue={accelRate}
-            onValueChange={setAccelRate}
-            items={accelRateOptions}
-            placeholder="Select sample rate"
-            enabled={accelEnabled}
-          />
+          {renderSwitchRow('Light', lightEnabled, setLightEnabled)}
+          {renderSwitchRow(
+            'Weather (temperature, humidity, pressure)',
+            envEnabled,
+            setEnvEnabled,
+            false,
+            'Sampled every 5 minutes.',
+          )}
+          {renderSwitchRow('Heading (magnetometer)', magEnabled, setMagEnabled)}
+          {renderSwitchRow(
+            'Particulates',
+            false,
+            undefined,
+            true,
+            'Sensor not installed on this collar.',
+          )}
 
-          <Text style={styles.label}>Sensitivity</Text>
-          <StyledPicker
-            selectedValue={accelSensitivity}
-            onValueChange={setAccelSensitivity}
-            items={accelSensitivityOptions}
-            placeholder="Select sensitivity"
-            enabled={accelEnabled}
-          />
-        </>,
-        accelEnabled,
-        setAccelEnabled,
-      )}
+          {renderAdvanced(
+            'sensors',
+            <>
+              <Text style={styles.label}>Light every (minutes)</Text>
+              <TextInput
+                style={[styles.input, !lightEnabled && styles.inputDisabled]}
+                keyboardType="numeric"
+                value={lightInterval}
+                onChangeText={setLightInterval}
+                placeholder="1–720 min"
+                placeholderTextColor="#999"
+                editable={lightEnabled}
+              />
 
-      {/* MAGNETOMETER */}
-      {renderCard(
-        '🧲 Magnetometer',
-        <>
-          <Text style={styles.label}>Interval (minutes)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={magIntervalMin}
-            onChangeText={setMagIntervalMin}
-            placeholder="1–60 min"
-            placeholderTextColor="#999"
-            editable={magEnabled}
-          />
+              <Text style={styles.label}>Weather every (minutes)</Text>
+              <TextInput
+                style={[styles.input, styles.inputDisabled]}
+                keyboardType="numeric"
+                value={envInterval}
+                placeholderTextColor="#999"
+                editable={false}
+              />
+              <Text style={styles.helper}>
+                Fixed at 5 minutes — the sensor's BSEC library supports only
+                that cadence.
+              </Text>
+
+              <Text style={styles.label}>Heading every (minutes)</Text>
+              <TextInput
+                style={[styles.input, !magEnabled && styles.inputDisabled]}
+                keyboardType="numeric"
+                value={magIntervalMin}
+                onChangeText={setMagIntervalMin}
+                placeholder="1–60 min"
+                placeholderTextColor="#999"
+                editable={magEnabled}
+              />
+
+              <Text style={styles.label}>Particulates every (minutes)</Text>
+              <TextInput
+                style={[styles.input, styles.inputDisabled]}
+                keyboardType="numeric"
+                value={partInterval}
+                onChangeText={setPartInterval}
+                placeholder="1–720 min"
+                placeholderTextColor="#999"
+                editable={false}
+              />
+            </>,
+          )}
         </>,
-        magEnabled,
-        setMagEnabled,
       )}
 
       {/* LORAWAN — mutually exclusive with LoRa (shared radio) */}
       {renderCard(
         '📡 LoRaWAN',
         <>
-          <Text style={styles.helper}>
-            LoRa and LoRaWAN share one radio — only one can be active per
-            schedule.
-          </Text>
-          <Text style={styles.label}>Send Interval (minutes)</Text>
+          <Text style={styles.label}>Uplink every (minutes)</Text>
           <TextInput
             style={[
               styles.input,
@@ -918,26 +1117,36 @@ export default function EditScheduleScreen() {
             placeholderTextColor="#999"
             editable={lorawanEnabled && !lorawanTxOnFix}
           />
-          <View style={styles.row}>
-            <Text
-              style={{
-                color: gpsEnabled ? '#333' : '#999',
-                flexShrink: 1,
-              }}
-            >
-              Transmit on Every New GPS Position
+          {lorawanEnabled && lorawanTxOnFix && (
+            <Text style={styles.helper}>
+              Uplinks on every new GPS position instead (Advanced).
             </Text>
-            <Switch
-              value={lorawanTxOnFix}
-              onValueChange={setLorawanTxOnFix}
-              disabled={!lorawanEnabled || !gpsEnabled}
-            />
-          </View>
-          <Text style={styles.helperSmall}>
-            When off, GPS fixes are batched and sent together on each scheduled
-            transmit to save power.
-            {!gpsEnabled ? ' Requires GPS to be enabled.' : ''}
-          </Text>
+          )}
+
+          {renderAdvanced(
+            'lorawan',
+            <>
+              <View style={styles.row}>
+                <Text style={gpsEnabled ? styles.rowLabel : styles.rowLabelDim}>
+                  Uplink on every new GPS position
+                </Text>
+                <Switch
+                  value={lorawanTxOnFix}
+                  onValueChange={setLorawanTxOnFix}
+                  disabled={!lorawanEnabled || !gpsEnabled}
+                />
+              </View>
+              <Text style={styles.helperSmall}>
+                When off, GPS fixes are batched and sent together on each
+                scheduled uplink to save power.
+                {!gpsEnabled ? ' Requires GPS to be enabled.' : ''}
+              </Text>
+              <Text style={styles.helperSmall}>
+                LoRaWAN and direct LoRa share one radio — only one can be
+                active per schedule.
+              </Text>
+            </>,
+          )}
         </>,
         lorawanEnabled,
         handleLorawanToggle,
@@ -945,13 +1154,9 @@ export default function EditScheduleScreen() {
 
       {/* LORA — mutually exclusive with LoRaWAN (shared radio) */}
       {renderCard(
-        '📻 LoRa',
+        '📻 Direct LoRa',
         <>
-          <Text style={styles.helper}>
-            LoRa and LoRaWAN share one radio — only one can be active per
-            schedule.
-          </Text>
-          <Text style={styles.label}>Send Interval (minutes)</Text>
+          <Text style={styles.label}>Transmit every (minutes)</Text>
           <TextInput
             style={[
               styles.input,
@@ -964,26 +1169,36 @@ export default function EditScheduleScreen() {
             placeholderTextColor="#999"
             editable={loraEnabled && !loraTxOnFix}
           />
-          <View style={styles.row}>
-            <Text
-              style={{
-                color: gpsEnabled ? '#333' : '#999',
-                flexShrink: 1,
-              }}
-            >
-              Transmit on Every New GPS Position
+          {loraEnabled && loraTxOnFix && (
+            <Text style={styles.helper}>
+              Transmits on every new GPS position instead (Advanced).
             </Text>
-            <Switch
-              value={loraTxOnFix}
-              onValueChange={setLoraTxOnFix}
-              disabled={!loraEnabled || !gpsEnabled}
-            />
-          </View>
-          <Text style={styles.helperSmall}>
-            When off, GPS fixes are batched and sent together on each scheduled
-            transmit to save power.
-            {!gpsEnabled ? ' Requires GPS to be enabled.' : ''}
-          </Text>
+          )}
+
+          {renderAdvanced(
+            'lora',
+            <>
+              <View style={styles.row}>
+                <Text style={gpsEnabled ? styles.rowLabel : styles.rowLabelDim}>
+                  Transmit on every new GPS position
+                </Text>
+                <Switch
+                  value={loraTxOnFix}
+                  onValueChange={setLoraTxOnFix}
+                  disabled={!loraEnabled || !gpsEnabled}
+                />
+              </View>
+              <Text style={styles.helperSmall}>
+                When off, GPS fixes are batched and sent together on each
+                scheduled transmit to save power.
+                {!gpsEnabled ? ' Requires GPS to be enabled.' : ''}
+              </Text>
+              <Text style={styles.helperSmall}>
+                LoRaWAN and direct LoRa share one radio — only one can be
+                active per schedule.
+              </Text>
+            </>,
+          )}
         </>,
         loraEnabled,
         handleLoraToggle,
@@ -1024,6 +1239,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   cardDisabled: { backgroundColor: '#EEE' },
+  cardBodyDim: { opacity: 0.5 },
 
   cardHeader: {
     flexDirection: 'row',
@@ -1052,6 +1268,18 @@ const styles = StyleSheet.create({
   },
   inputDisabled: { backgroundColor: '#F2F2F2', color: '#999' },
 
+  // "Record [N] min every [M] min" on one line.
+  inlinePair: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  inlineInput: { width: 64, textAlign: 'center', marginBottom: 0 },
+  inlineWord: { fontSize: 15, color: '#333' },
+
   helper: {
     fontSize: 12,
     color: '#6B7280',
@@ -1062,6 +1290,7 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 4,
   },
+  bold: { fontWeight: '700' },
 
   noteAmber: {
     fontSize: 12,
@@ -1073,6 +1302,56 @@ const styles = StyleSheet.create({
     padding: 8,
     marginTop: 4,
   },
+
+  // Quick setups
+  presetList: { marginTop: 4 },
+  presetBtn: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 8,
+    backgroundColor: '#FAFAFA',
+  },
+  presetBtnOn: { borderColor: '#FDC996', backgroundColor: '#FFF7ED' },
+  presetLabel: { fontSize: 14, fontWeight: '700', color: '#111' },
+  presetLabelOn: { color: '#B45309' },
+  presetDescription: { fontSize: 12, color: '#6B7280', marginTop: 3, lineHeight: 16 },
+
+  consequences: {
+    marginTop: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  consequenceLine: { fontSize: 15, fontWeight: '600', color: '#111', marginBottom: 2 },
+
+  // The one firmware line.
+  fwLine: {
+    fontSize: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 10,
+  },
+  fwLineOk: { color: '#166534', backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
+  fwLineWarn: { color: '#B45309', backgroundColor: '#FFF7ED', borderColor: '#FDE3C2' },
+  fwLineNone: { color: '#4B5563', backgroundColor: '#F9FAFB', borderColor: '#E5E7EB' },
+
+  // Advanced group
+  advancedWrap: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  advancedToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  advancedToggleText: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
+  advancedChevron: { fontSize: 14, color: '#9CA3AF' },
 
   windowSummary: {
     fontSize: 13,
@@ -1122,6 +1401,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6B7280',
   },
+  vedbaWide: { flex: 1.4 },
   vedbaHead: {
     fontWeight: '600',
     color: '#9CA3AF',
@@ -1141,6 +1421,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 6,
   },
+  rowLabelWrap: { flex: 1, paddingRight: 10 },
+  rowLabel: { color: '#333', flexShrink: 1 },
+  rowLabelDim: { color: '#999', flexShrink: 1 },
 
   saveButton: {
     backgroundColor: '#FDC996',

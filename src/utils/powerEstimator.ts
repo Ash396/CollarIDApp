@@ -220,6 +220,32 @@ export function estimateScheduleSolarHours(s: Schedule): number {
   return mwToSolarHours(baseline + mic + gps + lora);
 }
 
+// ── Battery longevity (js/power-model.js estimateLongevityDays port) ──────
+/** Usable battery, Wh. Mirrors POWER_MW.battery_wh on the website. */
+export const BATTERY_WH = 2.96;
+/** The sun the editors assume when they say "about N days" without asking:
+ *  one full-sun hour a day, the website's ps-sun default. */
+export const DEFAULT_SUN_SH_PER_DAY = 1;
+
+/** Inverse of mwToSolarHours — the estimators speak solar-hours, longevity
+ *  needs the draw back in mW. */
+export function solarHoursToMw(sh: number): number {
+  return (sh * POWER_MW.panelMw * POWER_MW.chargeEff) / 24;
+}
+
+/** Longevity from a full charge given the sun actually available: daily use
+ *  (mW x 24 h) minus daily harvest (sh x panel x charge efficiency), the
+ *  battery bridges the deficit. Infinity = net-positive, the collar runs on
+ *  sun alone. "Days until low-battery hibernation", from a full 2.96 Wh. */
+export function estimateLongevityDays(totalMw: number, sunShPerDay: number): number {
+  const useMwh = totalMw * 24;
+  const harvestMwh =
+    (Number(sunShPerDay) || 0) * POWER_MW.panelMw * POWER_MW.chargeEff;
+  const netMwh = useMwh - harvestMwh;
+  if (netMwh <= 0) return Infinity;
+  return (BATTERY_WH * 1000) / netMwh;
+}
+
 // ── SD card capacity ──────────────────────────────────────────
 // Microphone audio, mono PCM: bytes/s = sample rate x bytes per sample.
 // 16 kHz x 16-bit is 32 000 B/s. Accelerometer + sensor CSV rows are <1% of

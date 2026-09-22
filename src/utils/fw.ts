@@ -4,6 +4,7 @@
 // (e.g. "b306 6ca907b"). The build number is `git rev-parse --count HEAD`
 // of collarID_thread — ordered, so features gate with simple >= checks.
 // Mirrors renderFwVersion()/applyBleFeatureGates() in configure.html.
+import type { Schedule } from '../navigation/ScheduleNavigator';
 
 /** First build with the FLAC recorder (MicrophoneConfig.codec) and the
  *  low-bit drop (lsb_drop). A collar below it accepts and echoes both fields
@@ -47,6 +48,87 @@ export function bleFeatureGates(fwBuild: number, caps: number) {
      *  don't have the characteristic at all. */
     threadAddons: (caps & 0x01) !== 0,
   };
+}
+
+export type FeatureGates = ReturnType<typeof bleFeatureGates>;
+
+/** The microphone gates and the build that opens each, in the order the
+ *  firmware line names them (what a researcher is most likely to want
+ *  first). One table drives the line, the per-control note and the tests. */
+export const MIC_GATE_MIN_BUILD: {
+  gate: 'micCodec' | 'micSens' | 'micRateExt' | 'micFormat';
+  minBuild: number;
+  /** Plain name of the option, as the editor labels it. */
+  option: string;
+}[] = [
+  { gate: 'micCodec', minBuild: MIC_CODEC_MIN_FW_BUILD, option: 'compressed audio' },
+  { gate: 'micSens', minBuild: 349, option: 'microphone gain' },
+  { gate: 'micRateExt', minBuild: 343, option: 'sample rates above 16 kHz' },
+  { gate: 'micFormat', minBuild: 338, option: 'the sample rate' },
+];
+
+/** The gates the schedule EDITOR works against. A connected collar's build
+ *  decides; with no collar there is nothing to clamp to, so every option is
+ *  offered (and the top-of-editor line says so). Safe because the draft is
+ *  replaced by the collar's own config the moment one connects — an
+ *  unconnected draft never reaches a radio. */
+export function editorFeatureGates(fwBuild: number, caps: number): FeatureGates {
+  const g = bleFeatureGates(fwBuild, caps);
+  if (fwBuild > 0) return g;
+  return { ...g, micFormat: true, micRateExt: true, micSens: true, micCodec: true };
+}
+
+/** What the collar will actually record, given its gates: the values the
+ *  save path writes and the ones the pickers are held to. No format field
+ *  below 338, the extended rates (>= 2) need 343, the gain ladder 349, and
+ *  codec / lsb_drop 380 — below which the collar records WAV, so the draft
+ *  must say WAV too or the verify-after-write comparison would still pass
+ *  while the card fills with WAV. The drop is 0 unless the codec resolves
+ *  to FLAC (it only applies to FLAC takes). */
+export function micFieldsForGates(
+  m: Schedule['microphone'] | undefined,
+  g: Pick<FeatureGates, 'micFormat' | 'micRateExt' | 'micSens' | 'micCodec'>,
+): { sampleRate: number; sensitivity: number; codec: number; lsbDrop: number } {
+  const rate = m?.sampleRate ?? 0;
+  const sampleRate = !g.micFormat ? 0 : rate >= 2 && !g.micRateExt ? 0 : rate;
+  const sensitivity = g.micSens ? m?.sensitivity ?? 0 : 0;
+  const codec = g.micCodec ? m?.codec ?? 0 : 0;
+  const lsbDrop = codec === 1 ? m?.lsbDrop ?? 0 : 0;
+  return { sampleRate, sensitivity, codec, lsbDrop };
+}
+
+/** The one firmware line at the top of the schedule editor — instead of a
+ *  note under every gated knob. "Connected collar: firmware 380, all
+ *  options available", or "Connected collar: firmware 375: compressed audio
+ *  needs a firmware update"; with no collar, that everything is shown. */
+export function fwOptionsLine(
+  fwBuild: number,
+  g: Pick<FeatureGates, 'micFormat' | 'micRateExt' | 'micSens' | 'micCodec'>,
+): string {
+  if (!fwBuild) {
+    return 'No collar connected: every option is shown. Connect a collar to see what its firmware supports.';
+  }
+  // Below 338 there is no sample-rate field at all, so "rates above 16 kHz"
+  // would be a second way of saying the same thing.
+  const missing = MIC_GATE_MIN_BUILD.filter(
+    r => !g[r.gate] && !(r.gate === 'micRateExt' && !g.micFormat),
+  ).map(r => r.option);
+  if (missing.length === 0) {
+    return `Connected collar: firmware ${fwBuild}, all options available`;
+  }
+  const list =
+    missing.length === 1
+      ? missing[0]
+      : `${missing.slice(0, -1).join(', ')} and ${missing[missing.length - 1]}`;
+  return `Connected collar: firmware ${fwBuild}: ${list} need${
+    missing.length === 1 ? 's' : ''
+  } a firmware update`;
+}
+
+/** The note under a control the connected collar cannot use (greyed under
+ *  Advanced). Same words wherever it appears. */
+export function fwGateNote(fwBuild: number, minBuild: number): string {
+  return `Needs firmware ${minBuild}+ — this collar reports ${fwBuild}.`;
 }
 
 /** The one environmental sampling interval the collar can actually run.

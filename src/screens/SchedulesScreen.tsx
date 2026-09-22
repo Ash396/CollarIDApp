@@ -23,6 +23,8 @@ import { verifyWrite } from '../utils/verifyWrite';
 import { schedulesEqual } from '../utils/scheduleEquality';
 import { readSchedulesFromDevice } from '../ble/bleManager';
 import { Swipeable } from 'react-native-gesture-handler';
+import { defaultScheduleSlot } from '../utils/schedulePresets';
+import { scheduleSummaryLines } from '../utils/scheduleSummary';
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, 'Schedules'>;
 
@@ -127,50 +129,12 @@ export default function SchedulesScreen() {
       return;
     }
 
-    // Defaults match the website configurator's defaultSchedule().
-    const newSchedule = {
+    // Defaults match the website configurator's defaultSchedule() — the same
+    // stock slot the editor's quick setups are built from.
+    const newSchedule: Schedule = {
       id: Date.now().toString(),
       name: `Schedule ${draftSchedules.length + 1}`,
-      window: { startHour: 0, endHour: 23 },
-
-      gps: {
-        enabled: false,
-        sampleIntervalMin: 20,
-        accuracy: 5,
-        dynamicSamplingMode: false,
-        mediumMotionVedbaThresholdX100: 20,
-        mediumMotionGpsIntervalMin: 10,
-        highMotionVedbaThresholdX100: 100,
-        highMotionGpsIntervalMin: 5,
-        lorawanTxOnGpsFix: false,
-        loraTxOnGpsFix: false,
-      },
-      light: { enabled: false, sampleIntervalMin: 10 },
-      environmental: { enabled: false, sampleIntervalMin: 5 },
-      particulate: { enabled: false, sampleIntervalMin: 15 },
-      microphone: {
-        enabled: false,
-        continuousMode: false,
-        sampleLengthMin: 1,
-        sampleWindowMin: 10,
-      },
-      accelerometer: {
-        enabled: false,
-        sampleRate: 0,
-        sensitivity: 0,
-      },
-      lorawan: {
-        enabled: false,
-        sendIntervalMin: 60,
-      },
-      lora: {
-        enabled: false,
-        sendIntervalMin: 60,
-      },
-      magnetometer: {
-        enabled: false,
-        sampleIntervalS: 60,
-      },
+      ...defaultScheduleSlot(),
     };
 
     addSchedule(newSchedule);
@@ -373,76 +337,13 @@ export default function SchedulesScreen() {
               </Text>
 
               <View style={styles.detailsContainer}>
-                {s.gps?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    📍 GPS: every {s.gps.sampleIntervalMin} min (accuracy{' '}
-                    {s.gps.accuracy ?? 'N/A'})
-                    {s.gps.dynamicSamplingMode ? ' · dynamic' : ''}
+                {/* Plain words, one line per enabled sensor — the same
+                    vocabulary the editor uses (scheduleSummaryLines). */}
+                {scheduleSummaryLines(s).map(line => (
+                  <Text key={line} style={styles.cardDetail}>
+                    {line}
                   </Text>
-                )}
-                {s.light?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    💡 Light: every {s.light.sampleIntervalMin} min
-                  </Text>
-                )}
-                {s.environmental?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    🌡️ Env: every {s.environmental.sampleIntervalMin} min
-                  </Text>
-                )}
-                {s.particulate?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    💨 Particulate: every {s.particulate.sampleIntervalMin} min
-                  </Text>
-                )}
-                {s.microphone?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    🎙️ Microphone:{' '}
-                    {s.microphone.continuousMode ? 'continuous' : 'windowed'}
-                    {/* fw 380: say when a take is FLAC (and how many low bits
-                        it gives up). WAV is every collar's default, so it is
-                        left unsaid, like the sample rate. */}
-                    {s.microphone.codec === 1
-                      ? `, FLAC${
-                          s.microphone.lsbDrop
-                            ? ` (${s.microphone.lsbDrop} low bit${
-                                s.microphone.lsbDrop === 1 ? '' : 's'
-                              } dropped)`
-                            : ''
-                        }`
-                      : ''}
-                  </Text>
-                )}
-                {s.accelerometer?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    🏃 Accelerometer:{' '}
-                    {s.accelerometer.sampleRate === 0 ? '25Hz' : '50Hz'},{' '}
-                    {['2G', '4G', '8G'][s.accelerometer.sensitivity ?? 0]}
-                  </Text>
-                )}
-                {s.lorawan?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    📡 LoRaWAN:{' '}
-                    {s.gps?.enabled && s.gps?.lorawanTxOnGpsFix
-                      ? 'on every GPS fix'
-                      : `every ${s.lorawan.sendIntervalMin ?? '?'} min`}
-                  </Text>
-                )}
-                {s.lora?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    📡 LoRa:{' '}
-                    {s.gps?.enabled && s.gps?.loraTxOnGpsFix
-                      ? 'on every GPS fix'
-                      : `every ${s.lora.sendIntervalMin ?? '?'} min`}
-                  </Text>
-                )}
-                {s.magnetometer?.enabled && (
-                  <Text style={styles.cardDetail}>
-                    🧲 Magnetometer: every{' '}
-                    {Math.max(1, Math.round((s.magnetometer.sampleIntervalS ?? 60) / 60))}{' '}
-                    min
-                  </Text>
-                )}
+                ))}
 
                 {isDisabled && (
                   <Text style={[styles.cardDetail, { color: '#888' }]}>
