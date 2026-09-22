@@ -235,6 +235,20 @@ export function estimateScheduleSolarHours(s: Schedule): number {
 // 16-bit — but the table stays general because the firmware supports it.)
 const MIC_RATE_HZ = [16000, 8000, 48000, 96000, 192000];
 const MIC_SAMPLE_BYTES = [2, 1];
+// Compression (fw 380+) divides the byte rate by a planning ratio: lossless
+// FLAC measured 3.4:1 on ten hours of collar audio, so 3:1 for planning;
+// dropping low bits measured 4.55:1 (1 bit) and 6.0:1 (2 bits), 3 and 4 bits
+// extrapolated. Only where the collar honours the codec: 16-bit at 8 or
+// 16 kHz. Mirrors MIC_CODEC_RATIO / micCodecRatio in the website's
+// js/power-model.js — keep the two in step.
+export const MIC_CODEC_RATIO = [3.0, 4.5, 6.0, 7.5, 9.0];
+export function micCodecRatio(m: Schedule['microphone'] | undefined): number {
+  const rate = m?.sampleRate ?? 0;
+  const flac = (m?.codec ?? 0) === 1 && (m?.bitDepth ?? 0) === 0 && (rate === 0 || rate === 1);
+  if (!flac) return 1;
+  const drop = Math.min(4, Math.max(0, m?.lsbDrop ?? 0));
+  return MIC_CODEC_RATIO[drop];
+}
 
 /** SD-card bytes/day written by a schedule's microphone (0 if mic off). */
 export function estimateMicBytesPerDay(s: Schedule): number {
@@ -252,7 +266,7 @@ export function estimateMicBytesPerDay(s: Schedule): number {
   const hz = MIC_RATE_HZ[s.microphone.sampleRate ?? 0] ?? MIC_RATE_HZ[0];
   const bytes =
     MIC_SAMPLE_BYTES[s.microphone.bitDepth ?? 0] ?? MIC_SAMPLE_BYTES[0];
-  return frac * duty * 86400 * hz * bytes;
+  return (frac * duty * 86400 * hz * bytes) / micCodecRatio(s.microphone);
 }
 
 /** Microphone power multiplier on an unapproved SD card vs the approved one. */
