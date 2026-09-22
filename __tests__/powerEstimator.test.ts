@@ -13,8 +13,8 @@ describe('power estimate with compression', () => {
     expect(micCodecPowerScale({ codec: 1 } as any)).toBe(0.917);
     expect(micCodecPowerScale({ codec: 0 } as any)).toBe(1);
     expect(micCodecPowerScale({ codec: 1, sampleRate: 2 } as any)).toBe(1);
-    const wav = estimatePower([mic({ codec: 0 })]).mic;
-    const flac = estimatePower([mic({ codec: 1 })]).mic;
+    const wav = estimatePower([mic({ codec: 0 })]).components.microphone;
+    const flac = estimatePower([mic({ codec: 1 })]).components.microphone;
     expect(flac).toBeCloseTo(0.917 * wav, 9);
   });
 });
