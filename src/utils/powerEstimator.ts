@@ -31,6 +31,14 @@ const POWER_MW = {
   // byte-proportional model would give, because most of the cost of recording
   // is rate-independent — being awake with the card powered, not the bytes.
   micRateScale:     [1.00, 0.893, 1.55, 2.25, 3.55],
+  // Recording format (fw 380+): the mic increment scaled by codec, indexed by
+  // the wire value (0 = WAV, 1 = FLAC). Measured 2026-09-22 on build 382,
+  // 16 kHz continuous, other sensors off: 6.8 mW total as WAV, 6.3 mW as
+  // FLAC (increments 6.06 / 5.56 mW above the 0.74 mW base), ratio 0.917.
+  // Ratio only, like 0.893. Applied only where the collar honours the codec
+  // (16-bit at 8/16 kHz). Mirrors POWER_MW.mic_codec_scale in the website's
+  // js/power-model.js — keep the two in step.
+  micCodecScale:    [1.00, 0.917],
   gpsAcqDelta:     36.3,   // GPS acquisition incremental above baseline
   loraPower:       40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
   loraDur:          6.3,   // Duration of TX + RX event (s), 100-byte payload
@@ -119,7 +127,8 @@ function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gp
 
   if (s.microphone?.enabled) {
     const rateScale =
-      POWER_MW.micRateScale[s.microphone.sampleRate ?? 0] ?? POWER_MW.micRateScale[0];
+      (POWER_MW.micRateScale[s.microphone.sampleRate ?? 0] ?? POWER_MW.micRateScale[0]) *
+      micCodecPowerScale(s.microphone);
     if (s.microphone.continuousMode) {
       mic = frac * POWER_MW.micDelta * rateScale;
     } else {
@@ -274,6 +283,13 @@ export function micCodecRatio(m: Schedule['microphone'] | undefined): number {
   if (!flac) return 1;
   const drop = Math.min(4, Math.max(0, m?.lsbDrop ?? 0));
   return MIC_CODEC_RATIO[drop];
+}
+
+/** The measured codec power ratio, where the collar honours the codec. */
+export function micCodecPowerScale(m: Schedule['microphone'] | undefined): number {
+  const rate = m?.sampleRate ?? 0;
+  const honoured = (m?.codec ?? 0) === 1 && (m?.bitDepth ?? 0) === 0 && (rate === 0 || rate === 1);
+  return honoured ? POWER_MW.micCodecScale[1] : POWER_MW.micCodecScale[0];
 }
 
 /** SD-card bytes/day written by a schedule's microphone (0 if mic off). */
