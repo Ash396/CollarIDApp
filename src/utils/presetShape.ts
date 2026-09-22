@@ -6,6 +6,7 @@
 // radio settings nested under lorawan/lora. Converting at the preset boundary
 // keeps presets fully interchangeable between the app and configure.html.
 import type { Schedule } from '../navigation/ScheduleNavigator';
+import { ENV_INTERVAL_FIXED_MIN } from './fw';
 
 /** App Schedule -> website snake_case preset schedule. Always emits the full
  *  shape (like the website's readModalSchedule) so a preset saved from the
@@ -36,7 +37,7 @@ export function appToPresetSchedule(s: Schedule): any {
     },
     environmental: {
       enabled: !!s.environmental?.enabled,
-      sample_interval_min: s.environmental?.sampleIntervalMin ?? 5,
+      sample_interval_min: ENV_INTERVAL_FIXED_MIN,
     },
     particulate: {
       enabled: !!s.particulate?.enabled,
@@ -52,6 +53,10 @@ export function appToPresetSchedule(s: Schedule): any {
       sample_rate: s.microphone?.sampleRate ?? 0,
       bit_depth: s.microphone?.bitDepth ?? 0,
       sensitivity: s.microphone?.sensitivity ?? 0,
+      // fw 380: the website's readModalSchedule emits both, so a preset
+      // saved here loads there with its recording format intact.
+      codec: s.microphone?.codec ?? 0,
+      lsb_drop: s.microphone?.lsbDrop ?? 0,
     },
     accelerometer: {
       enabled: !!s.accelerometer?.enabled,
@@ -105,8 +110,11 @@ export function presetToAppSchedule(x: any, index: number): Schedule {
       sampleIntervalMin: Number(x?.light?.sample_interval_min ?? 10),
     },
     environmental: {
+      /* Presets are free-form JSON and predate this rule, so heal on the way
+       * in as well as out — otherwise an old preset re-infects every collar
+       * it is applied to. */
       enabled: !!x?.environmental?.enabled,
-      sampleIntervalMin: Number(x?.environmental?.sample_interval_min ?? 5),
+      sampleIntervalMin: ENV_INTERVAL_FIXED_MIN,
     },
     particulate: {
       enabled: !!x?.particulate?.enabled,
@@ -120,6 +128,8 @@ export function presetToAppSchedule(x: any, index: number): Schedule {
       sampleRate: Number(x?.microphone?.sample_rate ?? 0),
       bitDepth: Number(x?.microphone?.bit_depth ?? 0),
       sensitivity: Number(x?.microphone?.sensitivity ?? 0),
+      codec: Number(x?.microphone?.codec ?? 0),
+      lsbDrop: Number(x?.microphone?.lsb_drop ?? 0),
     },
     accelerometer: {
       enabled: !!x?.accelerometer?.enabled,

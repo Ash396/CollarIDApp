@@ -17,6 +17,9 @@ $root.TimeWindow = (function() {
      * @interface ITimeWindow
      * @property {number|null} [startHour] TimeWindow startHour
      * @property {number|null} [endHour] TimeWindow endHour
+     * @property {number|null} [dayMask] TimeWindow dayMask
+     * @property {number|null} [startDay] TimeWindow startDay
+     * @property {number|null} [endDay] TimeWindow endDay
      */
 
     /**
@@ -51,6 +54,30 @@ $root.TimeWindow = (function() {
     TimeWindow.prototype.endHour = 0;
 
     /**
+     * TimeWindow dayMask.
+     * @member {number} dayMask
+     * @memberof TimeWindow
+     * @instance
+     */
+    TimeWindow.prototype.dayMask = 0;
+
+    /**
+     * TimeWindow startDay.
+     * @member {number} startDay
+     * @memberof TimeWindow
+     * @instance
+     */
+    TimeWindow.prototype.startDay = 0;
+
+    /**
+     * TimeWindow endDay.
+     * @member {number} endDay
+     * @memberof TimeWindow
+     * @instance
+     */
+    TimeWindow.prototype.endDay = 0;
+
+    /**
      * Creates a new TimeWindow instance using the specified properties.
      * @function create
      * @memberof TimeWindow
@@ -78,6 +105,12 @@ $root.TimeWindow = (function() {
             writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.startHour);
         if (message.endHour != null && Object.hasOwnProperty.call(message, "endHour"))
             writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.endHour);
+        if (message.dayMask != null && Object.hasOwnProperty.call(message, "dayMask"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.dayMask);
+        if (message.startDay != null && Object.hasOwnProperty.call(message, "startDay"))
+            writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.startDay);
+        if (message.endDay != null && Object.hasOwnProperty.call(message, "endDay"))
+            writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.endDay);
         return writer;
     };
 
@@ -122,6 +155,18 @@ $root.TimeWindow = (function() {
                     message.endHour = reader.uint32();
                     break;
                 }
+            case 3: {
+                    message.dayMask = reader.uint32();
+                    break;
+                }
+            case 4: {
+                    message.startDay = reader.uint32();
+                    break;
+                }
+            case 5: {
+                    message.endDay = reader.uint32();
+                    break;
+                }
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -163,6 +208,15 @@ $root.TimeWindow = (function() {
         if (message.endHour != null && message.hasOwnProperty("endHour"))
             if (!$util.isInteger(message.endHour))
                 return "endHour: integer expected";
+        if (message.dayMask != null && message.hasOwnProperty("dayMask"))
+            if (!$util.isInteger(message.dayMask))
+                return "dayMask: integer expected";
+        if (message.startDay != null && message.hasOwnProperty("startDay"))
+            if (!$util.isInteger(message.startDay))
+                return "startDay: integer expected";
+        if (message.endDay != null && message.hasOwnProperty("endDay"))
+            if (!$util.isInteger(message.endDay))
+                return "endDay: integer expected";
         return null;
     };
 
@@ -182,6 +236,12 @@ $root.TimeWindow = (function() {
             message.startHour = object.startHour >>> 0;
         if (object.endHour != null)
             message.endHour = object.endHour >>> 0;
+        if (object.dayMask != null)
+            message.dayMask = object.dayMask >>> 0;
+        if (object.startDay != null)
+            message.startDay = object.startDay >>> 0;
+        if (object.endDay != null)
+            message.endDay = object.endDay >>> 0;
         return message;
     };
 
@@ -201,11 +261,20 @@ $root.TimeWindow = (function() {
         if (options.defaults) {
             object.startHour = 0;
             object.endHour = 0;
+            object.dayMask = 0;
+            object.startDay = 0;
+            object.endDay = 0;
         }
         if (message.startHour != null && message.hasOwnProperty("startHour"))
             object.startHour = message.startHour;
         if (message.endHour != null && message.hasOwnProperty("endHour"))
             object.endHour = message.endHour;
+        if (message.dayMask != null && message.hasOwnProperty("dayMask"))
+            object.dayMask = message.dayMask;
+        if (message.startDay != null && message.hasOwnProperty("startDay"))
+            object.startDay = message.startDay;
+        if (message.endDay != null && message.hasOwnProperty("endDay"))
+            object.endDay = message.endDay;
         return object;
     };
 
@@ -3388,6 +3457,20 @@ $root.MicSensitivity = (function() {
     return values;
 })();
 
+/**
+ * MicCodec enum.
+ * @exports MicCodec
+ * @enum {number}
+ * @property {number} MIC_CODEC_WAV=0 MIC_CODEC_WAV value
+ * @property {number} MIC_CODEC_FLAC=1 MIC_CODEC_FLAC value
+ */
+$root.MicCodec = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "MIC_CODEC_WAV"] = 0;
+    values[valuesById[1] = "MIC_CODEC_FLAC"] = 1;
+    return values;
+})();
+
 $root.MicrophoneConfig = (function() {
 
     /**
@@ -3401,6 +3484,8 @@ $root.MicrophoneConfig = (function() {
      * @property {MicSampleRate|null} [sampleRate] MicrophoneConfig sampleRate
      * @property {MicBitDepth|null} [bitDepth] MicrophoneConfig bitDepth
      * @property {MicSensitivity|null} [sensitivity] MicrophoneConfig sensitivity
+     * @property {MicCodec|null} [codec] MicrophoneConfig codec
+     * @property {number|null} [lsbDrop] MicrophoneConfig lsbDrop
      */
 
     /**
@@ -3475,6 +3560,22 @@ $root.MicrophoneConfig = (function() {
     MicrophoneConfig.prototype.sensitivity = 0;
 
     /**
+     * MicrophoneConfig codec.
+     * @member {MicCodec} codec
+     * @memberof MicrophoneConfig
+     * @instance
+     */
+    MicrophoneConfig.prototype.codec = 0;
+
+    /**
+     * MicrophoneConfig lsbDrop.
+     * @member {number} lsbDrop
+     * @memberof MicrophoneConfig
+     * @instance
+     */
+    MicrophoneConfig.prototype.lsbDrop = 0;
+
+    /**
      * Creates a new MicrophoneConfig instance using the specified properties.
      * @function create
      * @memberof MicrophoneConfig
@@ -3512,6 +3613,10 @@ $root.MicrophoneConfig = (function() {
             writer.uint32(/* id 6, wireType 0 =*/48).int32(message.bitDepth);
         if (message.sensitivity != null && Object.hasOwnProperty.call(message, "sensitivity"))
             writer.uint32(/* id 7, wireType 0 =*/56).int32(message.sensitivity);
+        if (message.codec != null && Object.hasOwnProperty.call(message, "codec"))
+            writer.uint32(/* id 8, wireType 0 =*/64).int32(message.codec);
+        if (message.lsbDrop != null && Object.hasOwnProperty.call(message, "lsbDrop"))
+            writer.uint32(/* id 9, wireType 0 =*/72).uint32(message.lsbDrop);
         return writer;
     };
 
@@ -3574,6 +3679,14 @@ $root.MicrophoneConfig = (function() {
                 }
             case 7: {
                     message.sensitivity = reader.int32();
+                    break;
+                }
+            case 8: {
+                    message.codec = reader.int32();
+                    break;
+                }
+            case 9: {
+                    message.lsbDrop = reader.uint32();
                     break;
                 }
             default:
@@ -3651,6 +3764,17 @@ $root.MicrophoneConfig = (function() {
             case 2:
                 break;
             }
+        if (message.codec != null && message.hasOwnProperty("codec"))
+            switch (message.codec) {
+            default:
+                return "codec: enum value expected";
+            case 0:
+            case 1:
+                break;
+            }
+        if (message.lsbDrop != null && message.hasOwnProperty("lsbDrop"))
+            if (!$util.isInteger(message.lsbDrop))
+                return "lsbDrop: integer expected";
         return null;
     };
 
@@ -3738,6 +3862,24 @@ $root.MicrophoneConfig = (function() {
             message.sensitivity = 2;
             break;
         }
+        switch (object.codec) {
+        default:
+            if (typeof object.codec === "number") {
+                message.codec = object.codec;
+                break;
+            }
+            break;
+        case "MIC_CODEC_WAV":
+        case 0:
+            message.codec = 0;
+            break;
+        case "MIC_CODEC_FLAC":
+        case 1:
+            message.codec = 1;
+            break;
+        }
+        if (object.lsbDrop != null)
+            message.lsbDrop = object.lsbDrop >>> 0;
         return message;
     };
 
@@ -3762,6 +3904,8 @@ $root.MicrophoneConfig = (function() {
             object.sampleRate = options.enums === String ? "MIC_RATE_16KHZ" : 0;
             object.bitDepth = options.enums === String ? "MIC_DEPTH_16BIT" : 0;
             object.sensitivity = options.enums === String ? "MIC_SENS_LOW" : 0;
+            object.codec = options.enums === String ? "MIC_CODEC_WAV" : 0;
+            object.lsbDrop = 0;
         }
         if (message.enabled != null && message.hasOwnProperty("enabled"))
             object.enabled = message.enabled;
@@ -3777,6 +3921,10 @@ $root.MicrophoneConfig = (function() {
             object.bitDepth = options.enums === String ? $root.MicBitDepth[message.bitDepth] === undefined ? message.bitDepth : $root.MicBitDepth[message.bitDepth] : message.bitDepth;
         if (message.sensitivity != null && message.hasOwnProperty("sensitivity"))
             object.sensitivity = options.enums === String ? $root.MicSensitivity[message.sensitivity] === undefined ? message.sensitivity : $root.MicSensitivity[message.sensitivity] : message.sensitivity;
+        if (message.codec != null && message.hasOwnProperty("codec"))
+            object.codec = options.enums === String ? $root.MicCodec[message.codec] === undefined ? message.codec : $root.MicCodec[message.codec] : message.codec;
+        if (message.lsbDrop != null && message.hasOwnProperty("lsbDrop"))
+            object.lsbDrop = message.lsbDrop;
         return object;
     };
 
@@ -4874,6 +5022,7 @@ $root.ScheduleConfigPacket = (function() {
      * @property {Uint8Array|null} [cfgDownlink] ScheduleConfigPacket cfgDownlink
      * @property {number|null} [bleQuery] ScheduleConfigPacket bleQuery
      * @property {ICfgEchoPacket|null} [cfgEcho] ScheduleConfigPacket cfgEcho
+     * @property {number|null} [writerVersion] ScheduleConfigPacket writerVersion
      */
 
     /**
@@ -4941,6 +5090,14 @@ $root.ScheduleConfigPacket = (function() {
     ScheduleConfigPacket.prototype.cfgEcho = null;
 
     /**
+     * ScheduleConfigPacket writerVersion.
+     * @member {number} writerVersion
+     * @memberof ScheduleConfigPacket
+     * @instance
+     */
+    ScheduleConfigPacket.prototype.writerVersion = 0;
+
+    /**
      * Creates a new ScheduleConfigPacket instance using the specified properties.
      * @function create
      * @memberof ScheduleConfigPacket
@@ -4977,6 +5134,8 @@ $root.ScheduleConfigPacket = (function() {
             writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.bleQuery);
         if (message.cfgEcho != null && Object.hasOwnProperty.call(message, "cfgEcho"))
             $root.CfgEchoPacket.encode(message.cfgEcho, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+        if (message.writerVersion != null && Object.hasOwnProperty.call(message, "writerVersion"))
+            writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.writerVersion);
         return writer;
     };
 
@@ -5037,6 +5196,10 @@ $root.ScheduleConfigPacket = (function() {
                 }
             case 6: {
                     message.cfgEcho = $root.CfgEchoPacket.decode(reader, reader.uint32());
+                    break;
+                }
+            case 7: {
+                    message.writerVersion = reader.uint32();
                     break;
                 }
             default:
@@ -5100,6 +5263,9 @@ $root.ScheduleConfigPacket = (function() {
             if (error)
                 return "cfgEcho." + error;
         }
+        if (message.writerVersion != null && message.hasOwnProperty("writerVersion"))
+            if (!$util.isInteger(message.writerVersion))
+                return "writerVersion: integer expected";
         return null;
     };
 
@@ -5141,6 +5307,8 @@ $root.ScheduleConfigPacket = (function() {
                 throw TypeError(".ScheduleConfigPacket.cfgEcho: object expected");
             message.cfgEcho = $root.CfgEchoPacket.fromObject(object.cfgEcho);
         }
+        if (object.writerVersion != null)
+            message.writerVersion = object.writerVersion >>> 0;
         return message;
     };
 
@@ -5171,6 +5339,7 @@ $root.ScheduleConfigPacket = (function() {
             }
             object.bleQuery = 0;
             object.cfgEcho = null;
+            object.writerVersion = 0;
         }
         if (message.engaged != null && message.hasOwnProperty("engaged"))
             object.engaged = message.engaged;
@@ -5187,6 +5356,8 @@ $root.ScheduleConfigPacket = (function() {
             object.bleQuery = message.bleQuery;
         if (message.cfgEcho != null && message.hasOwnProperty("cfgEcho"))
             object.cfgEcho = $root.CfgEchoPacket.toObject(message.cfgEcho, options);
+        if (message.writerVersion != null && message.hasOwnProperty("writerVersion"))
+            object.writerVersion = message.writerVersion;
         return object;
     };
 
@@ -5236,6 +5407,9 @@ $root.CfgEchoPacket = (function() {
      * @property {number|null} [echoSeq] CfgEchoPacket echoSeq
      * @property {number|null} [wipeStatus] CfgEchoPacket wipeStatus
      * @property {number|null} [wipeRemoved] CfgEchoPacket wipeRemoved
+     * @property {Uint8Array|null} [slotReport] CfgEchoPacket slotReport
+     * @property {number|null} [scheduleCount] CfgEchoPacket scheduleCount
+     * @property {boolean|null} [engaged] CfgEchoPacket engaged
      */
 
     /**
@@ -5342,6 +5516,30 @@ $root.CfgEchoPacket = (function() {
     CfgEchoPacket.prototype.wipeRemoved = 0;
 
     /**
+     * CfgEchoPacket slotReport.
+     * @member {Uint8Array} slotReport
+     * @memberof CfgEchoPacket
+     * @instance
+     */
+    CfgEchoPacket.prototype.slotReport = $util.newBuffer([]);
+
+    /**
+     * CfgEchoPacket scheduleCount.
+     * @member {number} scheduleCount
+     * @memberof CfgEchoPacket
+     * @instance
+     */
+    CfgEchoPacket.prototype.scheduleCount = 0;
+
+    /**
+     * CfgEchoPacket engaged.
+     * @member {boolean} engaged
+     * @memberof CfgEchoPacket
+     * @instance
+     */
+    CfgEchoPacket.prototype.engaged = false;
+
+    /**
      * Creates a new CfgEchoPacket instance using the specified properties.
      * @function create
      * @memberof CfgEchoPacket
@@ -5387,6 +5585,12 @@ $root.CfgEchoPacket = (function() {
             writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.wipeStatus);
         if (message.wipeRemoved != null && Object.hasOwnProperty.call(message, "wipeRemoved"))
             writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.wipeRemoved);
+        if (message.slotReport != null && Object.hasOwnProperty.call(message, "slotReport"))
+            writer.uint32(/* id 12, wireType 2 =*/98).bytes(message.slotReport);
+        if (message.scheduleCount != null && Object.hasOwnProperty.call(message, "scheduleCount"))
+            writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.scheduleCount);
+        if (message.engaged != null && Object.hasOwnProperty.call(message, "engaged"))
+            writer.uint32(/* id 14, wireType 0 =*/112).bool(message.engaged);
         return writer;
     };
 
@@ -5467,6 +5671,18 @@ $root.CfgEchoPacket = (function() {
                     message.wipeRemoved = reader.uint32();
                     break;
                 }
+            case 12: {
+                    message.slotReport = reader.bytes();
+                    break;
+                }
+            case 13: {
+                    message.scheduleCount = reader.uint32();
+                    break;
+                }
+            case 14: {
+                    message.engaged = reader.bool();
+                    break;
+                }
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -5535,6 +5751,15 @@ $root.CfgEchoPacket = (function() {
         if (message.wipeRemoved != null && message.hasOwnProperty("wipeRemoved"))
             if (!$util.isInteger(message.wipeRemoved))
                 return "wipeRemoved: integer expected";
+        if (message.slotReport != null && message.hasOwnProperty("slotReport"))
+            if (!(message.slotReport && typeof message.slotReport.length === "number" || $util.isString(message.slotReport)))
+                return "slotReport: buffer expected";
+        if (message.scheduleCount != null && message.hasOwnProperty("scheduleCount"))
+            if (!$util.isInteger(message.scheduleCount))
+                return "scheduleCount: integer expected";
+        if (message.engaged != null && message.hasOwnProperty("engaged"))
+            if (typeof message.engaged !== "boolean")
+                return "engaged: boolean expected";
         return null;
     };
 
@@ -5575,6 +5800,15 @@ $root.CfgEchoPacket = (function() {
             message.wipeStatus = object.wipeStatus >>> 0;
         if (object.wipeRemoved != null)
             message.wipeRemoved = object.wipeRemoved >>> 0;
+        if (object.slotReport != null)
+            if (typeof object.slotReport === "string")
+                $util.base64.decode(object.slotReport, message.slotReport = $util.newBuffer($util.base64.length(object.slotReport)), 0);
+            else if (object.slotReport.length >= 0)
+                message.slotReport = object.slotReport;
+        if (object.scheduleCount != null)
+            message.scheduleCount = object.scheduleCount >>> 0;
+        if (object.engaged != null)
+            message.engaged = Boolean(object.engaged);
         return message;
     };
 
@@ -5609,6 +5843,15 @@ $root.CfgEchoPacket = (function() {
             object.echoSeq = 0;
             object.wipeStatus = 0;
             object.wipeRemoved = 0;
+            if (options.bytes === String)
+                object.slotReport = "";
+            else {
+                object.slotReport = [];
+                if (options.bytes !== Array)
+                    object.slotReport = $util.newBuffer(object.slotReport);
+            }
+            object.scheduleCount = 0;
+            object.engaged = false;
         }
         if (message.txnId != null && message.hasOwnProperty("txnId"))
             object.txnId = message.txnId;
@@ -5632,6 +5875,12 @@ $root.CfgEchoPacket = (function() {
             object.wipeStatus = message.wipeStatus;
         if (message.wipeRemoved != null && message.hasOwnProperty("wipeRemoved"))
             object.wipeRemoved = message.wipeRemoved;
+        if (message.slotReport != null && message.hasOwnProperty("slotReport"))
+            object.slotReport = options.bytes === String ? $util.base64.encode(message.slotReport, 0, message.slotReport.length) : options.bytes === Array ? Array.prototype.slice.call(message.slotReport) : message.slotReport;
+        if (message.scheduleCount != null && message.hasOwnProperty("scheduleCount"))
+            object.scheduleCount = message.scheduleCount;
+        if (message.engaged != null && message.hasOwnProperty("engaged"))
+            object.engaged = message.engaged;
         return object;
     };
 
@@ -7462,6 +7711,12 @@ $root.PacketHeader = (function() {
      * @property {number|null} [fwBuild] PacketHeader fwBuild
      * @property {number|null} [schedCrc] PacketHeader schedCrc
      * @property {number|null} [activeFences] PacketHeader activeFences
+     * @property {number|null} [bootCount] PacketHeader bootCount
+     * @property {number|null} [resetCause] PacketHeader resetCause
+     * @property {number|null} [lastFatal] PacketHeader lastFatal
+     * @property {number|null} [linkMarginDb] PacketHeader linkMarginDb
+     * @property {number|null} [linkGateways] PacketHeader linkGateways
+     * @property {number|null} [linkMisses] PacketHeader linkMisses
      */
 
     /**
@@ -7543,6 +7798,54 @@ $root.PacketHeader = (function() {
      */
     PacketHeader.prototype.activeFences = null;
 
+    /**
+     * PacketHeader bootCount.
+     * @member {number|null|undefined} bootCount
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.bootCount = null;
+
+    /**
+     * PacketHeader resetCause.
+     * @member {number|null|undefined} resetCause
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.resetCause = null;
+
+    /**
+     * PacketHeader lastFatal.
+     * @member {number|null|undefined} lastFatal
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.lastFatal = null;
+
+    /**
+     * PacketHeader linkMarginDb.
+     * @member {number|null|undefined} linkMarginDb
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.linkMarginDb = null;
+
+    /**
+     * PacketHeader linkGateways.
+     * @member {number|null|undefined} linkGateways
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.linkGateways = null;
+
+    /**
+     * PacketHeader linkMisses.
+     * @member {number|null|undefined} linkMisses
+     * @memberof PacketHeader
+     * @instance
+     */
+    PacketHeader.prototype.linkMisses = null;
+
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
 
@@ -7591,6 +7894,72 @@ $root.PacketHeader = (function() {
     });
 
     /**
+     * PacketHeader _bootCount.
+     * @member {"bootCount"|undefined} _bootCount
+     * @memberof PacketHeader
+     * @instance
+     */
+    Object.defineProperty(PacketHeader.prototype, "_bootCount", {
+        get: $util.oneOfGetter($oneOfFields = ["bootCount"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * PacketHeader _resetCause.
+     * @member {"resetCause"|undefined} _resetCause
+     * @memberof PacketHeader
+     * @instance
+     */
+    Object.defineProperty(PacketHeader.prototype, "_resetCause", {
+        get: $util.oneOfGetter($oneOfFields = ["resetCause"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * PacketHeader _lastFatal.
+     * @member {"lastFatal"|undefined} _lastFatal
+     * @memberof PacketHeader
+     * @instance
+     */
+    Object.defineProperty(PacketHeader.prototype, "_lastFatal", {
+        get: $util.oneOfGetter($oneOfFields = ["lastFatal"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * PacketHeader _linkMarginDb.
+     * @member {"linkMarginDb"|undefined} _linkMarginDb
+     * @memberof PacketHeader
+     * @instance
+     */
+    Object.defineProperty(PacketHeader.prototype, "_linkMarginDb", {
+        get: $util.oneOfGetter($oneOfFields = ["linkMarginDb"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * PacketHeader _linkGateways.
+     * @member {"linkGateways"|undefined} _linkGateways
+     * @memberof PacketHeader
+     * @instance
+     */
+    Object.defineProperty(PacketHeader.prototype, "_linkGateways", {
+        get: $util.oneOfGetter($oneOfFields = ["linkGateways"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * PacketHeader _linkMisses.
+     * @member {"linkMisses"|undefined} _linkMisses
+     * @memberof PacketHeader
+     * @instance
+     */
+    Object.defineProperty(PacketHeader.prototype, "_linkMisses", {
+        get: $util.oneOfGetter($oneOfFields = ["linkMisses"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
      * Creates a new PacketHeader instance using the specified properties.
      * @function create
      * @memberof PacketHeader
@@ -7630,6 +7999,18 @@ $root.PacketHeader = (function() {
             writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.schedCrc);
         if (message.activeFences != null && Object.hasOwnProperty.call(message, "activeFences"))
             writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.activeFences);
+        if (message.bootCount != null && Object.hasOwnProperty.call(message, "bootCount"))
+            writer.uint32(/* id 9, wireType 0 =*/72).uint32(message.bootCount);
+        if (message.resetCause != null && Object.hasOwnProperty.call(message, "resetCause"))
+            writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.resetCause);
+        if (message.lastFatal != null && Object.hasOwnProperty.call(message, "lastFatal"))
+            writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.lastFatal);
+        if (message.linkMarginDb != null && Object.hasOwnProperty.call(message, "linkMarginDb"))
+            writer.uint32(/* id 12, wireType 0 =*/96).uint32(message.linkMarginDb);
+        if (message.linkGateways != null && Object.hasOwnProperty.call(message, "linkGateways"))
+            writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.linkGateways);
+        if (message.linkMisses != null && Object.hasOwnProperty.call(message, "linkMisses"))
+            writer.uint32(/* id 14, wireType 0 =*/112).uint32(message.linkMisses);
         return writer;
     };
 
@@ -7696,6 +8077,30 @@ $root.PacketHeader = (function() {
                 }
             case 8: {
                     message.activeFences = reader.uint32();
+                    break;
+                }
+            case 9: {
+                    message.bootCount = reader.uint32();
+                    break;
+                }
+            case 10: {
+                    message.resetCause = reader.uint32();
+                    break;
+                }
+            case 11: {
+                    message.lastFatal = reader.uint32();
+                    break;
+                }
+            case 12: {
+                    message.linkMarginDb = reader.uint32();
+                    break;
+                }
+            case 13: {
+                    message.linkGateways = reader.uint32();
+                    break;
+                }
+            case 14: {
+                    message.linkMisses = reader.uint32();
                     break;
                 }
             default:
@@ -7766,6 +8171,36 @@ $root.PacketHeader = (function() {
             if (!$util.isInteger(message.activeFences))
                 return "activeFences: integer expected";
         }
+        if (message.bootCount != null && message.hasOwnProperty("bootCount")) {
+            properties._bootCount = 1;
+            if (!$util.isInteger(message.bootCount))
+                return "bootCount: integer expected";
+        }
+        if (message.resetCause != null && message.hasOwnProperty("resetCause")) {
+            properties._resetCause = 1;
+            if (!$util.isInteger(message.resetCause))
+                return "resetCause: integer expected";
+        }
+        if (message.lastFatal != null && message.hasOwnProperty("lastFatal")) {
+            properties._lastFatal = 1;
+            if (!$util.isInteger(message.lastFatal))
+                return "lastFatal: integer expected";
+        }
+        if (message.linkMarginDb != null && message.hasOwnProperty("linkMarginDb")) {
+            properties._linkMarginDb = 1;
+            if (!$util.isInteger(message.linkMarginDb))
+                return "linkMarginDb: integer expected";
+        }
+        if (message.linkGateways != null && message.hasOwnProperty("linkGateways")) {
+            properties._linkGateways = 1;
+            if (!$util.isInteger(message.linkGateways))
+                return "linkGateways: integer expected";
+        }
+        if (message.linkMisses != null && message.hasOwnProperty("linkMisses")) {
+            properties._linkMisses = 1;
+            if (!$util.isInteger(message.linkMisses))
+                return "linkMisses: integer expected";
+        }
         return null;
     };
 
@@ -7797,6 +8232,18 @@ $root.PacketHeader = (function() {
             message.schedCrc = object.schedCrc >>> 0;
         if (object.activeFences != null)
             message.activeFences = object.activeFences >>> 0;
+        if (object.bootCount != null)
+            message.bootCount = object.bootCount >>> 0;
+        if (object.resetCause != null)
+            message.resetCause = object.resetCause >>> 0;
+        if (object.lastFatal != null)
+            message.lastFatal = object.lastFatal >>> 0;
+        if (object.linkMarginDb != null)
+            message.linkMarginDb = object.linkMarginDb >>> 0;
+        if (object.linkGateways != null)
+            message.linkGateways = object.linkGateways >>> 0;
+        if (object.linkMisses != null)
+            message.linkMisses = object.linkMisses >>> 0;
         return message;
     };
 
@@ -7846,6 +8293,36 @@ $root.PacketHeader = (function() {
             object.activeFences = message.activeFences;
             if (options.oneofs)
                 object._activeFences = "activeFences";
+        }
+        if (message.bootCount != null && message.hasOwnProperty("bootCount")) {
+            object.bootCount = message.bootCount;
+            if (options.oneofs)
+                object._bootCount = "bootCount";
+        }
+        if (message.resetCause != null && message.hasOwnProperty("resetCause")) {
+            object.resetCause = message.resetCause;
+            if (options.oneofs)
+                object._resetCause = "resetCause";
+        }
+        if (message.lastFatal != null && message.hasOwnProperty("lastFatal")) {
+            object.lastFatal = message.lastFatal;
+            if (options.oneofs)
+                object._lastFatal = "lastFatal";
+        }
+        if (message.linkMarginDb != null && message.hasOwnProperty("linkMarginDb")) {
+            object.linkMarginDb = message.linkMarginDb;
+            if (options.oneofs)
+                object._linkMarginDb = "linkMarginDb";
+        }
+        if (message.linkGateways != null && message.hasOwnProperty("linkGateways")) {
+            object.linkGateways = message.linkGateways;
+            if (options.oneofs)
+                object._linkGateways = "linkGateways";
+        }
+        if (message.linkMisses != null && message.hasOwnProperty("linkMisses")) {
+            object.linkMisses = message.linkMisses;
+            if (options.oneofs)
+                object._linkMisses = "linkMisses";
         }
         return object;
     };
@@ -13829,6 +14306,7 @@ $root.ConfigReport = (function() {
      * @property {number|null} [fragIndex] ConfigReport fragIndex
      * @property {number|null} [fragTotal] ConfigReport fragTotal
      * @property {IConfigFragment|null} [frag] ConfigReport frag
+     * @property {number|null} [reportMask] ConfigReport reportMask
      */
 
     /**
@@ -13879,6 +14357,14 @@ $root.ConfigReport = (function() {
     ConfigReport.prototype.frag = null;
 
     /**
+     * ConfigReport reportMask.
+     * @member {number} reportMask
+     * @memberof ConfigReport
+     * @instance
+     */
+    ConfigReport.prototype.reportMask = 0;
+
+    /**
      * Creates a new ConfigReport instance using the specified properties.
      * @function create
      * @memberof ConfigReport
@@ -13910,6 +14396,8 @@ $root.ConfigReport = (function() {
             writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.fragTotal);
         if (message.frag != null && Object.hasOwnProperty.call(message, "frag"))
             $root.ConfigFragment.encode(message.frag, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+        if (message.reportMask != null && Object.hasOwnProperty.call(message, "reportMask"))
+            writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.reportMask);
         return writer;
     };
 
@@ -13962,6 +14450,10 @@ $root.ConfigReport = (function() {
                     message.frag = $root.ConfigFragment.decode(reader, reader.uint32());
                     break;
                 }
+            case 5: {
+                    message.reportMask = reader.uint32();
+                    break;
+                }
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -14011,6 +14503,9 @@ $root.ConfigReport = (function() {
             if (error)
                 return "frag." + error;
         }
+        if (message.reportMask != null && message.hasOwnProperty("reportMask"))
+            if (!$util.isInteger(message.reportMask))
+                return "reportMask: integer expected";
         return null;
     };
 
@@ -14037,6 +14532,8 @@ $root.ConfigReport = (function() {
                 throw TypeError(".ConfigReport.frag: object expected");
             message.frag = $root.ConfigFragment.fromObject(object.frag);
         }
+        if (object.reportMask != null)
+            message.reportMask = object.reportMask >>> 0;
         return message;
     };
 
@@ -14058,6 +14555,7 @@ $root.ConfigReport = (function() {
             object.fragIndex = 0;
             object.fragTotal = 0;
             object.frag = null;
+            object.reportMask = 0;
         }
         if (message.schedCrc != null && message.hasOwnProperty("schedCrc"))
             object.schedCrc = message.schedCrc;
@@ -14067,6 +14565,8 @@ $root.ConfigReport = (function() {
             object.fragTotal = message.fragTotal;
         if (message.frag != null && message.hasOwnProperty("frag"))
             object.frag = $root.ConfigFragment.toObject(message.frag, options);
+        if (message.reportMask != null && message.hasOwnProperty("reportMask"))
+            object.reportMask = message.reportMask;
         return object;
     };
 
@@ -15380,6 +15880,9 @@ $root.ConfigTimeWindow = (function() {
      * @interface IConfigTimeWindow
      * @property {number|null} [startHour] ConfigTimeWindow startHour
      * @property {number|null} [endHour] ConfigTimeWindow endHour
+     * @property {number|null} [dayMask] ConfigTimeWindow dayMask
+     * @property {number|null} [startDay] ConfigTimeWindow startDay
+     * @property {number|null} [endDay] ConfigTimeWindow endDay
      */
 
     /**
@@ -15413,6 +15916,30 @@ $root.ConfigTimeWindow = (function() {
      */
     ConfigTimeWindow.prototype.endHour = null;
 
+    /**
+     * ConfigTimeWindow dayMask.
+     * @member {number|null|undefined} dayMask
+     * @memberof ConfigTimeWindow
+     * @instance
+     */
+    ConfigTimeWindow.prototype.dayMask = null;
+
+    /**
+     * ConfigTimeWindow startDay.
+     * @member {number|null|undefined} startDay
+     * @memberof ConfigTimeWindow
+     * @instance
+     */
+    ConfigTimeWindow.prototype.startDay = null;
+
+    /**
+     * ConfigTimeWindow endDay.
+     * @member {number|null|undefined} endDay
+     * @memberof ConfigTimeWindow
+     * @instance
+     */
+    ConfigTimeWindow.prototype.endDay = null;
+
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
 
@@ -15435,6 +15962,39 @@ $root.ConfigTimeWindow = (function() {
      */
     Object.defineProperty(ConfigTimeWindow.prototype, "_endHour", {
         get: $util.oneOfGetter($oneOfFields = ["endHour"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigTimeWindow _dayMask.
+     * @member {"dayMask"|undefined} _dayMask
+     * @memberof ConfigTimeWindow
+     * @instance
+     */
+    Object.defineProperty(ConfigTimeWindow.prototype, "_dayMask", {
+        get: $util.oneOfGetter($oneOfFields = ["dayMask"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigTimeWindow _startDay.
+     * @member {"startDay"|undefined} _startDay
+     * @memberof ConfigTimeWindow
+     * @instance
+     */
+    Object.defineProperty(ConfigTimeWindow.prototype, "_startDay", {
+        get: $util.oneOfGetter($oneOfFields = ["startDay"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigTimeWindow _endDay.
+     * @member {"endDay"|undefined} _endDay
+     * @memberof ConfigTimeWindow
+     * @instance
+     */
+    Object.defineProperty(ConfigTimeWindow.prototype, "_endDay", {
+        get: $util.oneOfGetter($oneOfFields = ["endDay"]),
         set: $util.oneOfSetter($oneOfFields)
     });
 
@@ -15466,6 +16026,12 @@ $root.ConfigTimeWindow = (function() {
             writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.startHour);
         if (message.endHour != null && Object.hasOwnProperty.call(message, "endHour"))
             writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.endHour);
+        if (message.dayMask != null && Object.hasOwnProperty.call(message, "dayMask"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.dayMask);
+        if (message.startDay != null && Object.hasOwnProperty.call(message, "startDay"))
+            writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.startDay);
+        if (message.endDay != null && Object.hasOwnProperty.call(message, "endDay"))
+            writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.endDay);
         return writer;
     };
 
@@ -15508,6 +16074,18 @@ $root.ConfigTimeWindow = (function() {
                 }
             case 2: {
                     message.endHour = reader.uint32();
+                    break;
+                }
+            case 3: {
+                    message.dayMask = reader.uint32();
+                    break;
+                }
+            case 4: {
+                    message.startDay = reader.uint32();
+                    break;
+                }
+            case 5: {
+                    message.endDay = reader.uint32();
                     break;
                 }
             default:
@@ -15556,6 +16134,21 @@ $root.ConfigTimeWindow = (function() {
             if (!$util.isInteger(message.endHour))
                 return "endHour: integer expected";
         }
+        if (message.dayMask != null && message.hasOwnProperty("dayMask")) {
+            properties._dayMask = 1;
+            if (!$util.isInteger(message.dayMask))
+                return "dayMask: integer expected";
+        }
+        if (message.startDay != null && message.hasOwnProperty("startDay")) {
+            properties._startDay = 1;
+            if (!$util.isInteger(message.startDay))
+                return "startDay: integer expected";
+        }
+        if (message.endDay != null && message.hasOwnProperty("endDay")) {
+            properties._endDay = 1;
+            if (!$util.isInteger(message.endDay))
+                return "endDay: integer expected";
+        }
         return null;
     };
 
@@ -15575,6 +16168,12 @@ $root.ConfigTimeWindow = (function() {
             message.startHour = object.startHour >>> 0;
         if (object.endHour != null)
             message.endHour = object.endHour >>> 0;
+        if (object.dayMask != null)
+            message.dayMask = object.dayMask >>> 0;
+        if (object.startDay != null)
+            message.startDay = object.startDay >>> 0;
+        if (object.endDay != null)
+            message.endDay = object.endDay >>> 0;
         return message;
     };
 
@@ -15600,6 +16199,21 @@ $root.ConfigTimeWindow = (function() {
             object.endHour = message.endHour;
             if (options.oneofs)
                 object._endHour = "endHour";
+        }
+        if (message.dayMask != null && message.hasOwnProperty("dayMask")) {
+            object.dayMask = message.dayMask;
+            if (options.oneofs)
+                object._dayMask = "dayMask";
+        }
+        if (message.startDay != null && message.hasOwnProperty("startDay")) {
+            object.startDay = message.startDay;
+            if (options.oneofs)
+                object._startDay = "startDay";
+        }
+        if (message.endDay != null && message.hasOwnProperty("endDay")) {
+            object.endDay = message.endDay;
+            if (options.oneofs)
+                object._endDay = "endDay";
         }
         return object;
     };
@@ -15945,6 +16559,8 @@ $root.ConfigMicrophone = (function() {
      * @property {number|null} [sampleRate] ConfigMicrophone sampleRate
      * @property {number|null} [bitDepth] ConfigMicrophone bitDepth
      * @property {number|null} [sensitivity] ConfigMicrophone sensitivity
+     * @property {number|null} [codec] ConfigMicrophone codec
+     * @property {number|null} [lsbDrop] ConfigMicrophone lsbDrop
      */
 
     /**
@@ -16017,6 +16633,22 @@ $root.ConfigMicrophone = (function() {
      * @instance
      */
     ConfigMicrophone.prototype.sensitivity = null;
+
+    /**
+     * ConfigMicrophone codec.
+     * @member {number|null|undefined} codec
+     * @memberof ConfigMicrophone
+     * @instance
+     */
+    ConfigMicrophone.prototype.codec = null;
+
+    /**
+     * ConfigMicrophone lsbDrop.
+     * @member {number|null|undefined} lsbDrop
+     * @memberof ConfigMicrophone
+     * @instance
+     */
+    ConfigMicrophone.prototype.lsbDrop = null;
 
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
@@ -16099,6 +16731,28 @@ $root.ConfigMicrophone = (function() {
     });
 
     /**
+     * ConfigMicrophone _codec.
+     * @member {"codec"|undefined} _codec
+     * @memberof ConfigMicrophone
+     * @instance
+     */
+    Object.defineProperty(ConfigMicrophone.prototype, "_codec", {
+        get: $util.oneOfGetter($oneOfFields = ["codec"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigMicrophone _lsbDrop.
+     * @member {"lsbDrop"|undefined} _lsbDrop
+     * @memberof ConfigMicrophone
+     * @instance
+     */
+    Object.defineProperty(ConfigMicrophone.prototype, "_lsbDrop", {
+        get: $util.oneOfGetter($oneOfFields = ["lsbDrop"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
      * Creates a new ConfigMicrophone instance using the specified properties.
      * @function create
      * @memberof ConfigMicrophone
@@ -16136,6 +16790,10 @@ $root.ConfigMicrophone = (function() {
             writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.bitDepth);
         if (message.sensitivity != null && Object.hasOwnProperty.call(message, "sensitivity"))
             writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.sensitivity);
+        if (message.codec != null && Object.hasOwnProperty.call(message, "codec"))
+            writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.codec);
+        if (message.lsbDrop != null && Object.hasOwnProperty.call(message, "lsbDrop"))
+            writer.uint32(/* id 9, wireType 0 =*/72).uint32(message.lsbDrop);
         return writer;
     };
 
@@ -16198,6 +16856,14 @@ $root.ConfigMicrophone = (function() {
                 }
             case 7: {
                     message.sensitivity = reader.uint32();
+                    break;
+                }
+            case 8: {
+                    message.codec = reader.uint32();
+                    break;
+                }
+            case 9: {
+                    message.lsbDrop = reader.uint32();
                     break;
                 }
             default:
@@ -16271,6 +16937,16 @@ $root.ConfigMicrophone = (function() {
             if (!$util.isInteger(message.sensitivity))
                 return "sensitivity: integer expected";
         }
+        if (message.codec != null && message.hasOwnProperty("codec")) {
+            properties._codec = 1;
+            if (!$util.isInteger(message.codec))
+                return "codec: integer expected";
+        }
+        if (message.lsbDrop != null && message.hasOwnProperty("lsbDrop")) {
+            properties._lsbDrop = 1;
+            if (!$util.isInteger(message.lsbDrop))
+                return "lsbDrop: integer expected";
+        }
         return null;
     };
 
@@ -16300,6 +16976,10 @@ $root.ConfigMicrophone = (function() {
             message.bitDepth = object.bitDepth >>> 0;
         if (object.sensitivity != null)
             message.sensitivity = object.sensitivity >>> 0;
+        if (object.codec != null)
+            message.codec = object.codec >>> 0;
+        if (object.lsbDrop != null)
+            message.lsbDrop = object.lsbDrop >>> 0;
         return message;
     };
 
@@ -16351,6 +17031,16 @@ $root.ConfigMicrophone = (function() {
             if (options.oneofs)
                 object._sensitivity = "sensitivity";
         }
+        if (message.codec != null && message.hasOwnProperty("codec")) {
+            object.codec = message.codec;
+            if (options.oneofs)
+                object._codec = "codec";
+        }
+        if (message.lsbDrop != null && message.hasOwnProperty("lsbDrop")) {
+            object.lsbDrop = message.lsbDrop;
+            if (options.oneofs)
+                object._lsbDrop = "lsbDrop";
+        }
         return object;
     };
 
@@ -16392,6 +17082,13 @@ $root.ConfigGPS = (function() {
      * @property {boolean|null} [enabled] ConfigGPS enabled
      * @property {number|null} [sampleIntervalMin] ConfigGPS sampleIntervalMin
      * @property {number|null} [accuracy] ConfigGPS accuracy
+     * @property {boolean|null} [dynamicSamplingMode] ConfigGPS dynamicSamplingMode
+     * @property {number|null} [mediumMotionVedbaThresholdX100] ConfigGPS mediumMotionVedbaThresholdX100
+     * @property {number|null} [mediumMotionGpsIntervalMin] ConfigGPS mediumMotionGpsIntervalMin
+     * @property {number|null} [highMotionVedbaThresholdX100] ConfigGPS highMotionVedbaThresholdX100
+     * @property {number|null} [highMotionGpsIntervalMin] ConfigGPS highMotionGpsIntervalMin
+     * @property {boolean|null} [lorawanTxOnGpsFix] ConfigGPS lorawanTxOnGpsFix
+     * @property {boolean|null} [loraTxOnGpsFix] ConfigGPS loraTxOnGpsFix
      */
 
     /**
@@ -16433,6 +17130,62 @@ $root.ConfigGPS = (function() {
      */
     ConfigGPS.prototype.accuracy = null;
 
+    /**
+     * ConfigGPS dynamicSamplingMode.
+     * @member {boolean|null|undefined} dynamicSamplingMode
+     * @memberof ConfigGPS
+     * @instance
+     */
+    ConfigGPS.prototype.dynamicSamplingMode = null;
+
+    /**
+     * ConfigGPS mediumMotionVedbaThresholdX100.
+     * @member {number|null|undefined} mediumMotionVedbaThresholdX100
+     * @memberof ConfigGPS
+     * @instance
+     */
+    ConfigGPS.prototype.mediumMotionVedbaThresholdX100 = null;
+
+    /**
+     * ConfigGPS mediumMotionGpsIntervalMin.
+     * @member {number|null|undefined} mediumMotionGpsIntervalMin
+     * @memberof ConfigGPS
+     * @instance
+     */
+    ConfigGPS.prototype.mediumMotionGpsIntervalMin = null;
+
+    /**
+     * ConfigGPS highMotionVedbaThresholdX100.
+     * @member {number|null|undefined} highMotionVedbaThresholdX100
+     * @memberof ConfigGPS
+     * @instance
+     */
+    ConfigGPS.prototype.highMotionVedbaThresholdX100 = null;
+
+    /**
+     * ConfigGPS highMotionGpsIntervalMin.
+     * @member {number|null|undefined} highMotionGpsIntervalMin
+     * @memberof ConfigGPS
+     * @instance
+     */
+    ConfigGPS.prototype.highMotionGpsIntervalMin = null;
+
+    /**
+     * ConfigGPS lorawanTxOnGpsFix.
+     * @member {boolean|null|undefined} lorawanTxOnGpsFix
+     * @memberof ConfigGPS
+     * @instance
+     */
+    ConfigGPS.prototype.lorawanTxOnGpsFix = null;
+
+    /**
+     * ConfigGPS loraTxOnGpsFix.
+     * @member {boolean|null|undefined} loraTxOnGpsFix
+     * @memberof ConfigGPS
+     * @instance
+     */
+    ConfigGPS.prototype.loraTxOnGpsFix = null;
+
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
 
@@ -16470,6 +17223,83 @@ $root.ConfigGPS = (function() {
     });
 
     /**
+     * ConfigGPS _dynamicSamplingMode.
+     * @member {"dynamicSamplingMode"|undefined} _dynamicSamplingMode
+     * @memberof ConfigGPS
+     * @instance
+     */
+    Object.defineProperty(ConfigGPS.prototype, "_dynamicSamplingMode", {
+        get: $util.oneOfGetter($oneOfFields = ["dynamicSamplingMode"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigGPS _mediumMotionVedbaThresholdX100.
+     * @member {"mediumMotionVedbaThresholdX100"|undefined} _mediumMotionVedbaThresholdX100
+     * @memberof ConfigGPS
+     * @instance
+     */
+    Object.defineProperty(ConfigGPS.prototype, "_mediumMotionVedbaThresholdX100", {
+        get: $util.oneOfGetter($oneOfFields = ["mediumMotionVedbaThresholdX100"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigGPS _mediumMotionGpsIntervalMin.
+     * @member {"mediumMotionGpsIntervalMin"|undefined} _mediumMotionGpsIntervalMin
+     * @memberof ConfigGPS
+     * @instance
+     */
+    Object.defineProperty(ConfigGPS.prototype, "_mediumMotionGpsIntervalMin", {
+        get: $util.oneOfGetter($oneOfFields = ["mediumMotionGpsIntervalMin"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigGPS _highMotionVedbaThresholdX100.
+     * @member {"highMotionVedbaThresholdX100"|undefined} _highMotionVedbaThresholdX100
+     * @memberof ConfigGPS
+     * @instance
+     */
+    Object.defineProperty(ConfigGPS.prototype, "_highMotionVedbaThresholdX100", {
+        get: $util.oneOfGetter($oneOfFields = ["highMotionVedbaThresholdX100"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigGPS _highMotionGpsIntervalMin.
+     * @member {"highMotionGpsIntervalMin"|undefined} _highMotionGpsIntervalMin
+     * @memberof ConfigGPS
+     * @instance
+     */
+    Object.defineProperty(ConfigGPS.prototype, "_highMotionGpsIntervalMin", {
+        get: $util.oneOfGetter($oneOfFields = ["highMotionGpsIntervalMin"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigGPS _lorawanTxOnGpsFix.
+     * @member {"lorawanTxOnGpsFix"|undefined} _lorawanTxOnGpsFix
+     * @memberof ConfigGPS
+     * @instance
+     */
+    Object.defineProperty(ConfigGPS.prototype, "_lorawanTxOnGpsFix", {
+        get: $util.oneOfGetter($oneOfFields = ["lorawanTxOnGpsFix"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigGPS _loraTxOnGpsFix.
+     * @member {"loraTxOnGpsFix"|undefined} _loraTxOnGpsFix
+     * @memberof ConfigGPS
+     * @instance
+     */
+    Object.defineProperty(ConfigGPS.prototype, "_loraTxOnGpsFix", {
+        get: $util.oneOfGetter($oneOfFields = ["loraTxOnGpsFix"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
      * Creates a new ConfigGPS instance using the specified properties.
      * @function create
      * @memberof ConfigGPS
@@ -16499,6 +17329,20 @@ $root.ConfigGPS = (function() {
             writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.sampleIntervalMin);
         if (message.accuracy != null && Object.hasOwnProperty.call(message, "accuracy"))
             writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.accuracy);
+        if (message.dynamicSamplingMode != null && Object.hasOwnProperty.call(message, "dynamicSamplingMode"))
+            writer.uint32(/* id 4, wireType 0 =*/32).bool(message.dynamicSamplingMode);
+        if (message.mediumMotionVedbaThresholdX100 != null && Object.hasOwnProperty.call(message, "mediumMotionVedbaThresholdX100"))
+            writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.mediumMotionVedbaThresholdX100);
+        if (message.mediumMotionGpsIntervalMin != null && Object.hasOwnProperty.call(message, "mediumMotionGpsIntervalMin"))
+            writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.mediumMotionGpsIntervalMin);
+        if (message.highMotionVedbaThresholdX100 != null && Object.hasOwnProperty.call(message, "highMotionVedbaThresholdX100"))
+            writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.highMotionVedbaThresholdX100);
+        if (message.highMotionGpsIntervalMin != null && Object.hasOwnProperty.call(message, "highMotionGpsIntervalMin"))
+            writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.highMotionGpsIntervalMin);
+        if (message.lorawanTxOnGpsFix != null && Object.hasOwnProperty.call(message, "lorawanTxOnGpsFix"))
+            writer.uint32(/* id 9, wireType 0 =*/72).bool(message.lorawanTxOnGpsFix);
+        if (message.loraTxOnGpsFix != null && Object.hasOwnProperty.call(message, "loraTxOnGpsFix"))
+            writer.uint32(/* id 10, wireType 0 =*/80).bool(message.loraTxOnGpsFix);
         return writer;
     };
 
@@ -16545,6 +17389,34 @@ $root.ConfigGPS = (function() {
                 }
             case 3: {
                     message.accuracy = reader.uint32();
+                    break;
+                }
+            case 4: {
+                    message.dynamicSamplingMode = reader.bool();
+                    break;
+                }
+            case 5: {
+                    message.mediumMotionVedbaThresholdX100 = reader.uint32();
+                    break;
+                }
+            case 6: {
+                    message.mediumMotionGpsIntervalMin = reader.uint32();
+                    break;
+                }
+            case 7: {
+                    message.highMotionVedbaThresholdX100 = reader.uint32();
+                    break;
+                }
+            case 8: {
+                    message.highMotionGpsIntervalMin = reader.uint32();
+                    break;
+                }
+            case 9: {
+                    message.lorawanTxOnGpsFix = reader.bool();
+                    break;
+                }
+            case 10: {
+                    message.loraTxOnGpsFix = reader.bool();
                     break;
                 }
             default:
@@ -16598,6 +17470,41 @@ $root.ConfigGPS = (function() {
             if (!$util.isInteger(message.accuracy))
                 return "accuracy: integer expected";
         }
+        if (message.dynamicSamplingMode != null && message.hasOwnProperty("dynamicSamplingMode")) {
+            properties._dynamicSamplingMode = 1;
+            if (typeof message.dynamicSamplingMode !== "boolean")
+                return "dynamicSamplingMode: boolean expected";
+        }
+        if (message.mediumMotionVedbaThresholdX100 != null && message.hasOwnProperty("mediumMotionVedbaThresholdX100")) {
+            properties._mediumMotionVedbaThresholdX100 = 1;
+            if (!$util.isInteger(message.mediumMotionVedbaThresholdX100))
+                return "mediumMotionVedbaThresholdX100: integer expected";
+        }
+        if (message.mediumMotionGpsIntervalMin != null && message.hasOwnProperty("mediumMotionGpsIntervalMin")) {
+            properties._mediumMotionGpsIntervalMin = 1;
+            if (!$util.isInteger(message.mediumMotionGpsIntervalMin))
+                return "mediumMotionGpsIntervalMin: integer expected";
+        }
+        if (message.highMotionVedbaThresholdX100 != null && message.hasOwnProperty("highMotionVedbaThresholdX100")) {
+            properties._highMotionVedbaThresholdX100 = 1;
+            if (!$util.isInteger(message.highMotionVedbaThresholdX100))
+                return "highMotionVedbaThresholdX100: integer expected";
+        }
+        if (message.highMotionGpsIntervalMin != null && message.hasOwnProperty("highMotionGpsIntervalMin")) {
+            properties._highMotionGpsIntervalMin = 1;
+            if (!$util.isInteger(message.highMotionGpsIntervalMin))
+                return "highMotionGpsIntervalMin: integer expected";
+        }
+        if (message.lorawanTxOnGpsFix != null && message.hasOwnProperty("lorawanTxOnGpsFix")) {
+            properties._lorawanTxOnGpsFix = 1;
+            if (typeof message.lorawanTxOnGpsFix !== "boolean")
+                return "lorawanTxOnGpsFix: boolean expected";
+        }
+        if (message.loraTxOnGpsFix != null && message.hasOwnProperty("loraTxOnGpsFix")) {
+            properties._loraTxOnGpsFix = 1;
+            if (typeof message.loraTxOnGpsFix !== "boolean")
+                return "loraTxOnGpsFix: boolean expected";
+        }
         return null;
     };
 
@@ -16619,6 +17526,20 @@ $root.ConfigGPS = (function() {
             message.sampleIntervalMin = object.sampleIntervalMin >>> 0;
         if (object.accuracy != null)
             message.accuracy = object.accuracy >>> 0;
+        if (object.dynamicSamplingMode != null)
+            message.dynamicSamplingMode = Boolean(object.dynamicSamplingMode);
+        if (object.mediumMotionVedbaThresholdX100 != null)
+            message.mediumMotionVedbaThresholdX100 = object.mediumMotionVedbaThresholdX100 >>> 0;
+        if (object.mediumMotionGpsIntervalMin != null)
+            message.mediumMotionGpsIntervalMin = object.mediumMotionGpsIntervalMin >>> 0;
+        if (object.highMotionVedbaThresholdX100 != null)
+            message.highMotionVedbaThresholdX100 = object.highMotionVedbaThresholdX100 >>> 0;
+        if (object.highMotionGpsIntervalMin != null)
+            message.highMotionGpsIntervalMin = object.highMotionGpsIntervalMin >>> 0;
+        if (object.lorawanTxOnGpsFix != null)
+            message.lorawanTxOnGpsFix = Boolean(object.lorawanTxOnGpsFix);
+        if (object.loraTxOnGpsFix != null)
+            message.loraTxOnGpsFix = Boolean(object.loraTxOnGpsFix);
         return message;
     };
 
@@ -16649,6 +17570,41 @@ $root.ConfigGPS = (function() {
             object.accuracy = message.accuracy;
             if (options.oneofs)
                 object._accuracy = "accuracy";
+        }
+        if (message.dynamicSamplingMode != null && message.hasOwnProperty("dynamicSamplingMode")) {
+            object.dynamicSamplingMode = message.dynamicSamplingMode;
+            if (options.oneofs)
+                object._dynamicSamplingMode = "dynamicSamplingMode";
+        }
+        if (message.mediumMotionVedbaThresholdX100 != null && message.hasOwnProperty("mediumMotionVedbaThresholdX100")) {
+            object.mediumMotionVedbaThresholdX100 = message.mediumMotionVedbaThresholdX100;
+            if (options.oneofs)
+                object._mediumMotionVedbaThresholdX100 = "mediumMotionVedbaThresholdX100";
+        }
+        if (message.mediumMotionGpsIntervalMin != null && message.hasOwnProperty("mediumMotionGpsIntervalMin")) {
+            object.mediumMotionGpsIntervalMin = message.mediumMotionGpsIntervalMin;
+            if (options.oneofs)
+                object._mediumMotionGpsIntervalMin = "mediumMotionGpsIntervalMin";
+        }
+        if (message.highMotionVedbaThresholdX100 != null && message.hasOwnProperty("highMotionVedbaThresholdX100")) {
+            object.highMotionVedbaThresholdX100 = message.highMotionVedbaThresholdX100;
+            if (options.oneofs)
+                object._highMotionVedbaThresholdX100 = "highMotionVedbaThresholdX100";
+        }
+        if (message.highMotionGpsIntervalMin != null && message.hasOwnProperty("highMotionGpsIntervalMin")) {
+            object.highMotionGpsIntervalMin = message.highMotionGpsIntervalMin;
+            if (options.oneofs)
+                object._highMotionGpsIntervalMin = "highMotionGpsIntervalMin";
+        }
+        if (message.lorawanTxOnGpsFix != null && message.hasOwnProperty("lorawanTxOnGpsFix")) {
+            object.lorawanTxOnGpsFix = message.lorawanTxOnGpsFix;
+            if (options.oneofs)
+                object._lorawanTxOnGpsFix = "lorawanTxOnGpsFix";
+        }
+        if (message.loraTxOnGpsFix != null && message.hasOwnProperty("loraTxOnGpsFix")) {
+            object.loraTxOnGpsFix = message.loraTxOnGpsFix;
+            if (options.oneofs)
+                object._loraTxOnGpsFix = "loraTxOnGpsFix";
         }
         return object;
     };
@@ -19010,13 +19966,134 @@ $root.ConfigFragment = (function() {
     var $oneOfFields;
 
     /**
-     * ConfigFragment setting.
-     * @member {"cfgTimeWindow"|"cfgAccelerometer"|"cfgMicrophone"|"cfgGps"|"cfgMagnetometer"|"cfgLight"|"cfgEnvironmental"|"cfgParticulate"|"cfgRadioTiming"|"cfgSystem"|"cfgMortality"|"cfgGeofence"|undefined} setting
+     * ConfigFragment _cfgTimeWindow.
+     * @member {"cfgTimeWindow"|undefined} _cfgTimeWindow
      * @memberof ConfigFragment
      * @instance
      */
-    Object.defineProperty(ConfigFragment.prototype, "setting", {
-        get: $util.oneOfGetter($oneOfFields = ["cfgTimeWindow", "cfgAccelerometer", "cfgMicrophone", "cfgGps", "cfgMagnetometer", "cfgLight", "cfgEnvironmental", "cfgParticulate", "cfgRadioTiming", "cfgSystem", "cfgMortality", "cfgGeofence"]),
+    Object.defineProperty(ConfigFragment.prototype, "_cfgTimeWindow", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgTimeWindow"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgAccelerometer.
+     * @member {"cfgAccelerometer"|undefined} _cfgAccelerometer
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgAccelerometer", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgAccelerometer"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgMicrophone.
+     * @member {"cfgMicrophone"|undefined} _cfgMicrophone
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgMicrophone", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgMicrophone"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgGps.
+     * @member {"cfgGps"|undefined} _cfgGps
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgGps", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgGps"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgMagnetometer.
+     * @member {"cfgMagnetometer"|undefined} _cfgMagnetometer
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgMagnetometer", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgMagnetometer"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgLight.
+     * @member {"cfgLight"|undefined} _cfgLight
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgLight", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgLight"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgEnvironmental.
+     * @member {"cfgEnvironmental"|undefined} _cfgEnvironmental
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgEnvironmental", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgEnvironmental"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgParticulate.
+     * @member {"cfgParticulate"|undefined} _cfgParticulate
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgParticulate", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgParticulate"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgRadioTiming.
+     * @member {"cfgRadioTiming"|undefined} _cfgRadioTiming
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgRadioTiming", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgRadioTiming"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgSystem.
+     * @member {"cfgSystem"|undefined} _cfgSystem
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgSystem", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgSystem"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgMortality.
+     * @member {"cfgMortality"|undefined} _cfgMortality
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgMortality", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgMortality"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigFragment _cfgGeofence.
+     * @member {"cfgGeofence"|undefined} _cfgGeofence
+     * @memberof ConfigFragment
+     * @instance
+     */
+    Object.defineProperty(ConfigFragment.prototype, "_cfgGeofence", {
+        get: $util.oneOfGetter($oneOfFields = ["cfgGeofence"]),
         set: $util.oneOfSetter($oneOfFields)
     });
 
@@ -19216,7 +20293,7 @@ $root.ConfigFragment = (function() {
             if (!$util.isInteger(message.fragmentTotal))
                 return "fragmentTotal: integer expected";
         if (message.cfgTimeWindow != null && message.hasOwnProperty("cfgTimeWindow")) {
-            properties.setting = 1;
+            properties._cfgTimeWindow = 1;
             {
                 var error = $root.ConfigTimeWindow.verify(message.cfgTimeWindow);
                 if (error)
@@ -19224,9 +20301,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgAccelerometer != null && message.hasOwnProperty("cfgAccelerometer")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgAccelerometer = 1;
             {
                 var error = $root.ConfigAccelerometer.verify(message.cfgAccelerometer);
                 if (error)
@@ -19234,9 +20309,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgMicrophone != null && message.hasOwnProperty("cfgMicrophone")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgMicrophone = 1;
             {
                 var error = $root.ConfigMicrophone.verify(message.cfgMicrophone);
                 if (error)
@@ -19244,9 +20317,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgGps != null && message.hasOwnProperty("cfgGps")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgGps = 1;
             {
                 var error = $root.ConfigGPS.verify(message.cfgGps);
                 if (error)
@@ -19254,9 +20325,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgMagnetometer != null && message.hasOwnProperty("cfgMagnetometer")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgMagnetometer = 1;
             {
                 var error = $root.ConfigMagnetometer.verify(message.cfgMagnetometer);
                 if (error)
@@ -19264,9 +20333,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgLight != null && message.hasOwnProperty("cfgLight")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgLight = 1;
             {
                 var error = $root.ConfigSampling.verify(message.cfgLight);
                 if (error)
@@ -19274,9 +20341,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgEnvironmental != null && message.hasOwnProperty("cfgEnvironmental")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgEnvironmental = 1;
             {
                 var error = $root.ConfigSampling.verify(message.cfgEnvironmental);
                 if (error)
@@ -19284,9 +20349,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgParticulate != null && message.hasOwnProperty("cfgParticulate")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgParticulate = 1;
             {
                 var error = $root.ConfigSampling.verify(message.cfgParticulate);
                 if (error)
@@ -19294,9 +20357,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgRadioTiming != null && message.hasOwnProperty("cfgRadioTiming")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgRadioTiming = 1;
             {
                 var error = $root.ConfigRadioTiming.verify(message.cfgRadioTiming);
                 if (error)
@@ -19304,9 +20365,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgSystem != null && message.hasOwnProperty("cfgSystem")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgSystem = 1;
             {
                 var error = $root.ConfigSystem.verify(message.cfgSystem);
                 if (error)
@@ -19314,9 +20373,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgMortality != null && message.hasOwnProperty("cfgMortality")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgMortality = 1;
             {
                 var error = $root.ConfigMortality.verify(message.cfgMortality);
                 if (error)
@@ -19324,9 +20381,7 @@ $root.ConfigFragment = (function() {
             }
         }
         if (message.cfgGeofence != null && message.hasOwnProperty("cfgGeofence")) {
-            if (properties.setting === 1)
-                return "setting: multiple values";
-            properties.setting = 1;
+            properties._cfgGeofence = 1;
             {
                 var error = $root.ConfigGeofence.verify(message.cfgGeofence);
                 if (error)
@@ -19444,62 +20499,62 @@ $root.ConfigFragment = (function() {
         if (message.cfgTimeWindow != null && message.hasOwnProperty("cfgTimeWindow")) {
             object.cfgTimeWindow = $root.ConfigTimeWindow.toObject(message.cfgTimeWindow, options);
             if (options.oneofs)
-                object.setting = "cfgTimeWindow";
+                object._cfgTimeWindow = "cfgTimeWindow";
         }
         if (message.cfgAccelerometer != null && message.hasOwnProperty("cfgAccelerometer")) {
             object.cfgAccelerometer = $root.ConfigAccelerometer.toObject(message.cfgAccelerometer, options);
             if (options.oneofs)
-                object.setting = "cfgAccelerometer";
+                object._cfgAccelerometer = "cfgAccelerometer";
         }
         if (message.cfgMicrophone != null && message.hasOwnProperty("cfgMicrophone")) {
             object.cfgMicrophone = $root.ConfigMicrophone.toObject(message.cfgMicrophone, options);
             if (options.oneofs)
-                object.setting = "cfgMicrophone";
+                object._cfgMicrophone = "cfgMicrophone";
         }
         if (message.cfgGps != null && message.hasOwnProperty("cfgGps")) {
             object.cfgGps = $root.ConfigGPS.toObject(message.cfgGps, options);
             if (options.oneofs)
-                object.setting = "cfgGps";
+                object._cfgGps = "cfgGps";
         }
         if (message.cfgMagnetometer != null && message.hasOwnProperty("cfgMagnetometer")) {
             object.cfgMagnetometer = $root.ConfigMagnetometer.toObject(message.cfgMagnetometer, options);
             if (options.oneofs)
-                object.setting = "cfgMagnetometer";
+                object._cfgMagnetometer = "cfgMagnetometer";
         }
         if (message.cfgLight != null && message.hasOwnProperty("cfgLight")) {
             object.cfgLight = $root.ConfigSampling.toObject(message.cfgLight, options);
             if (options.oneofs)
-                object.setting = "cfgLight";
+                object._cfgLight = "cfgLight";
         }
         if (message.cfgEnvironmental != null && message.hasOwnProperty("cfgEnvironmental")) {
             object.cfgEnvironmental = $root.ConfigSampling.toObject(message.cfgEnvironmental, options);
             if (options.oneofs)
-                object.setting = "cfgEnvironmental";
+                object._cfgEnvironmental = "cfgEnvironmental";
         }
         if (message.cfgParticulate != null && message.hasOwnProperty("cfgParticulate")) {
             object.cfgParticulate = $root.ConfigSampling.toObject(message.cfgParticulate, options);
             if (options.oneofs)
-                object.setting = "cfgParticulate";
+                object._cfgParticulate = "cfgParticulate";
         }
         if (message.cfgRadioTiming != null && message.hasOwnProperty("cfgRadioTiming")) {
             object.cfgRadioTiming = $root.ConfigRadioTiming.toObject(message.cfgRadioTiming, options);
             if (options.oneofs)
-                object.setting = "cfgRadioTiming";
+                object._cfgRadioTiming = "cfgRadioTiming";
         }
         if (message.cfgSystem != null && message.hasOwnProperty("cfgSystem")) {
             object.cfgSystem = $root.ConfigSystem.toObject(message.cfgSystem, options);
             if (options.oneofs)
-                object.setting = "cfgSystem";
+                object._cfgSystem = "cfgSystem";
         }
         if (message.cfgMortality != null && message.hasOwnProperty("cfgMortality")) {
             object.cfgMortality = $root.ConfigMortality.toObject(message.cfgMortality, options);
             if (options.oneofs)
-                object.setting = "cfgMortality";
+                object._cfgMortality = "cfgMortality";
         }
         if (message.cfgGeofence != null && message.hasOwnProperty("cfgGeofence")) {
             object.cfgGeofence = $root.ConfigGeofence.toObject(message.cfgGeofence, options);
             if (options.oneofs)
-                object.setting = "cfgGeofence";
+                object._cfgGeofence = "cfgGeofence";
         }
         return object;
     };
@@ -19548,6 +20603,7 @@ $root.DownlinkPacket = (function() {
      * @property {number|null} [resendFrom] DownlinkPacket resendFrom
      * @property {number|null} [resendMask] DownlinkPacket resendMask
      * @property {number|null} [cfgTxnId] DownlinkPacket cfgTxnId
+     * @property {number|null} [reportMask] DownlinkPacket reportMask
      */
 
     /**
@@ -19637,6 +20693,14 @@ $root.DownlinkPacket = (function() {
      */
     DownlinkPacket.prototype.cfgTxnId = null;
 
+    /**
+     * DownlinkPacket reportMask.
+     * @member {number|null|undefined} reportMask
+     * @memberof DownlinkPacket
+     * @instance
+     */
+    DownlinkPacket.prototype.reportMask = null;
+
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
 
@@ -19718,6 +20782,17 @@ $root.DownlinkPacket = (function() {
     });
 
     /**
+     * DownlinkPacket _reportMask.
+     * @member {"reportMask"|undefined} _reportMask
+     * @memberof DownlinkPacket
+     * @instance
+     */
+    Object.defineProperty(DownlinkPacket.prototype, "_reportMask", {
+        get: $util.oneOfGetter($oneOfFields = ["reportMask"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
      * Creates a new DownlinkPacket instance using the specified properties.
      * @function create
      * @memberof DownlinkPacket
@@ -19759,6 +20834,8 @@ $root.DownlinkPacket = (function() {
             writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.resendMask);
         if (message.cfgTxnId != null && Object.hasOwnProperty.call(message, "cfgTxnId"))
             writer.uint32(/* id 9, wireType 0 =*/72).uint32(message.cfgTxnId);
+        if (message.reportMask != null && Object.hasOwnProperty.call(message, "reportMask"))
+            writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.reportMask);
         return writer;
     };
 
@@ -19829,6 +20906,10 @@ $root.DownlinkPacket = (function() {
                 }
             case 9: {
                     message.cfgTxnId = reader.uint32();
+                    break;
+                }
+            case 10: {
+                    message.reportMask = reader.uint32();
                     break;
                 }
             default:
@@ -19937,6 +21018,11 @@ $root.DownlinkPacket = (function() {
             properties._cfgTxnId = 1;
             if (!$util.isInteger(message.cfgTxnId))
                 return "cfgTxnId: integer expected";
+        }
+        if (message.reportMask != null && message.hasOwnProperty("reportMask")) {
+            properties._reportMask = 1;
+            if (!$util.isInteger(message.reportMask))
+                return "reportMask: integer expected";
         }
         return null;
     };
@@ -20058,6 +21144,8 @@ $root.DownlinkPacket = (function() {
             message.resendMask = object.resendMask >>> 0;
         if (object.cfgTxnId != null)
             message.cfgTxnId = object.cfgTxnId >>> 0;
+        if (object.reportMask != null)
+            message.reportMask = object.reportMask >>> 0;
         return message;
     };
 
@@ -20116,6 +21204,11 @@ $root.DownlinkPacket = (function() {
             object.cfgTxnId = message.cfgTxnId;
             if (options.oneofs)
                 object._cfgTxnId = "cfgTxnId";
+        }
+        if (message.reportMask != null && message.hasOwnProperty("reportMask")) {
+            object.reportMask = message.reportMask;
+            if (options.oneofs)
+                object._reportMask = "reportMask";
         }
         return object;
     };

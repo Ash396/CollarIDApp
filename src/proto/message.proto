@@ -137,7 +137,26 @@ message ParticulateData{
 //             trigger duration. Not a hardware fault — consumers must mask
 //             bits 0-7 before reporting hardware health, or a mortality
 //             flag will read as a broken collar.
-//   bits 9-31 free
+//   bit  9    STORAGE: the collar could not open a recording file on its SD
+//             card (directory or file create failed even after its recovery
+//             fallbacks — see sd_prepare_recording_folder in the firmware).
+//             Audio/accelerometer data is being lost while set. Clears on
+//             the next successful open. Not a hardware fault either.
+//   bit  10   MIC: the boot microphone self-test failed (settled PDM capture
+//             all-zero = broken mic flex). On BLE this fault is bit 8 of
+//             SystemStatePacket.hw_diag; it CANNOT sit there in this word,
+//             because bit 8 here is MORTALITY. Firmware builds 306 up to the
+//             fix did send it on bit 8, so on those builds bit 8 together
+//             with bit 7 is ambiguous (mic fault, mortality, or both), while
+//             bit 8 without bit 7 is always a clean mortality. The server
+//             folds bit 10 back onto bit 8 of devices.hw_faults, which keeps
+//             the BLE layout.
+//   bit  11   LORAWAN_FCNT: the frame-counter restore failed for good and this
+//             session restarted at FCntUp 0 so the collar could keep
+//             reporting (firmware lw_rebase_policy.h). Counters are being
+//             re-used under the same keys while set. Rides every uplink
+//             until a restore works again. Not a hardware fault.
+//   bits 12-31 free
 message ErrorFlags{
     uint32 flag = 1;
 }
@@ -192,11 +211,19 @@ message AddonReport {
 // frag_index/frag_total let the server assemble and detect gaps; sched_crc
 // binds every fragment to the identity it describes, so a mid-report edit
 // invalidates the batch instead of splicing two configs together.
+//
+// fw 360 trims the report: sched_crc is left 0 (the packet header already
+// carries the identity of every uplink, and the server keys on that), one
+// fragment carries several settings of a slot (five fragments per slot
+// instead of nine), and after a committed push only the parts the push
+// touched are reported — report_mask says which (bits as
+// DownlinkPacket.report_mask; 0 = the whole config, as older firmware sends).
 message ConfigReport {
-    uint32 sched_crc  = 1;
+    uint32 sched_crc  = 1;    // 0 from fw 360: use PacketHeader.sched_crc
     uint32 frag_index = 2;
     uint32 frag_total = 3;
     ConfigFragment frag = 4;
+    uint32 report_mask = 5;   // fw 360+: scope of this report; 0 = everything
 }
 
 message MessagePacket {

@@ -1,6 +1,7 @@
 import { BleManager, Device, State } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import * as PB from '../proto/collar_pb.js';
+import { ENV_INTERVAL_FIXED_MIN } from '../utils/fw';
 import {
   hexToBytes,
   hexByteToInt,
@@ -442,9 +443,13 @@ export function buildSchedulePacketFromAppState(
       });
     }
     if (s.environmental?.enabled) {
+      /* Pinned at the wire, not merely in the editor. This tunnel reaches the
+       * collar without touching the server, so no server-side rule can cover
+       * it — and an illegal interval here subscribes nothing in BSEC and
+       * silently stops the sensor. See ENV_INTERVAL_FIXED_MIN. */
       fields.environmental = PB.SamplingConfig.create({
         enabled: true,
-        sampleIntervalMin: Number(s.environmental?.sampleIntervalMin ?? 5),
+        sampleIntervalMin: ENV_INTERVAL_FIXED_MIN,
       });
     }
     if (s.particulate?.enabled) {
@@ -465,6 +470,10 @@ export function buildSchedulePacketFromAppState(
         sampleRate: Number(s.microphone?.sampleRate ?? 0),
         bitDepth: Number(s.microphone?.bitDepth ?? 0),
         sensitivity: Number(s.microphone?.sensitivity ?? 0),
+        // fw 380: same story — 0/0 (WAV, nothing dropped) is the proto3
+        // default, so a WAV config encodes to the same bytes as before.
+        codec: Number(s.microphone?.codec ?? 0),
+        lsbDrop: Number(s.microphone?.lsbDrop ?? 0),
       });
     }
     if (s.accelerometer?.enabled) {

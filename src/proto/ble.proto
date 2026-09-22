@@ -6,9 +6,25 @@ option (nanopb_fileopt).packed_struct = false;
 
 
 // ================== SCHEDULING / CONFIG ==================
-message TimeWindow {          // 2 bytes
+message TimeWindow {          // 2 bytes for a plain daily window
   uint32 start_hour = 1;  // 0 to 23 (inclusive)
   uint32 end_hour   = 2;  // 0 to 23 (inclusive)
+  // Calendar filters (fw 357+, DESIGN_calendar_schedules.md). A window
+  // applies at an hour only when ALL of hour, day and date match; the
+  // scheduler is still first-match over the slot list, so a narrower
+  // calendar placed ABOVE a broader one takes priority for the hours they
+  // share. Zero means unbounded, so every legacy config decodes to the
+  // every-day behavior it always had. Days and epochs are UTC, like hours.
+  // Dates are DAY NUMBERS (UTC days since 1970-01-01 = epoch / 86400), not
+  // epoch seconds: a 3-byte varint instead of 5, which is what keeps a
+  // window fragment plus its downlink wrapper under the 33 B RX2 floor.
+  // A window that runs past midnight belongs to the day it STARTS on: its
+  // hours after midnight are judged against the previous calendar day, so
+  // "Saturday 20-05" runs into Sunday morning and "until Nov 15" includes
+  // the night of Nov 15.
+  uint32 day_mask  = 3; // bit 0 = Monday .. bit 6 = Sunday; 0 = every day
+  uint32 start_day = 4; // first day the window applies; 0 = no start bound
+  uint32 end_day   = 5; // first day it NO LONGER applies (exclusive); 0 = none
 }
 // Enabled/disabled and sample interval for each sensor
 message SamplingConfig {
@@ -174,6 +190,19 @@ enum MicSensitivity {
   MIC_SENS_HIGH   = 2;  // +12 dB
 }
 
+// How a recording is stored on the card. Value 0 is the historical behaviour:
+// collars, configs and clients predating the field record plain WAV.
+//
+// FLAC is lossless: the decoded samples are bit for bit what the WAV would have
+// held, in roughly 30 % of the space on collar recordings (measured 28 % over
+// 299 field files). The encoder is a fixed-predictor FLAC subset that any FLAC
+// decoder reads. Firmware only honours it where it has been shown to keep up:
+// 16-bit at 8 or 16 kHz. Anything else records WAV and says so in the log.
+enum MicCodec {
+  MIC_CODEC_WAV  = 0;  // legacy default: uncompressed PCM in a WAV file
+  MIC_CODEC_FLAC = 1;  // lossless FLAC, 16-bit at 8/16 kHz only
+}
+
 message MicrophoneConfig {
   bool            enabled            = 1;
   bool            continuous_mode    = 2; // on if true
@@ -182,6 +211,13 @@ message MicrophoneConfig {
   MicSampleRate   sample_rate        = 5; // 0 = 16 kHz (pre-field default)
   MicBitDepth     bit_depth          = 6; // 0 = 16-bit (pre-field default)
   MicSensitivity  sensitivity        = 7; // 0 = calibrated baseline (fw 349+)
+  MicCodec        codec              = 8; // 0 = WAV (pre-field default)
+  // Low bits removed from every sample before it is stored, 0 to 4. 0 keeps
+  // the recording exactly as captured. Each bit dropped is about 6 dB of the
+  // noise floor given up and makes FLAC files markedly smaller (2 bits: about
+  // 6:1 instead of 3.5:1 on collar recordings). Lossy and not reversible, so
+  // it is a separate knob from the codec. Ignored by firmware that predates it.
+  uint32          lsb_drop           = 9;
 }
 enum AccelSampleRate {
   ACCEL_25HZ = 0;
@@ -254,6 +290,10 @@ message ScheduleConfigPacket {
   //   0        = none
   //   1        = echo status only (masks, last verdict)
   //   2|(N<<8) = echo geofence slot N (0..3) as a binary record
+  //   3|(N<<8) = echo schedule slot N (0..4) as a ScheduleConfig message
+  //              (fw 358): slot-by-slot read-back for schedules too large for
+  //              the resting blob to survive the radios (one Bluetooth read
+  //              carries 182 B; both radios cast the blob length to a byte)
   uint32 ble_query = 5;
 
   // Collar -> webapp echo. Pushed after a tunnel frame that produced a
@@ -265,6 +305,16 @@ message ScheduleConfigPacket {
   // re-pushes the canonical schedule blob ~10 s later so the resting value
   // an old webapp reads is always a real schedule.
   CfgEchoPacket cfg_echo = 6;
+  // Highest schedule-schema revision the WRITER of this packet understands
+  // (fw 357+). A writer that predates a field cannot round-trip it: it decodes
+  // a collar's schedule with its old schema, drops the unknown fields, and
+  // writes the flattened result back. For the calendar fields that silently
+  // turns a first-placed "weekends only" slot into an every-day slot. So the
+  // collar refuses a schedule write whose writer_version is below the
+  // revision of any feature RESIDENT in its current config, re-pushes the
+  // resident schedule, and logs it. 0 = legacy writer (never saw this field).
+  //   1 = knows TimeWindow.day_mask / start_day / end_day
+  uint32 writer_version = 7;
 }
 
 // The BLE tunnel echo body. fence_report (ble_query=2 responses) is a
@@ -297,6 +347,14 @@ message CfgEchoPacket {
   // 5 card reformatted (the clean outcome).
   uint32 wipe_status = 10;
   uint32 wipe_removed = 11;     // files/directories removed on the delete path
+  // fw 358: schedule read-back. slot_report answers ble_query 3|(N<<8) with
+  // slot N as a nanopb-encoded ScheduleConfig (lean: ~60-100 B, max 128);
+  // schedule_count and engaged ride on EVERY echo so the webapp knows how
+  // many slots to ask for and the collar's engaged state without ever
+  // reading the resting blob.
+  bytes  slot_report = 12;
+  uint32 schedule_count = 13;
+  bool   engaged = 14;
 }
 
 
@@ -327,8 +385,10 @@ message SystemStatePacket {
   // 3 BME688, 4 GPS, 5 particulate, 6 LoRa radio, 8 microphone (PDM
   // capture flat/silent — bit 7 was already the validity flag when the
   // mic check arrived, so mic jumps over it). Bit 7 = diagnostics ran
-  // (validity). Same layout mirrored into Deployment.errorFlags.flag
-  // on LoRaWAN uplinks. Absent on older firmware.
+  // (validity). Bits 0-7 are mirrored into Deployment.errorFlags.flag on
+  // LoRaWAN uplinks; the microphone fault is NOT mirrored on bit 8 (that
+  // position is mortality there), it rides ErrorFlags bit 10. Absent on
+  // older firmware.
   optional uint32 hw_diag = 7;
 }
 

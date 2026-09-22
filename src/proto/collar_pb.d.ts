@@ -8,6 +8,15 @@ export interface ITimeWindow {
 
     /** TimeWindow endHour */
     endHour?: (number|null);
+
+    /** TimeWindow dayMask */
+    dayMask?: (number|null);
+
+    /** TimeWindow startDay */
+    startDay?: (number|null);
+
+    /** TimeWindow endDay */
+    endDay?: (number|null);
 }
 
 /** Represents a TimeWindow. */
@@ -24,6 +33,15 @@ export class TimeWindow implements ITimeWindow {
 
     /** TimeWindow endHour. */
     public endHour: number;
+
+    /** TimeWindow dayMask. */
+    public dayMask: number;
+
+    /** TimeWindow startDay. */
+    public startDay: number;
+
+    /** TimeWindow endDay. */
+    public endDay: number;
 
     /**
      * Creates a new TimeWindow instance using the specified properties.
@@ -1137,6 +1155,12 @@ export enum MicSensitivity {
     MIC_SENS_HIGH = 2
 }
 
+/** MicCodec enum. */
+export enum MicCodec {
+    MIC_CODEC_WAV = 0,
+    MIC_CODEC_FLAC = 1
+}
+
 /** Represents a MicrophoneConfig. */
 export class MicrophoneConfig implements IMicrophoneConfig {
 
@@ -1166,6 +1190,12 @@ export class MicrophoneConfig implements IMicrophoneConfig {
 
     /** MicrophoneConfig sensitivity. */
     public sensitivity: MicSensitivity;
+
+    /** MicrophoneConfig codec. */
+    public codec: MicCodec;
+
+    /** MicrophoneConfig lsbDrop. */
+    public lsbDrop: number;
 
     /**
      * Creates a new MicrophoneConfig instance using the specified properties.
@@ -1597,6 +1627,9 @@ export class ScheduleConfigPacket implements IScheduleConfigPacket {
     /** ScheduleConfigPacket cfgEcho. */
     public cfgEcho?: (ICfgEchoPacket|null);
 
+    /** ScheduleConfigPacket writerVersion. */
+    public writerVersion: number;
+
     /**
      * Creates a new ScheduleConfigPacket instance using the specified properties.
      * @param [properties] Properties to set
@@ -1716,6 +1749,15 @@ export class CfgEchoPacket implements ICfgEchoPacket {
 
     /** CfgEchoPacket wipeRemoved. */
     public wipeRemoved: number;
+
+    /** CfgEchoPacket slotReport. */
+    public slotReport: Uint8Array;
+
+    /** CfgEchoPacket scheduleCount. */
+    public scheduleCount: number;
+
+    /** CfgEchoPacket engaged. */
+    public engaged: boolean;
 
     /**
      * Creates a new CfgEchoPacket instance using the specified properties.
@@ -2362,6 +2404,24 @@ export class PacketHeader implements IPacketHeader {
     /** PacketHeader activeFences. */
     public activeFences?: (number|null);
 
+    /** PacketHeader bootCount. */
+    public bootCount?: (number|null);
+
+    /** PacketHeader resetCause. */
+    public resetCause?: (number|null);
+
+    /** PacketHeader lastFatal. */
+    public lastFatal?: (number|null);
+
+    /** PacketHeader linkMarginDb. */
+    public linkMarginDb?: (number|null);
+
+    /** PacketHeader linkGateways. */
+    public linkGateways?: (number|null);
+
+    /** PacketHeader linkMisses. */
+    public linkMisses?: (number|null);
+
     /** PacketHeader _requestAck. */
     public _requestAck?: "requestAck";
 
@@ -2373,6 +2433,24 @@ export class PacketHeader implements IPacketHeader {
 
     /** PacketHeader _activeFences. */
     public _activeFences?: "activeFences";
+
+    /** PacketHeader _bootCount. */
+    public _bootCount?: "bootCount";
+
+    /** PacketHeader _resetCause. */
+    public _resetCause?: "resetCause";
+
+    /** PacketHeader _lastFatal. */
+    public _lastFatal?: "lastFatal";
+
+    /** PacketHeader _linkMarginDb. */
+    public _linkMarginDb?: "linkMarginDb";
+
+    /** PacketHeader _linkGateways. */
+    public _linkGateways?: "linkGateways";
+
+    /** PacketHeader _linkMisses. */
+    public _linkMisses?: "linkMisses";
 
     /**
      * Creates a new PacketHeader instance using the specified properties.
@@ -4344,6 +4422,9 @@ export class ConfigReport implements IConfigReport {
     /** ConfigReport frag. */
     public frag?: (IConfigFragment|null);
 
+    /** ConfigReport reportMask. */
+    public reportMask: number;
+
     /**
      * Creates a new ConfigReport instance using the specified properties.
      * @param [properties] Properties to set
@@ -4864,11 +4945,29 @@ export class ConfigTimeWindow implements IConfigTimeWindow {
     /** ConfigTimeWindow endHour. */
     public endHour?: (number|null);
 
+    /** ConfigTimeWindow dayMask. */
+    public dayMask?: (number|null);
+
+    /** ConfigTimeWindow startDay. */
+    public startDay?: (number|null);
+
+    /** ConfigTimeWindow endDay. */
+    public endDay?: (number|null);
+
     /** ConfigTimeWindow _startHour. */
     public _startHour?: "startHour";
 
     /** ConfigTimeWindow _endHour. */
     public _endHour?: "endHour";
+
+    /** ConfigTimeWindow _dayMask. */
+    public _dayMask?: "dayMask";
+
+    /** ConfigTimeWindow _startDay. */
+    public _startDay?: "startDay";
+
+    /** ConfigTimeWindow _endDay. */
+    public _endDay?: "endDay";
 
     /**
      * Creates a new ConfigTimeWindow instance using the specified properties.
@@ -5083,6 +5182,12 @@ export class ConfigMicrophone implements IConfigMicrophone {
     /** ConfigMicrophone sensitivity. */
     public sensitivity?: (number|null);
 
+    /** ConfigMicrophone codec. */
+    public codec?: (number|null);
+
+    /** ConfigMicrophone lsbDrop. */
+    public lsbDrop?: (number|null);
+
     /** ConfigMicrophone _enabled. */
     public _enabled?: "enabled";
 
@@ -5103,6 +5208,12 @@ export class ConfigMicrophone implements IConfigMicrophone {
 
     /** ConfigMicrophone _sensitivity. */
     public _sensitivity?: "sensitivity";
+
+    /** ConfigMicrophone _codec. */
+    public _codec?: "codec";
+
+    /** ConfigMicrophone _lsbDrop. */
+    public _lsbDrop?: "lsbDrop";
 
     /**
      * Creates a new ConfigMicrophone instance using the specified properties.
@@ -5200,6 +5311,27 @@ export class ConfigGPS implements IConfigGPS {
     /** ConfigGPS accuracy. */
     public accuracy?: (number|null);
 
+    /** ConfigGPS dynamicSamplingMode. */
+    public dynamicSamplingMode?: (boolean|null);
+
+    /** ConfigGPS mediumMotionVedbaThresholdX100. */
+    public mediumMotionVedbaThresholdX100?: (number|null);
+
+    /** ConfigGPS mediumMotionGpsIntervalMin. */
+    public mediumMotionGpsIntervalMin?: (number|null);
+
+    /** ConfigGPS highMotionVedbaThresholdX100. */
+    public highMotionVedbaThresholdX100?: (number|null);
+
+    /** ConfigGPS highMotionGpsIntervalMin. */
+    public highMotionGpsIntervalMin?: (number|null);
+
+    /** ConfigGPS lorawanTxOnGpsFix. */
+    public lorawanTxOnGpsFix?: (boolean|null);
+
+    /** ConfigGPS loraTxOnGpsFix. */
+    public loraTxOnGpsFix?: (boolean|null);
+
     /** ConfigGPS _enabled. */
     public _enabled?: "enabled";
 
@@ -5208,6 +5340,27 @@ export class ConfigGPS implements IConfigGPS {
 
     /** ConfigGPS _accuracy. */
     public _accuracy?: "accuracy";
+
+    /** ConfigGPS _dynamicSamplingMode. */
+    public _dynamicSamplingMode?: "dynamicSamplingMode";
+
+    /** ConfigGPS _mediumMotionVedbaThresholdX100. */
+    public _mediumMotionVedbaThresholdX100?: "mediumMotionVedbaThresholdX100";
+
+    /** ConfigGPS _mediumMotionGpsIntervalMin. */
+    public _mediumMotionGpsIntervalMin?: "mediumMotionGpsIntervalMin";
+
+    /** ConfigGPS _highMotionVedbaThresholdX100. */
+    public _highMotionVedbaThresholdX100?: "highMotionVedbaThresholdX100";
+
+    /** ConfigGPS _highMotionGpsIntervalMin. */
+    public _highMotionGpsIntervalMin?: "highMotionGpsIntervalMin";
+
+    /** ConfigGPS _lorawanTxOnGpsFix. */
+    public _lorawanTxOnGpsFix?: "lorawanTxOnGpsFix";
+
+    /** ConfigGPS _loraTxOnGpsFix. */
+    public _loraTxOnGpsFix?: "loraTxOnGpsFix";
 
     /**
      * Creates a new ConfigGPS instance using the specified properties.
@@ -6028,8 +6181,41 @@ export class ConfigFragment implements IConfigFragment {
     /** ConfigFragment cfgGeofence. */
     public cfgGeofence?: (IConfigGeofence|null);
 
-    /** ConfigFragment setting. */
-    public setting?: ("cfgTimeWindow"|"cfgAccelerometer"|"cfgMicrophone"|"cfgGps"|"cfgMagnetometer"|"cfgLight"|"cfgEnvironmental"|"cfgParticulate"|"cfgRadioTiming"|"cfgSystem"|"cfgMortality"|"cfgGeofence");
+    /** ConfigFragment _cfgTimeWindow. */
+    public _cfgTimeWindow?: "cfgTimeWindow";
+
+    /** ConfigFragment _cfgAccelerometer. */
+    public _cfgAccelerometer?: "cfgAccelerometer";
+
+    /** ConfigFragment _cfgMicrophone. */
+    public _cfgMicrophone?: "cfgMicrophone";
+
+    /** ConfigFragment _cfgGps. */
+    public _cfgGps?: "cfgGps";
+
+    /** ConfigFragment _cfgMagnetometer. */
+    public _cfgMagnetometer?: "cfgMagnetometer";
+
+    /** ConfigFragment _cfgLight. */
+    public _cfgLight?: "cfgLight";
+
+    /** ConfigFragment _cfgEnvironmental. */
+    public _cfgEnvironmental?: "cfgEnvironmental";
+
+    /** ConfigFragment _cfgParticulate. */
+    public _cfgParticulate?: "cfgParticulate";
+
+    /** ConfigFragment _cfgRadioTiming. */
+    public _cfgRadioTiming?: "cfgRadioTiming";
+
+    /** ConfigFragment _cfgSystem. */
+    public _cfgSystem?: "cfgSystem";
+
+    /** ConfigFragment _cfgMortality. */
+    public _cfgMortality?: "cfgMortality";
+
+    /** ConfigFragment _cfgGeofence. */
+    public _cfgGeofence?: "cfgGeofence";
 
     /**
      * Creates a new ConfigFragment instance using the specified properties.
@@ -6145,6 +6331,9 @@ export class DownlinkPacket implements IDownlinkPacket {
     /** DownlinkPacket cfgTxnId. */
     public cfgTxnId?: (number|null);
 
+    /** DownlinkPacket reportMask. */
+    public reportMask?: (number|null);
+
     /** DownlinkPacket _highFixParams. */
     public _highFixParams?: "highFixParams";
 
@@ -6165,6 +6354,9 @@ export class DownlinkPacket implements IDownlinkPacket {
 
     /** DownlinkPacket _cfgTxnId. */
     public _cfgTxnId?: "cfgTxnId";
+
+    /** DownlinkPacket _reportMask. */
+    public _reportMask?: "reportMask";
 
     /**
      * Creates a new DownlinkPacket instance using the specified properties.

@@ -15,6 +15,8 @@ import {
   SOLAR_CONDITIONS,
 } from '../src/utils/powerEstimator';
 import type { Schedule } from '../src/navigation/ScheduleNavigator';
+import { ENV_INTERVAL_FIXED_MIN } from '../src/utils/fw';
+import { appToPresetSchedule, presetToAppSchedule } from '../src/utils/presetShape';
 
 // bleManager pulls in the BLE native module; stub it for pure-logic tests.
 jest.mock('react-native-ble-plx', () => ({
@@ -159,6 +161,115 @@ describe('buildSchedulePacketFromAppState', () => {
     const packet = buildSchedulePacketFromAppState([s], true);
     const sched = packet.scheduleConfigPacket.schedules[0];
     expect(sched.gps.lorawanTxOnGpsFix).toBe(false);
+  });
+});
+
+describe('environmental interval is pinned (BSEC discrete rates)', () => {
+  /* BSEC accepts five discrete sample RATES and rejects anything else,
+     subscribing nothing — the BME688 then produces no rows and reports no
+     error anywhere. Only 5 min (= ULP, 300 s) is nameable in whole minutes.
+     Collar 0x00240028 lost nine days to a 20 and then a 10. Every path the
+     app can put a value on the wire is pinned; these pin the pins. */
+
+  it('the BLE tunnel encodes 5 whatever the app state holds', () => {
+    const s = fullSchedule();
+    (s as any).environmental = { enabled: true, sampleIntervalMin: 20 };
+    const packet = buildSchedulePacketFromAppState([s], true);
+    const wire = PB.BlePacket.decode(PB.BlePacket.encode(packet).finish());
+    expect(wire.scheduleConfigPacket.schedules[0].environmental.sampleIntervalMin).toBe(
+      ENV_INTERVAL_FIXED_MIN,
+    );
+  });
+
+  it('a collar reporting an illegal interval heals on read', () => {
+    // 15 is the WB co-processor's own slot-1 boot default.
+    const mapped: any = mapProtoSchedule(
+      {
+        window: { startHour: 0, endHour: 23 },
+        environmental: { enabled: true, sampleIntervalMin: 15 },
+      } as any,
+      0,
+    );
+    expect(mapped.environmental.sampleIntervalMin).toBe(ENV_INTERVAL_FIXED_MIN);
+  });
+
+  it('a stale preset heals in both directions', () => {
+    const out: any = appToPresetSchedule({
+      ...fullSchedule(),
+      environmental: { enabled: true, sampleIntervalMin: 20 },
+    } as any);
+    expect(out.environmental.sample_interval_min).toBe(ENV_INTERVAL_FIXED_MIN);
+    const back: any = presetToAppSchedule(
+      {
+        window: { start_hour: 0, end_hour: 23 },
+        environmental: { enabled: true, sample_interval_min: 20 },
+      } as any,
+      0,
+    );
+    expect(back.environmental.sampleIntervalMin).toBe(ENV_INTERVAL_FIXED_MIN);
+  });
+
+  it('the constant matches the firmware and the website', () => {
+    expect(ENV_INTERVAL_FIXED_MIN).toBe(5);
+  });
+});
+
+describe('recording format (fw 380): codec + low-bit drop', () => {
+  const flacMic = {
+    enabled: true,
+    continuousMode: false,
+    sampleLengthMin: 1,
+    sampleWindowMin: 10,
+    sampleRate: 1,
+    codec: 1,
+    lsbDrop: 2,
+  };
+
+  it('the regenerated proto carries MicCodec and lsb_drop end to end', () => {
+    expect(PB.MicCodec.MIC_CODEC_WAV).toBe(0);
+    expect(PB.MicCodec.MIC_CODEC_FLAC).toBe(1);
+    const packet = buildSchedulePacketFromAppState([fullSchedule({ microphone: flacMic })], true);
+    const wire = PB.BlePacket.decode(PB.BlePacket.encode(packet).finish());
+    const mic = wire.scheduleConfigPacket.schedules[0].microphone!;
+    expect(mic.codec).toBe(1);
+    expect(mic.lsbDrop).toBe(2);
+    // and the read-back maps them into the app shape
+    const mapped = mapProtoSchedule(wire.scheduleConfigPacket.schedules[0], 0);
+    expect(mapped.microphone?.codec).toBe(1);
+    expect(mapped.microphone?.lsbDrop).toBe(2);
+  });
+
+  it('a WAV config encodes to the same bytes as before the fields existed', () => {
+    // 0/0 is the proto3 default, so a legacy collar sees nothing new — and a
+    // collar predating the fields echoes nothing, which maps back to 0/0.
+    const withFields = buildSchedulePacketFromAppState(
+      [fullSchedule({ microphone: { ...flacMic, codec: 0, lsbDrop: 0 } })], true);
+    const without = buildSchedulePacketFromAppState(
+      [fullSchedule({ microphone: { enabled: true, continuousMode: false,
+                                    sampleLengthMin: 1, sampleWindowMin: 10, sampleRate: 1 } })], true);
+    expect(Array.from(PB.BlePacket.encode(withFields).finish()))
+      .toEqual(Array.from(PB.BlePacket.encode(without).finish()));
+    const legacy = mapProtoSchedule(
+      PB.ScheduleConfig.create({ window: { startHour: 0, endHour: 23 },
+                                 microphone: PB.MicrophoneConfig.create({ enabled: true }) }), 0);
+    expect(legacy.microphone?.codec).toBe(0);
+    expect(legacy.microphone?.lsbDrop).toBe(0);
+  });
+
+  it('equality sees a codec change and treats an absent echo as WAV', () => {
+    const draft = [fullSchedule({ microphone: flacMic })];
+    const same = buildSchedulePacketFromAppState(draft, true);
+    const readback = PB.BlePacket.decode(PB.BlePacket.encode(same).finish())
+      .scheduleConfigPacket.schedules;
+    expect(schedulesEqual(draft, readback)).toBe(true);
+    const wav = buildSchedulePacketFromAppState(
+      [fullSchedule({ microphone: { ...flacMic, codec: 0, lsbDrop: 0 } })], true);
+    const readbackWav = PB.BlePacket.decode(PB.BlePacket.encode(wav).finish())
+      .scheduleConfigPacket.schedules;
+    expect(schedulesEqual(draft, readbackWav)).toBe(false);
+    // a WAV draft against a legacy collar's echo (no fields at all) is equal
+    const wavDraft = [fullSchedule({ microphone: { ...flacMic, codec: 0, lsbDrop: 0 } })];
+    expect(schedulesEqual(wavDraft, readbackWav)).toBe(true);
   });
 });
 

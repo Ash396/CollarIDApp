@@ -1,5 +1,6 @@
 import * as PB from "../proto/collar_pb.js";
 import type { Schedule } from "../navigation/ScheduleNavigator";
+import { ENV_INTERVAL_FIXED_MIN } from './fw';
 
 export function mapProtoSchedule(p: PB.ScheduleConfig, index: number): Schedule {
   const lorawanEnabled = Boolean(p.lorawanEnabled);
@@ -45,7 +46,10 @@ export function mapProtoSchedule(p: PB.ScheduleConfig, index: number): Schedule 
     environmental: p.environmental
     ? {
         enabled: Boolean(p.environmental.enabled),
-        sampleIntervalMin: p.environmental.sampleIntervalMin ?? undefined,
+        /* Healed on read: a collar — or the WB's own boot-default schedule —
+         * can report an interval BSEC cannot run. Showing it verbatim would
+         * round-trip it straight back through Save. */
+        sampleIntervalMin: ENV_INTERVAL_FIXED_MIN,
         }
     : undefined,
 
@@ -65,6 +69,10 @@ export function mapProtoSchedule(p: PB.ScheduleConfig, index: number): Schedule 
         sampleRate: p.microphone.sampleRate ?? 0,
         bitDepth: p.microphone.bitDepth ?? 0,
         sensitivity: p.microphone.sensitivity ?? 0,
+        // fw 380: a collar predating the fields sends nothing, and 0/0 is
+        // exactly what it records (WAV, nothing dropped).
+        codec: p.microphone.codec ?? 0,
+        lsbDrop: p.microphone.lsbDrop ?? 0,
         }
     : undefined,
 

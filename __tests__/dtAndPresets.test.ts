@@ -12,7 +12,7 @@ import {
   checkinLabel,
   CHECKIN_LADDER,
 } from '../src/utils/dt';
-import { parseFwBuild, bleFeatureGates } from '../src/utils/fw';
+import { parseFwBuild, bleFeatureGates, MIC_CODEC_MIN_FW_BUILD } from '../src/utils/fw';
 import {
   appToPresetSchedule,
   presetToAppSchedule,
@@ -167,6 +167,7 @@ describe('firmware gating', () => {
       micFormat: false,
       micRateExt: false,
       micSens: false,
+      micCodec: false,
     });
     expect(bleFeatureGates(304, 0)).toEqual({
       cfgTunnel: false,
@@ -175,6 +176,7 @@ describe('firmware gating', () => {
       micFormat: false,
       micRateExt: false,
       micSens: false,
+      micCodec: false,
     });
   });
   it('opens the extended-rate gate exactly at build 343', () => {
@@ -188,6 +190,13 @@ describe('firmware gating', () => {
   it('opens the sensitivity gate exactly at build 349', () => {
     expect(bleFeatureGates(348, 0).micSens).toBe(false);
     expect(bleFeatureGates(349, 0).micSens).toBe(true);
+  });
+  it('opens the FLAC recorder gate exactly at build 380', () => {
+    // Below it the collar accepts and echoes codec / lsb_drop but records
+    // WAV, so the pickers must stay shut and the save path must force 0/0.
+    expect(MIC_CODEC_MIN_FW_BUILD).toBe(380);
+    expect(bleFeatureGates(379, 0).micCodec).toBe(false);
+    expect(bleFeatureGates(380, 0).micCodec).toBe(true);
   });
   it('opens the microphone format gate exactly at build 338', () => {
     expect(bleFeatureGates(337, 0).micFormat).toBe(false);
@@ -253,5 +262,22 @@ describe('preset shape converters', () => {
     expect(back.lorawan?.enabled).toBe(true);
     expect(back.lorawan?.sendIntervalMin).toBe(60);
     expect(back.microphone?.sampleWindowMin).toBe(10);
+    // fw 380: a preset predating the recording format is WAV / nothing dropped
+    expect(back.microphone?.codec).toBe(0);
+    expect(back.microphone?.lsbDrop).toBe(0);
+  });
+
+  it('carries the recording format in the website preset keys (fw 380)', () => {
+    // The website's readModalSchedule writes microphone.codec / .lsb_drop;
+    // a preset saved on either editor must load on the other with FLAC intact.
+    const wire = appToPresetSchedule({
+      ...appSchedule,
+      microphone: { ...appSchedule.microphone!, codec: 1, lsbDrop: 2 },
+    });
+    expect(wire.microphone.codec).toBe(1);
+    expect(wire.microphone.lsb_drop).toBe(2);
+    const back = presetToAppSchedule(wire, 0);
+    expect(back.microphone?.codec).toBe(1);
+    expect(back.microphone?.lsbDrop).toBe(2);
   });
 });

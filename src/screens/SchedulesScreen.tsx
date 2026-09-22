@@ -399,6 +399,18 @@ export default function SchedulesScreen() {
                   <Text style={styles.cardDetail}>
                     🎙️ Microphone:{' '}
                     {s.microphone.continuousMode ? 'continuous' : 'windowed'}
+                    {/* fw 380: say when a take is FLAC (and how many low bits
+                        it gives up). WAV is every collar's default, so it is
+                        left unsaid, like the sample rate. */}
+                    {s.microphone.codec === 1
+                      ? `, FLAC${
+                          s.microphone.lsbDrop
+                            ? ` (${s.microphone.lsbDrop} low bit${
+                                s.microphone.lsbDrop === 1 ? '' : 's'
+                              } dropped)`
+                            : ''
+                        }`
+                      : ''}
                   </Text>
                 )}
                 {s.accelerometer?.enabled && (

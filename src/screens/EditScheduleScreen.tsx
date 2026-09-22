@@ -12,7 +12,7 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSchedules } from '../context/SchedulesContext';
 import { useDevice } from '../context/DeviceContext';
-import { bleFeatureGates } from '../utils/fw';
+import { bleFeatureGates, ENV_INTERVAL_FIXED_MIN, MIC_CODEC_MIN_FW_BUILD } from '../utils/fw';
 import type { Schedule } from '../navigation/ScheduleNavigator';
 import StyledPicker from '../components/StyledPicker';
 import { estimateScheduleSolarHours } from '../utils/powerEstimator';
@@ -133,9 +133,9 @@ export default function EditScheduleScreen() {
   const [envEnabled, setEnvEnabled] = useState(
     schedule.environmental?.enabled ?? false,
   );
-  const [envInterval, setEnvInterval] = useState(
-    String(schedule.environmental?.sampleIntervalMin ?? 5),
-  );
+  /* Pinned, and pinned on LOAD: a collar or preset already holding an illegal
+     interval heals here rather than round-tripping through Save. */
+  const [envInterval] = useState(String(ENV_INTERVAL_FIXED_MIN));
 
   /* Particulate — sensor not installed on this hardware; always off */
   const [partEnabled] = useState(false);
@@ -158,6 +158,10 @@ export default function EditScheduleScreen() {
   );
   const [micRate, setMicRate] = useState(schedule.microphone?.sampleRate ?? 0);
   const [micSens, setMicSens] = useState(schedule.microphone?.sensitivity ?? 0);
+  // fw 380: recording format and low-bit drop. ?? 0 = WAV / nothing dropped,
+  // which is what a collar or preset predating the fields records.
+  const [micCodec, setMicCodec] = useState(schedule.microphone?.codec ?? 0);
+  const [micLsbDrop, setMicLsbDrop] = useState(schedule.microphone?.lsbDrop ?? 0);
 
   /* A selectable sample rate exists only on fw 338+. Older collars record at
      16 kHz unconditionally, so the picker stays visible but disabled (a
@@ -169,6 +173,7 @@ export default function EditScheduleScreen() {
   const micFormatCapable = gates.micFormat;
   const micRateExtCapable = gates.micRateExt;
   const micSensCapable = gates.micSens;
+  const micCodecCapable = gates.micCodec;
 
   /* Accelerometer */
   const [accelEnabled, setAccelEnabled] = useState(
@@ -284,6 +289,30 @@ export default function EditScheduleScreen() {
       : []),
   ];
 
+  // Mirrors VOCAB.micCodec / micLsbDrop on the website (fw 380). Filtered
+  // below 380 like the sensitivity ladder (StyledPicker has no per-item
+  // disable); save clamps to WAV / 0 regardless. The drop picker only shows
+  // under FLAC — it does nothing on a WAV take.
+  const micCodecOptions = [
+    { label: 'WAV', value: 0 },
+    ...(micCodecCapable ? [{ label: 'FLAC (lossless, ~3x smaller)', value: 1 }] : []),
+  ];
+  const micLsbDropOptions = [
+    { label: '0 (none)', value: 0 },
+    { label: '1 bit (~6 dB)', value: 1 },
+    { label: '2 bits (~12 dB, FLAC ~6:1)', value: 2 },
+    { label: '3 bits (~18 dB)', value: 3 },
+    { label: '4 bits (~24 dB)', value: 4 },
+  ];
+  // FLAC is honoured at 8 and 16 kHz (wire 1 / 0) only; the collar records
+  // WAV at 48 kHz and above and says so in its log. Same rule as the
+  // website's micCodecRateOk.
+  const micCodecRateOk = micRate === 0 || micRate === 1;
+  // What the collar will actually store, given its build: the value the save
+  // path writes and the one the pickers are held to.
+  const micCodecEffective = micCodecCapable ? micCodec : 0;
+  const micLsbDropEffective = micCodecEffective === 1 ? micLsbDrop : 0;
+
 
   const accelSensitivityOptions = [
     { label: '±2g (most sensitive)', value: 0 },
@@ -319,7 +348,7 @@ export default function EditScheduleScreen() {
     },
     environmental: {
       enabled: envEnabled,
-      sampleIntervalMin: clamp(envInterval, 1, 720),
+      sampleIntervalMin: ENV_INTERVAL_FIXED_MIN,
     },
     particulate: {
       enabled: partEnabled,
@@ -340,6 +369,10 @@ export default function EditScheduleScreen() {
       sampleRate: !micFormatCapable ? 0 : (micRate >= 2 && !micRateExtCapable ? 0 : micRate),
       bitDepth: 0,   // always 16-bit; not user-selectable
       sensitivity: micSensCapable ? micSens : 0,
+      // fw 380: WAV / 0 below the recorder build, and the drop is 0 unless
+      // the codec resolves to FLAC (it only applies to FLAC takes).
+      codec: micCodecEffective,
+      lsbDrop: micLsbDropEffective,
     },
     accelerometer: {
       enabled: accelEnabled,
@@ -368,6 +401,7 @@ export default function EditScheduleScreen() {
       gpsMedVedba, gpsMedInt, gpsHighVedba, gpsHighInt, lightEnabled,
       lightInterval, envEnabled, envInterval, micEnabled, micContinuous,
       micLength, micWindow, micRate, micSens, micSensCapable, micFormatCapable,
+      micCodecEffective, micLsbDropEffective,
       accelEnabled, accelRate, accelSensitivity,
       lorawanEnabled, lorawanInterval, lorawanTxOnFix, loraEnabled,
       loraInterval, loraTxOnFix, magEnabled, magIntervalMin,
@@ -659,14 +693,17 @@ export default function EditScheduleScreen() {
       {renderCard(
         '🌡️ Environmental',
         <>
+          <Text style={styles.helper}>
+            Sampling is fixed at 5 minutes — the sensor's BSEC library
+            supports only that cadence.
+          </Text>
           <Text style={styles.label}>Interval (minutes)</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, styles.inputDisabled]}
             keyboardType="numeric"
             value={envInterval}
-            onChangeText={setEnvInterval}
-            placeholder="1–720 min"
             placeholderTextColor="#999"
+            editable={false}
           />
         </>,
         envEnabled,
@@ -759,6 +796,56 @@ export default function EditScheduleScreen() {
                 ? `This collar’s firmware (build ${fwBuild}) records at 16 kHz only — a selectable sample rate needs build 338+.`
                 : 'Selecting the sample rate needs firmware build 338+. Connect to a collar to check.'}
             </Text>
+          )}
+
+          {/* Recording format (fw 380). Unlike the sample rate this one DOES
+              carry an explainer: what FLAC costs is nothing and what the bit
+              drop costs is permanent, neither obvious from the label. The
+              picker stays visible below 380 — disabled with the gating note,
+              so it reads as an out-of-date collar, not a missing feature. */}
+          <Text style={styles.label}>Recording format</Text>
+          <StyledPicker
+            selectedValue={micCodecEffective}
+            onValueChange={setMicCodec}
+            items={micCodecOptions}
+            placeholder="Select recording format"
+            enabled={micEnabled && micCodecCapable}
+          />
+          {!micCodecCapable ? (
+            <Text style={styles.noteAmber}>
+              {fwBuild
+                ? `FLAC recording needs firmware build ${MIC_CODEC_MIN_FW_BUILD}+ (this collar reports ${fwBuild}) — it records WAV until updated.`
+                : `FLAC recording needs firmware build ${MIC_CODEC_MIN_FW_BUILD}+. Connect to a collar to check.`}
+            </Text>
+          ) : micCodecEffective === 1 && !micCodecRateOk ? (
+            <Text style={styles.noteAmber}>
+              FLAC is honoured at 8 and 16 kHz only — at this sample rate the
+              collar records WAV.
+            </Text>
+          ) : (
+            <Text style={styles.helper}>
+              FLAC is lossless — the same samples in about a third of the
+              space. The collar honours it at 8 and 16 kHz only; at 48 kHz and
+              above it records WAV regardless.
+            </Text>
+          )}
+
+          {micCodecEffective === 1 && (
+            <>
+              <Text style={styles.label}>Low bits dropped</Text>
+              <StyledPicker
+                selectedValue={micLsbDropEffective}
+                onValueChange={setMicLsbDrop}
+                items={micLsbDropOptions}
+                placeholder="Select bits to drop"
+                enabled={micEnabled}
+              />
+              <Text style={styles.helper}>
+                Removes the lowest bits of every sample before it is stored:
+                about 6 dB of noise floor per bit, and not reversible. Only
+                affects FLAC recordings — 2 bits takes FLAC to about 6:1.
+              </Text>
+            </>
           )}
         </>,
         micEnabled,
