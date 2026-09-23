@@ -1013,9 +1013,13 @@ export default function EditScheduleScreen() {
                     enabled={micEnabled}
                   />
                   <Text style={styles.helper}>
-                    Removes the lowest bits of every sample before it is
-                    stored: about 6 dB of noise floor per bit. Lossy and not
-                    reversible. Only affects compressed recordings.
+                    Lossy and not reversible: removes the lowest bits of every
+                    sample before it is stored. Each bit raises the file's own
+                    noise floor about 6 dB, but the microphone's hiss sits above
+                    it, so at Default one bit costs up to about 1 dB of the
+                    quietest detail and two up to about 3 dB (less at Medium or
+                    High); three or more start to bury quiet sounds. Leave at 0
+                    to keep everything. Only affects compressed recordings.
                   </Text>
                 </>
               )}
