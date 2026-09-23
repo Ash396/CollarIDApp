@@ -1013,8 +1013,8 @@ export default function EditScheduleScreen() {
                     enabled={micEnabled}
                   />
                   <Text style={styles.helper}>
-                    Lossy and not reversible: removes the lowest bits of every
-                    sample before it is stored. Each bit raises the file's own
+                    Lossy. Removes the lowest bits of every sample before it is
+                    stored, and it cannot be undone. Each bit raises the file's own
                     noise floor about 6 dB, but the microphone's hiss sits above
                     it, so at Default one bit costs up to about 1 dB of the
                     quietest detail and two up to about 3 dB (less at Medium or
