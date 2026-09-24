@@ -17,14 +17,13 @@ import {
   createPreset,
   deletePreset,
   getPreset,
-  getToken,
-  getUsername,
   listPresets,
-  loadSession,
   login,
   logout,
-  onSessionExpired,
 } from '../utils/api';
+// old: also getToken, getUsername, loadSession, onSessionExpired (the screen
+// kept its own copy of the session; it now reads the app-wide one).
+import { useSession } from '../utils/useSession';
 import {
   appToPresetSchedule,
   presetToAppSchedule,
@@ -34,8 +33,14 @@ export default function SavedSchedulesScreen() {
   const navigation = useNavigation<any>();
   const { draftSchedules, replaceDraft } = useSchedules();
 
-  const [ready, setReady] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
+  // The app-wide session: signing in on Home (or here) unlocks this screen,
+  // signing out anywhere (or a 401) locks it.
+  const session = useSession();
+  const ready = session.ready;
+  const signedIn = session.signedIn;
+  // old:
+  // const [ready, setReady] = useState(false);
+  // const [signedIn, setSignedIn] = useState(false);
 
   /* sign-in form */
   const [username, setUsername] = useState('');
@@ -59,16 +64,22 @@ export default function SavedSchedulesScreen() {
     }
   }, []);
 
+  // (Re)load the list whenever a session starts; forget it when one ends.
   useEffect(() => {
-    (async () => {
-      await loadSession();
-      const t = !!getToken();
-      setSignedIn(t);
-      setReady(true);
-      if (t) refresh();
-    })();
-    return onSessionExpired(() => setSignedIn(false));
-  }, [refresh]);
+    if (signedIn) refresh();
+    else setPresets(null);
+  }, [signedIn, session.generation, refresh]);
+  // old:
+  // useEffect(() => {
+  //   (async () => {
+  //     await loadSession();
+  //     const t = !!getToken();
+  //     setSignedIn(t);
+  //     setReady(true);
+  //     if (t) refresh();
+  //   })();
+  //   return onSessionExpired(() => setSignedIn(false));
+  // }, [refresh]);
 
   const handleSignIn = async () => {
     setAuthBusy(true);
@@ -76,8 +87,7 @@ export default function SavedSchedulesScreen() {
     try {
       await login(username.trim(), password);
       setPassword('');
-      setSignedIn(true);
-      refresh();
+      // old: setSignedIn(true); refresh();  (the session change does both)
     } catch (e: any) {
       setAuthError(e?.message ?? 'Sign in failed');
     } finally {
@@ -87,7 +97,7 @@ export default function SavedSchedulesScreen() {
 
   const handleSignOut = async () => {
     await logout();
-    setSignedIn(false);
+    // old: setSignedIn(false);
     setPresets(null);
   };
 
@@ -189,15 +199,19 @@ export default function SavedSchedulesScreen() {
           <Text style={styles.cardTitle}>Sign in</Text>
           <Text style={styles.helper}>
             Presets are stored in your CollarID account and shared with the
-            website configurator.
+            website configurator. Signing in here also signs in the rest of
+            the app (Home, Map).
           </Text>
           <Text style={styles.label}>Username</Text>
           <TextInput
             style={styles.input}
             value={username}
             onChangeText={setUsername}
+            textContentType="username"
+            autoComplete="username"
             autoCapitalize="none"
             autoCorrect={false}
+            spellCheck={false}
             placeholder="username"
             placeholderTextColor="#999"
           />
@@ -207,6 +221,11 @@ export default function SavedSchedulesScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            textContentType="password"
+            autoComplete="current-password"
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
             placeholder="••••••••"
             placeholderTextColor="#999"
           />
@@ -225,7 +244,7 @@ export default function SavedSchedulesScreen() {
         <>
           <View style={styles.rowBetween}>
             <Text style={styles.helper}>
-              Signed in as {getUsername() ?? 'user'}
+              Signed in as {session.username ?? 'user'}
             </Text>
             <TouchableOpacity onPress={handleSignOut}>
               <Text style={styles.linkText}>Sign out</Text>

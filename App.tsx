@@ -11,6 +11,7 @@ import { RadioConfigProvider } from './src/context/RadioConfigContext';
 import SplashScreen from './src/screens/SplashScreen';
 import RadioNavigator from './src/navigation/RadioNavigator';
 import AddOnsScreen from './src/screens/AddOnsScreen';
+import LiveMapScreen from './src/screens/LiveMapScreen';
 import { DeviceProvider } from './src/context/DeviceContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Text } from 'react-native';
@@ -47,6 +48,7 @@ export default function App() {
                     else if (route.name === 'RadioTab') icon = '📡';
                     else if (route.name === 'AddOnsTab') icon = '🧲';
                     else if (route.name === 'Power Consumption') icon = '🔋';
+                    else if (route.name === 'MapTab') icon = '🗺️';
 
                     return <Text style={{ fontSize: size }}>{icon}</Text>;
                   },
@@ -78,6 +80,13 @@ export default function App() {
                   name="Power Consumption"
                   component={PowerConsumptionScreen}
                   options={{ title: 'Power' }}
+                />
+
+                {/* collarid.org live map, signed in with the Home account. */}
+                <Tab.Screen
+                  name="MapTab"
+                  component={LiveMapScreen}
+                  options={{ title: 'Map' }}
                 />
               </Tab.Navigator>
             </NavigationContainer>

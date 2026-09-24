@@ -19,6 +19,7 @@ import * as PB from '../proto/collar_pb.js';
 import { useDevice } from '../context/DeviceContext';
 
 import CollarCard from '../components/CollarCard';
+import AccountCard from '../components/AccountCard';
 import {
   manager,
   COLLAR_SERVICE_UUID,
@@ -59,7 +60,7 @@ interface Collar {
 export default function HomeScreen() {
   const [collars, setCollars] = useState<Collar[]>([]);
   const [scanning, setScanning] = useState(false);
-  const { device, setDevice, setFwBuild, setCaps } = useDevice();
+  const { device, setDevice, setFwBuild, setCaps, setSystemUid } = useDevice();
   const [connectedDevice, setConnectedDevice] = useState<Collar | null>(null);
 
   const navigation = useNavigation<any>();
@@ -301,6 +302,11 @@ export default function HomeScreen() {
             const decoded = PB.BlePacket.decode(bytes);
             const sys = decoded.systemStatePacket;
             if (!sys) return;
+            // The collar's own UID (what the CollarID server calls it) —
+            // utils/collarUid.ts. 0 = not in this packet; keep what we have.
+            if (decoded.header?.systemUid) {
+              setSystemUid(decoded.header.systemUid);
+            }
             setConnectedDevice(prev =>
               prev
                 ? {
@@ -371,6 +377,9 @@ export default function HomeScreen() {
           console.log('has systemStatePacket?', !!decoded.systemStatePacket);
           console.log('systemStatePacket:', decoded.systemStatePacket);
           const sys = decoded.systemStatePacket;
+          if (sys && decoded.header?.systemUid) {
+            setSystemUid(decoded.header.systemUid);
+          }
 
           const updated = {
             ...collar,
@@ -447,7 +456,14 @@ export default function HomeScreen() {
     : collars.sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <ScrollView style={styles.container}>
+    // old: <ScrollView style={styles.container}>
+    // Taps must reach the account card's Sign in button while the keyboard
+    // is up, and the keyboard must not cover its password field.
+    <ScrollView
+      style={styles.container}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+    >
       <View style={styles.header}>
         <Text style={styles.title}>
           {connectedDevice ? 'CONNECTED COLLAR' : 'NEARBY COLLARS'}
@@ -519,6 +535,11 @@ export default function HomeScreen() {
           </View>
         )}
 
+      {/* CollarID account — below the Bluetooth list so scanning/connecting
+          stays exactly where it was. */}
+      <Text style={styles.sectionTitle}>ACCOUNT</Text>
+      <AccountCard />
+
       {__DEV__ && (
         <View style={styles.center}>
           {isMockDevice(device) ? (
@@ -550,6 +571,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#FFFFFF' },
   header: { marginBottom: 15 },
   title: { fontSize: 28, fontWeight: '700', color: '#111', letterSpacing: 0.5 },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6B7280',
+    letterSpacing: 0.8,
+    marginTop: 18,
+  },
   center: { alignItems: 'center', marginVertical: 24 },
   subtext: { marginTop: 10, fontSize: 16, color: '#444', fontWeight: '400' },
   mockButton: {

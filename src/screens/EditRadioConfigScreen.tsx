@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Text,
   TextInput,
   TouchableOpacity,
@@ -18,6 +19,14 @@ import {
   toUnixEpochSecondsFromLocal,
 } from '../utils/datetime';
 import StyledPicker from '../components/StyledPicker';
+import { useDevice } from '../context/DeviceContext';
+import { isMockDevice } from '../ble/bleManager';
+import { useSession } from '../utils/useSession';
+import { deriveCollarUid } from '../utils/collarUid';
+import {
+  RadioFormPatch,
+  loadServerRadioCredentials,
+} from '../utils/serverRadioConfig';
 
 type RadioRegion = 'REGION_US915' | 'REGION_AU915' | 'REGION_EU868';
 type RadioAuth = 'AUTH_OTAA' | 'AUTH_ABP';
@@ -36,6 +45,16 @@ export default function EditRadioConfigScreen() {
     useRadioConfig();
 
   const seedCfg = draftRadioConfig ?? deviceRadioConfig;
+
+  /* ---------------- CollarID server (LoRaWAN keys) ---------------- */
+  const { device, systemUid } = useDevice();
+  const session = useSession();
+  const [serverBusy, setServerBusy] = useState(false);
+  // What the last "Load from CollarID server" did, in words. Never holds keys.
+  const [serverNote, setServerNote] = useState<{
+    ok: boolean;
+    text: string;
+  } | null>(null);
 
   /* ---------------- LoRaWAN ---------------- */
   const [lorawanRegion, setLorawanRegion] =
@@ -396,6 +415,61 @@ export default function EditRadioConfigScreen() {
     });
   };
 
+  // Fill the LoRaWAN fields the way configure.html's "Prepopulate from
+  // Server" does (utils/serverRadioConfig.ts). Form only: nothing is saved
+  // until SAVE, nothing reaches the collar until SEND on the Radio tab.
+  const applyServerPatch = (p: RadioFormPatch) => {
+    if (p.region) setLorawanRegion(p.region);
+    if (p.auth) setLorawanAuth(p.auth);
+    if (p.devEui !== undefined) setDevEui(p.devEui);
+    if (p.joinEui !== undefined) setJoinEui(p.joinEui);
+    if (p.appKey !== undefined) setAppKey(p.appKey);
+    if (p.nwkKey !== undefined) setNwkKey(p.nwkKey);
+    if (p.devAddr !== undefined) setDevAddr(p.devAddr);
+    if (p.nwkSKey !== undefined) setNwkSKey(p.nwkSKey);
+    if (p.appSKey !== undefined) setAppSKey(p.appSKey);
+    if (p.fNwkSIntKey !== undefined) setFNwkSIntKey(p.fNwkSIntKey);
+    if (p.sNwkSIntKey !== undefined) setSNwkSIntKey(p.sNwkSIntKey);
+  };
+
+  const collarUid = deriveCollarUid({
+    systemUid,
+    name: device?.name,
+    localName: device?.localName,
+  });
+
+  const handleLoadFromServer = async () => {
+    if (serverBusy) return;
+    if (!collarUid) {
+      setServerNote({
+        ok: false,
+        text: isMockDevice(device)
+          ? 'The mock collar has no CollarID identity, so there is nothing to load.'
+          : "Could not tell this collar's ID: it has not sent its status yet " +
+            'and its Bluetooth name is not "CollarID-" + 8 hex digits. ' +
+            'Reconnect from Home and try again.',
+      });
+      return;
+    }
+    setServerBusy(true);
+    setServerNote(null);
+    try {
+      const r = await loadServerRadioCredentials(collarUid.uid);
+      if (r.kind === 'ok') applyServerPatch(r.patch);
+      setServerNote({
+        ok: r.kind === 'ok',
+        text:
+          r.message +
+          (r.kind === 'ok' && collarUid.source === 'name'
+            ? " (Collar ID taken from its Bluetooth name; it has not sent " +
+              'its status yet.)'
+            : ''),
+      });
+    } finally {
+      setServerBusy(false);
+    }
+  };
+
   const handleSave = () => {
     try {
       const pb = buildPbRadioConfigPacketFromUI();
@@ -417,6 +491,48 @@ export default function EditRadioConfigScreen() {
       {renderCard(
         '📡 LoRaWAN',
         <>
+          {/* CollarID server keys — only with a collar connected. */}
+          {device ? (
+            session.signedIn ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.serverBtn, serverBusy && styles.serverBtnBusy]}
+                  onPress={handleLoadFromServer}
+                  disabled={serverBusy}
+                  accessibilityRole="button"
+                  testID="radio-load-from-server"
+                >
+                  {serverBusy ? (
+                    <ActivityIndicator color="#1D4ED8" />
+                  ) : (
+                    <Text style={styles.serverBtnText}>
+                      ☁️ Load from CollarID server
+                    </Text>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.helper}>
+                  For collars on the CollarID LoRaWAN network
+                  {collarUid ? ` (${collarUid.uid})` : ''}: fills the fields
+                  below with the keys the network holds. Nothing is sent until
+                  you SAVE and then SEND.
+                </Text>
+              </>
+            ) : session.ready ? (
+              <Text style={styles.noteMuted} testID="radio-server-signed-out">
+                Sign in with your CollarID account on the Home tab to load this
+                collar's LoRaWAN keys from the CollarID server.
+              </Text>
+            ) : null
+          ) : null}
+          {serverNote && (
+            <Text
+              style={serverNote.ok ? styles.serverOk : styles.serverWarn}
+              testID="radio-server-note"
+            >
+              {serverNote.text}
+            </Text>
+          )}
+
           <Text style={styles.label}>Region</Text>
           <StyledPicker
             selectedValue={lorawanRegion}
@@ -441,6 +557,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={devEui}
+                testID="radio-devEui"
                 onChangeText={t => setDevEui(cleanHex(t).slice(0, 16))}
                 placeholder="0123456789ABCDEF"
                 placeholderTextColor="#999"
@@ -451,6 +568,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={joinEui}
+                testID="radio-joinEui"
                 onChangeText={t => setJoinEui(cleanHex(t).slice(0, 16))}
                 placeholder="0123456789ABCDEF"
                 placeholderTextColor="#999"
@@ -461,6 +579,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={appKey}
+                testID="radio-appKey"
                 onChangeText={t => setAppKey(cleanHex(t).slice(0, 32))}
                 placeholder="32 hex chars"
                 placeholderTextColor="#999"
@@ -471,6 +590,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={nwkKey}
+                testID="radio-nwkKey"
                 onChangeText={t => setNwkKey(cleanHex(t).slice(0, 32))}
                 placeholder="32 hex chars"
                 placeholderTextColor="#999"
@@ -485,6 +605,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={devAddr}
+                testID="radio-devAddr"
                 onChangeText={t => setDevAddr(cleanHex(t).slice(0, 8))}
                 placeholder="8 hex chars"
                 placeholderTextColor="#999"
@@ -495,6 +616,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={nwkSKey}
+                testID="radio-nwkSKey"
                 onChangeText={t => setNwkSKey(cleanHex(t).slice(0, 32))}
                 placeholder="32 hex chars"
                 placeholderTextColor="#999"
@@ -505,6 +627,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={appSKey}
+                testID="radio-appSKey"
                 onChangeText={t => setAppSKey(cleanHex(t).slice(0, 32))}
                 placeholder="32 hex chars"
                 placeholderTextColor="#999"
@@ -515,6 +638,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={fNwkSIntKey}
+                testID="radio-fNwkSIntKey"
                 onChangeText={t => setFNwkSIntKey(cleanHex(t).slice(0, 32))}
                 placeholder="32 hex chars"
                 placeholderTextColor="#999"
@@ -525,6 +649,7 @@ export default function EditRadioConfigScreen() {
               <TextInput
                 style={styles.input}
                 value={sNwkSIntKey}
+                testID="radio-sNwkSIntKey"
                 onChangeText={t => setSNwkSIntKey(cleanHex(t).slice(0, 32))}
                 placeholder="32 hex chars"
                 placeholderTextColor="#999"
@@ -794,6 +919,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginVertical: 6,
     alignItems: 'center',
+  },
+
+  serverBtn: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  serverBtnBusy: { opacity: 0.7 },
+  serverBtnText: { color: '#1D4ED8', fontWeight: '700', fontSize: 15 },
+  serverOk: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#166534',
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 9,
+    lineHeight: 18,
+  },
+  serverWarn: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#9A3412',
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FDBA74',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 9,
+    lineHeight: 18,
   },
 
   saveButton: {
