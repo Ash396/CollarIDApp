@@ -22,7 +22,17 @@ export type ScheduleSlot = Omit<Schedule, 'id' | 'name'>;
 
 /** The app's stock slot — what "+ Add Schedule" creates and what every
  *  preset starts from. Matches the website configurator's defaultSchedule():
- *  everything off, full day, the historical intervals. */
+ *  everything off, full day, the historical intervals, and audio stored
+ *  compressed (FLAC, lossless) so a microphone switched on in a new slot
+ *  records FLAC unless the operator picks WAV.
+ *
+ *  Only NEW slots start compressed. An absent codec — a collar echo, a
+ *  saved preset or a persisted draft that predates the field — still means
+ *  WAV everywhere it is read (the proto3 default, and the schedule CRC every
+ *  fielded collar already holds). A collar below MIC_CODEC_MIN_FW_BUILD
+ *  cannot record FLAC: the editor's save path (micFieldsForGates) and the
+ *  Send path (micFormatForCollar, for saved sets and restored drafts) both
+ *  hold the codec to WAV there, so this default never reaches one. */
 export function defaultScheduleSlot(): ScheduleSlot {
   return {
     window: { startHour: 0, endHour: 23 },
@@ -49,14 +59,34 @@ export function defaultScheduleSlot(): ScheduleSlot {
       sampleRate: 0, // 16 kHz
       bitDepth: 0, // 16-bit, never user-selectable
       sensitivity: 0, // gain: default
-      codec: 0, // WAV
-      lsbDrop: 0,
+      codec: 1, // compressed (FLAC, lossless), fw 380+ — the save and Send paths force WAV below
+      // old: codec: 0, // WAV
+      lsbDrop: 0, // lossless: nothing dropped
     },
     accelerometer: { enabled: false, sampleRate: 0, sensitivity: 0 },
     lorawan: { enabled: false, sendIntervalMin: 60 },
     lora: { enabled: false, sendIntervalMin: 60 },
     magnetometer: { enabled: false, sampleIntervalS: 60 },
   };
+}
+
+/** The storage the editor starts from for a slot it is handed — opened as
+ *  stored, or filled from a quick setup: the slot's own codec, and WAV when
+ *  it names none (a collar echo, a saved preset or a draft that predates
+ *  the field; absent is WAV everywhere it is read). Only defaultScheduleSlot()
+ *  and the quick setups name compressed, so that is where a new slot's FLAC
+ *  comes from. One rule for both editor entry points (its initial state and
+ *  applySlot).
+ *
+ *  Open question for Patrick: the collar leaves a DISABLED microphone out
+ *  of its BLE echo, so a blank-card or factory-reset collar's FLAC stock
+ *  reads back as no mic block, and switching the mic on here starts as WAV.
+ *  Starting a missing block as FLAC instead (`m ? m.codec ?? 0 : 1`) would be
+ *  safe — a disabled mic's codec never reaches the wire or the equality
+ *  check, and the gates still clamp below 380 — but it must change together
+ *  with the website editor (configure.html, `s.microphone?.codec ?? 0`). */
+export function slotMicCodec(m: Schedule['microphone'] | undefined): number {
+  return m?.codec ?? 0;
 }
 
 export type SchedulePresetKey = 'standard' | 'audio' | 'movement' | 'battery';

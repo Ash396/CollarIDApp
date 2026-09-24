@@ -69,14 +69,37 @@ export const MIC_GATE_MIN_BUILD: {
 
 /** The gates the schedule EDITOR works against. A connected collar's build
  *  decides; with no collar there is nothing to clamp to, so every option is
- *  offered (and the top-of-editor line says so). Safe because the draft is
- *  replaced by the collar's own config the moment one connects — an
- *  unconnected draft never reaches a radio. */
-export function editorFeatureGates(fwBuild: number, caps: number): FeatureGates {
+ *  offered (and the top-of-editor line says so).
+ *
+ *  The editor is NOT what keeps an unsupported option off an old collar. A
+ *  draft edited with no collar connected is persisted and restored when a
+ *  collar connects (SchedulesContext keeps the last collar's key), and a
+ *  saved schedule set loads straight into the draft without passing through
+ *  the editor at all. The Send path is: it holds every schedule to the
+ *  connected collar's own gates (micFormatForCollar) before writing.
+ *
+ *  `connected`: a collar IS connected but has not reported a parsable build
+ *  (legacy firmware, or a just-rebooted collar). That is not "no collar":
+ *  its gates stay closed until the build arrives, like the website's
+ *  "firmware not reported yet", so the editor does not offer — or save —
+ *  compressed audio to a collar that may predate the codec field. The
+ *  editor holds only the derived draft, not its pickers, so a choice made
+ *  before the build arrives takes effect once it does. */
+export function editorFeatureGates(
+  fwBuild: number,
+  caps: number,
+  connected = false,
+): FeatureGates {
   const g = bleFeatureGates(fwBuild, caps);
-  if (fwBuild > 0) return g;
+  if (fwBuild > 0 || connected) return g;
   return { ...g, micFormat: true, micRateExt: true, micSens: true, micCodec: true };
 }
+// old:
+// export function editorFeatureGates(fwBuild: number, caps: number): FeatureGates {
+//   const g = bleFeatureGates(fwBuild, caps);
+//   if (fwBuild > 0) return g;
+//   return { ...g, micFormat: true, micRateExt: true, micSens: true, micCodec: true };
+// }
 
 /** What the collar will actually record, given its gates: the values the
  *  save path writes and the ones the pickers are held to. No format field
@@ -97,14 +120,46 @@ export function micFieldsForGates(
   return { sampleRate, sensitivity, codec, lsbDrop };
 }
 
+/** The Send path's hold on the recording format: the last line of the codec
+ *  gate, for schedules that never went through the editor's Save against
+ *  this collar — a saved schedule set, or a draft edited with no collar (or
+ *  another one) and restored on reconnect. New slots store compressed audio
+ *  by default (defaultScheduleSlot), so such a schedule often names FLAC.
+ *  A collar below MIC_CODEC_MIN_FW_BUILD, or one that has not reported its
+ *  build, records WAV whatever it is told, so it is told WAV: codec 0 and
+ *  nothing dropped, exactly what the editor's save path (micFieldsForGates)
+ *  would have written. That keeps the verify-after-write comparison true
+ *  against a collar that predates the field (its echo has no codec, which
+ *  reads as WAV), and keeps the draft and its summary honest on one that
+ *  echoes the field but records WAV.
+ *
+ *  Codec only, like the website's micFormatForCollar (configure.html): the
+ *  other microphone gates are the editor's. Returns `s` itself when nothing
+ *  changes, so the caller can tell whether the draft moved. */
+export function micFormatForCollar(
+  s: Schedule,
+  g: Pick<FeatureGates, 'micCodec'>,
+): Schedule {
+  const m = s.microphone;
+  if (!m || g.micCodec) return s;
+  if ((m.codec ?? 0) === 0 && (m.lsbDrop ?? 0) === 0) return s;
+  return { ...s, microphone: { ...m, codec: 0, lsbDrop: 0 } };
+}
+
 /** The one firmware line at the top of the schedule editor — instead of a
  *  note under every gated knob. "Connected collar: firmware 380, all
  *  options available", or "Connected collar: firmware 375: compressed audio
- *  needs a firmware update"; with no collar, that everything is shown. */
+ *  needs a firmware update"; with no collar, that everything is shown; with
+ *  a collar that has not reported its build (`connected`, see
+ *  editorFeatureGates), that the newer options wait for it. */
 export function fwOptionsLine(
   fwBuild: number,
   g: Pick<FeatureGates, 'micFormat' | 'micRateExt' | 'micSens' | 'micCodec'>,
+  connected = false,
 ): string {
+  if (!fwBuild && connected) {
+    return 'Connected collar: firmware not reported yet. Options that need a newer firmware stay off until it is.';
+  }
   if (!fwBuild) {
     return 'No collar connected: every option is shown. Connect a collar to see what its firmware supports.';
   }
@@ -128,6 +183,9 @@ export function fwOptionsLine(
 /** The note under a control the connected collar cannot use (greyed under
  *  Advanced). Same words wherever it appears. */
 export function fwGateNote(fwBuild: number, minBuild: number): string {
+  // A connected collar with no parsable build greys these too (see
+  // editorFeatureGates); "reports 0" would read as a real build.
+  if (!fwBuild) return `Needs firmware ${minBuild}+ — this collar has not reported its firmware.`;
   return `Needs firmware ${minBuild}+ — this collar reports ${fwBuild}.`;
 }
 

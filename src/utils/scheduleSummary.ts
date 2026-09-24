@@ -50,7 +50,11 @@ export function everyText(min: number | undefined): string {
 }
 
 /** The microphone in one clause: "record continuously" or "record N min
- *  every M min", then rate / storage / gain only when off the default. */
+ *  every M min", then rate / gain only when off the default, and
+ *  "compressed" only where the collar honours it: 16-bit at 8 or 16 kHz
+ *  (the firmware's mic_format_codec_effective; the card estimate's
+ *  micCodecRatio uses the same rule). New slots default to compressed, so a
+ *  slot moved to 48 kHz and up would otherwise claim FLAC for a WAV take. */
 export function microphoneText(m: Schedule['microphone'] | undefined): string {
   if (!m?.enabled) return '';
   const parts: string[] = [
@@ -60,7 +64,11 @@ export function microphoneText(m: Schedule['microphone'] | undefined): string {
   ];
   const rate = MIC_RATE_LABEL[m.sampleRate ?? 0];
   if ((m.sampleRate ?? 0) !== 0 && rate) parts.push(rate);
-  if ((m.codec ?? 0) === 1) {
+  const rateWire = m.sampleRate ?? 0;
+  const codecHonoured =
+    (m.codec ?? 0) === 1 && (m.bitDepth ?? 0) === 0 && (rateWire === 0 || rateWire === 1);
+  if (codecHonoured) {
+    // old: if ((m.codec ?? 0) === 1) {
     const drop = m.lsbDrop ?? 0;
     parts.push(
       drop

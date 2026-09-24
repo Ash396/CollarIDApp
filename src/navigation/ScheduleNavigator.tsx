@@ -44,8 +44,10 @@ export type Schedule = {
     bitDepth?: number;
     /** MicSensitivity: 0 = Low (baseline), 1 = +6 dB, 2 = +12 dB. Fw 349+. */
     sensitivity?: number;
-    /** MicCodec: 0 = WAV (default), 1 = FLAC (lossless, 16-bit at 8/16 kHz
-     *  only — the collar records WAV at higher rates). Fw 380+. */
+    /** MicCodec: 0 = WAV, 1 = FLAC (lossless, 16-bit at 8/16 kHz only — the
+     *  collar records WAV at higher rates). Fw 380+. New slots start at 1
+     *  (defaultScheduleSlot); absent still means 0, the proto3 default and
+     *  what a collar predating the field records. */
     codec?: number;
     /** Low bits dropped from every sample before storing, 0-4. Lossy, ~6 dB
      *  of noise floor per bit; only affects FLAC takes. Fw 380+. */

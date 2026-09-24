@@ -27,6 +27,7 @@ import {
   SCHEDULE_PRESETS,
   applySchedulePreset,
   matchingSchedulePreset,
+  slotMicCodec,
 } from '../utils/schedulePresets';
 import type { ScheduleSlot } from '../utils/schedulePresets';
 import { scheduleConsequences } from '../utils/scheduleSummary';
@@ -178,16 +179,25 @@ export default function EditScheduleScreen() {
   );
   const [micRate, setMicRate] = useState(schedule.microphone?.sampleRate ?? 0);
   const [micSens, setMicSens] = useState(schedule.microphone?.sensitivity ?? 0);
-  // fw 380: recording format and low-bit drop. ?? 0 = WAV / nothing dropped,
-  // which is what a collar or preset predating the fields records.
-  const [micCodec, setMicCodec] = useState(schedule.microphone?.codec ?? 0);
+  // fw 380: recording format and low-bit drop. Absent = WAV / nothing
+  // dropped, which is what a collar or preset predating the fields records
+  // (slotMicCodec). A NEW slot arrives with codec 1 from defaultScheduleSlot()
+  // (compressed is the default), so only an absent codec reads as WAV here.
+  // <any>: typed like its sibling pickers' state (the route's schedule is
+  // untyped), so the setter still takes StyledPicker's value as-is.
+  const [micCodec, setMicCodec] = useState<any>(slotMicCodec(schedule.microphone));
+  // old: const [micCodec, setMicCodec] = useState(schedule.microphone?.codec ?? 0);
   const [micLsbDrop, setMicLsbDrop] = useState(schedule.microphone?.lsbDrop ?? 0);
 
   /* Firmware gates. A connected collar's build decides what it can honour;
      with no collar every option is offered and the line at the top says so.
      Bit depth is deliberately not offered — recordings are always 16-bit. */
-  const { fwBuild, caps } = useDevice();
-  const gates = editorFeatureGates(fwBuild, caps);
+  // `device`: a connected collar that has not reported its build keeps the
+  // gates closed (editorFeatureGates) — "no build" is not "no collar".
+  const { device, fwBuild, caps } = useDevice();
+  const gates = editorFeatureGates(fwBuild, caps, !!device);
+  // old: const { fwBuild, caps } = useDevice();
+  // old: const gates = editorFeatureGates(fwBuild, caps);
   const micFormatCapable = gates.micFormat;
   const micRateExtCapable = gates.micRateExt;
   const micSensCapable = gates.micSens;
@@ -294,7 +304,8 @@ export default function EditScheduleScreen() {
     setMicWindow(String(s.microphone?.sampleWindowMin ?? 10));
     setMicRate(s.microphone?.sampleRate ?? 0);
     setMicSens(s.microphone?.sensitivity ?? 0);
-    setMicCodec(s.microphone?.codec ?? 0);
+    setMicCodec(slotMicCodec(s.microphone));
+    // old: setMicCodec(s.microphone?.codec ?? 0);
     setMicLsbDrop(s.microphone?.lsbDrop ?? 0);
     setAccelEnabled(!!s.accelerometer?.enabled);
     setAccelRate(s.accelerometer?.sampleRate ?? 0);
@@ -604,7 +615,8 @@ export default function EditScheduleScreen() {
   );
 
   /* ---------------- RENDER ---------------- */
-  const fwLine = fwOptionsLine(fwBuild, gates);
+  const fwLine = fwOptionsLine(fwBuild, gates, !!device);
+  // old: const fwLine = fwOptionsLine(fwBuild, gates);
   const fwAllOk =
     fwBuild > 0 && micFormatCapable && micRateExtCapable && micSensCapable && micCodecCapable;
 

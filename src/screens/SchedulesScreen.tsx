@@ -25,6 +25,7 @@ import { readSchedulesFromDevice } from '../ble/bleManager';
 import { Swipeable } from 'react-native-gesture-handler';
 import { defaultScheduleSlot } from '../utils/schedulePresets';
 import { scheduleSummaryLines } from '../utils/scheduleSummary';
+import { bleFeatureGates, micFormatForCollar } from '../utils/fw';
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, 'Schedules'>;
 
@@ -64,13 +65,16 @@ function findOverlappingSchedules(
 
 export default function SchedulesScreen() {
   const navigation = useNavigation<Nav>();
-  const { device } = useDevice();
+  // fwBuild / caps: the Send path holds the draft to this collar's gates.
+  const { device, fwBuild, caps } = useDevice();
+  // old: const { device } = useDevice();
   const { loadRadioFromDevice } = useRadioConfig();
 
   const {
     draftSchedules,
     addSchedule,
     deleteSchedule,
+    replaceDraft,
     loadSchedulesFromDevice,
     clearSchedulesState,
     draftEngaged,
@@ -157,12 +161,27 @@ export default function SchedulesScreen() {
         return;
       }
 
+      // The codec gate's last line. A schedule that never went through the
+      // editor's Save against THIS collar — a saved set, or a draft edited
+      // with no collar and restored on reconnect — can name compressed
+      // audio (the default for new slots). A collar below build 380, or one
+      // that has not reported its build, records WAV whatever it is told, so
+      // the draft is made to say WAV before anything is written: that is
+      // what goes out, what the read-back is checked against, and what the
+      // cards show. No refusal — the collar records either way. Mirrors
+      // micFormatForCollar in the website's sendSchedules.
+      const sendGates = bleFeatureGates(fwBuild, caps);
+      const toSend = draftSchedules.map(s => micFormatForCollar(s, sendGates));
+      if (toSend.some((s, i) => s !== draftSchedules[i])) replaceDraft(toSend);
+
       const result = await verifyWrite({
-        draft: { schedules: draftSchedules, engaged: effectiveDraftEngaged },
+        draft: { schedules: toSend, engaged: effectiveDraftEngaged },
+        // old: draft: { schedules: draftSchedules, engaged: effectiveDraftEngaged },
 
         write: async () => {
           const packet = buildSchedulePacketFromAppState(
-            draftSchedules,
+            toSend,
+            // old: draftSchedules,
             effectiveDraftEngaged,
           );
           await sendConfig(device, packet);
