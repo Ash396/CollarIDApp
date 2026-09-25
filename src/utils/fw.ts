@@ -31,7 +31,7 @@ export const MAG_CAL_MIN_FW_BUILD = 398;
  *  and Send paths hold the rate to 0 (interval mode). Provisional: set at
  *  the firmware merge. Mirrors MAG_RATE_MIN_FW_BUILD in the website's
  *  js/collar-vocab.js and the server's api/main.py. */
-export const MAG_RATE_MIN_FW_BUILD = 424;
+export const MAG_RATE_MIN_FW_BUILD = 425;
 
 /** The rates the collar can run in rate mode, Hz (powers of two: exact
  *  LPTIM1 reloads on the 32.768 kHz crystal). 0 is interval mode. */

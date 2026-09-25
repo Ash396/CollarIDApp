@@ -162,8 +162,8 @@ describe('the packet builder', () => {
 /* ---------------- the gate and the clamps ---------------- */
 
 describe('firmware gate', () => {
-  it('opens exactly at MAG_RATE_MIN_FW_BUILD (provisional 424, set at the firmware merge)', () => {
-    expect(MAG_RATE_MIN_FW_BUILD).toBe(424);
+  it('opens exactly at MAG_RATE_MIN_FW_BUILD (firmware main build 425, set at the firmware merge)', () => {
+    expect(MAG_RATE_MIN_FW_BUILD).toBe(425);
     expect(bleFeatureGates(MAG_RATE_MIN_FW_BUILD, 0).magRate).toBe(true);
     expect(bleFeatureGates(MAG_RATE_MIN_FW_BUILD - 1, 0).magRate).toBe(false);
     expect(bleFeatureGates(398, 0).magRate).toBe(false); // calibration, not the rate
