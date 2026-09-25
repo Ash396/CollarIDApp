@@ -20,19 +20,30 @@ import { appSchedulesEqual } from './scheduleEquality';
 /** A schedule without its positional identity (id / "Schedule N"). */
 export type ScheduleSlot = Omit<Schedule, 'id' | 'name'>;
 
+/** The storage format a microphone starts with when nobody has chosen one
+ *  for it: compressed (FLAC, lossless; lsbDrop stays 0). A NEW slot carries
+ *  it (defaultScheduleSlot), and the editor starts from it for a slot whose
+ *  microphone is off (slotMicCodec). It is NOT how anything is read: an
+ *  absent codec on a microphone that is on still means WAV. Mirrors
+ *  MIC_CODEC_NEW_DEFAULT in the website's js/collar-vocab.js (added there
+ *  on the website's feat/flac-default branch, 2026-09-24). */
+export const MIC_CODEC_NEW_DEFAULT = 1;
+
 /** The app's stock slot — what "+ Add Schedule" creates and what every
  *  preset starts from. Matches the website configurator's defaultSchedule():
  *  everything off, full day, the historical intervals, and audio stored
  *  compressed (FLAC, lossless) so a microphone switched on in a new slot
  *  records FLAC unless the operator picks WAV.
  *
- *  Only NEW slots start compressed. An absent codec — a collar echo, a
- *  saved preset or a persisted draft that predates the field — still means
- *  WAV everywhere it is read (the proto3 default, and the schedule CRC every
- *  fielded collar already holds). A collar below MIC_CODEC_MIN_FW_BUILD
- *  cannot record FLAC: the editor's save path (micFieldsForGates) and the
- *  Send path (micFormatForCollar, for saved sets and restored drafts) both
- *  hold the codec to WAV there, so this default never reaches one. */
+ *  Only NEW slots, and a microphone switched on in the editor from off
+ *  (slotMicCodec), start compressed. An absent codec on a microphone that is
+ *  on — a collar echo, a saved preset or a persisted draft that predates the
+ *  field — still means WAV everywhere it is read (the proto3 default, and
+ *  the schedule CRC every fielded collar already holds). A collar below
+ *  MIC_CODEC_MIN_FW_BUILD cannot record FLAC: the editor's save path
+ *  (micFieldsForGates) and the Send path (micFormatForCollar, for saved sets
+ *  and restored drafts) both hold the codec to WAV there, so this default
+ *  never reaches one. */
 export function defaultScheduleSlot(): ScheduleSlot {
   return {
     window: { startHour: 0, endHour: 23 },
@@ -59,7 +70,7 @@ export function defaultScheduleSlot(): ScheduleSlot {
       sampleRate: 0, // 16 kHz
       bitDepth: 0, // 16-bit, never user-selectable
       sensitivity: 0, // gain: default
-      codec: 1, // compressed (FLAC, lossless), fw 380+ — the save and Send paths force WAV below
+      codec: MIC_CODEC_NEW_DEFAULT, // compressed (FLAC, lossless), fw 380+ — the save and Send paths force WAV below
       // old: codec: 0, // WAV
       lsbDrop: 0, // lossless: nothing dropped
     },
@@ -71,22 +82,46 @@ export function defaultScheduleSlot(): ScheduleSlot {
 }
 
 /** The storage the editor starts from for a slot it is handed — opened as
- *  stored, or filled from a quick setup: the slot's own codec, and WAV when
- *  it names none (a collar echo, a saved preset or a draft that predates
- *  the field; absent is WAV everywhere it is read). Only defaultScheduleSlot()
- *  and the quick setups name compressed, so that is where a new slot's FLAC
- *  comes from. One rule for both editor entry points (its initial state and
- *  applySlot).
+ *  stored, or filled from a quick setup. One rule for both editor entry
+ *  points (its initial state and applySlot), keyed on what the editor treats
+ *  as "mic on": microphone.enabled (continuous mode and the sample lengths
+ *  only mean anything under it).
  *
- *  Open question for Patrick: the collar leaves a DISABLED microphone out
- *  of its BLE echo, so a blank-card or factory-reset collar's FLAC stock
- *  reads back as no mic block, and switching the mic on here starts as WAV.
- *  Starting a missing block as FLAC instead (`m ? m.codec ?? 0 : 1`) would be
- *  safe — a disabled mic's codec never reaches the wire or the equality
- *  check, and the gates still clamp below 380 — but it must change together
- *  with the website editor (configure.html, `s.microphone?.codec ?? 0`). */
+ *  Decided 2026-09-24 (Patrick): a mic switched on in a slot read back from
+ *  a collar starts as FLAC. The collar leaves a DISABLED microphone out of
+ *  its BLE echo, so a mic-off slot read back from it has no microphone
+ *  block, and a disabled mic's codec never reaches the wire or the equality
+ *  check (both strip or zero a disabled sensor), so no stored codec is
+ *  anything the collar holds. So:
+ *   - mic OFF (no block, or a block with enabled false, whatever codec it
+ *     names): the new-slot default, MIC_CODEC_NEW_DEFAULT;
+ *   - mic ON: its own codec, and WAV when it names none — that is what the
+ *     collar really records (firmware reads an absent codec as WAV).
+ *  The drop follows in slotMicLsbDrop (0 when WAV turns compressed). Below
+ *  MIC_CODEC_MIN_FW_BUILD, or with no reported build, the save path
+ *  (micFieldsForGates) and the Send path (micFormatForCollar) still hold
+ *  the codec to WAV. Must match the website editor: its micCodecToStart
+ *  (js/collar-vocab.js, used by configure.html) takes the build gate and
+ *  picks FLAC for an off mic only when the gate is open. Here the gate is
+ *  applied after the helper instead, by micFieldsForGates (what the editor
+ *  shows and saves) and micFormatForCollar (Send), the same way a new slot's
+ *  codec 1 is held. On purpose: while the gate stays put, both save and
+ *  send the same values. They differ only when the gate changes with the
+ *  editor open (the collar disconnects): the app then shows, and would save,
+ *  compressed for a mic switched on from off, and the website keeps WAV.
+ *  Either way Send still holds a collar below 380 to WAV. */
 export function slotMicCodec(m: Schedule['microphone'] | undefined): number {
-  return m?.codec ?? 0;
+  return m?.enabled ? m.codec ?? 0 : MIC_CODEC_NEW_DEFAULT;
+  // old: return m?.codec ?? 0;
+}
+
+/** The low-bit drop the editor starts from, beside slotMicCodec. When the
+ *  rule above turns an off mic's WAV into compressed, the drop starts at 0
+ *  (lossless), so a drop left on a WAV mic, where it never applied, cannot
+ *  quietly become lossy FLAC. Otherwise the slot's own drop. Mirrors the
+ *  website's micLsbDropToStart (js/collar-vocab.js). */
+export function slotMicLsbDrop(m: Schedule['microphone'] | undefined): number {
+  return slotMicCodec(m) !== (m?.codec ?? 0) ? 0 : m?.lsbDrop ?? 0;
 }
 
 export type SchedulePresetKey = 'standard' | 'audio' | 'movement' | 'battery';

@@ -8,7 +8,11 @@
  *    sets and restored drafts — flacDefaultScreens.test.tsx): no refused
  *    push, no false mismatch,
  *  - the quick-setup highlight and the plain-words summary still tell the
- *    truth.
+ *    truth,
+ *  - (2026-09-24) the editor starts a microphone that is OFF — no block in a
+ *    collar's read-back, or a disabled block whatever codec it names — at
+ *    the new-slot default, so switching it on records FLAC; a microphone
+ *    that is ON keeps its codec, absent = WAV.
  */
 import * as PB from '../src/proto/collar_pb.js';
 import {
@@ -16,6 +20,9 @@ import {
   applySchedulePreset,
   defaultScheduleSlot,
   matchingSchedulePreset,
+  MIC_CODEC_NEW_DEFAULT,
+  slotMicCodec,
+  slotMicLsbDrop,
 } from '../src/utils/schedulePresets';
 import type { SchedulePreset } from '../src/utils/schedulePresets';
 import {
@@ -251,5 +258,147 @@ describe('the summary claims compression only where the collar honours it', () =
       'record 1 min every 10 min, 48 kHz',
     );
     expect(microphoneText({ ...newSlotMicOn().microphone!, bitDepth: 1 })).not.toMatch(/compressed/);
+  });
+});
+
+describe('a microphone that is off starts compressed in the editor (2026-09-24)', () => {
+  /** A slot as the collar reads it back: through the packet builder (a
+   *  disabled sensor is stripped) and mapProtoSchedule. */
+  const readBack = (s: Schedule): Schedule => ({
+    ...mapProtoSchedule(echoOf([s])[0], 0),
+    id: s.id,
+    name: s.name,
+  });
+
+  /** What the editor saves for a slot it opened, with the mic switched to
+   *  `on` and nothing else touched: its codec state starts at slotMicCodec
+   *  and is held to the collar's gates (buildDraft in EditScheduleScreen). */
+  const editorSave = (
+    s: Schedule,
+    on: boolean,
+    g: Pick<FeatureGates, 'micFormat' | 'micRateExt' | 'micSens' | 'micCodec'>,
+  ): Schedule => {
+    const m = {
+      enabled: on,
+      continuousMode: s.microphone?.continuousMode ?? false,
+      sampleLengthMin: s.microphone?.sampleLengthMin ?? 1,
+      sampleWindowMin: s.microphone?.sampleWindowMin ?? 10,
+      sampleRate: s.microphone?.sampleRate ?? 0,
+      bitDepth: 0,
+      sensitivity: s.microphone?.sensitivity ?? 0,
+      codec: slotMicCodec(s.microphone),
+      lsbDrop: slotMicLsbDrop(s.microphone),
+    };
+    return { ...s, microphone: { ...m, ...micFieldsForGates(m, g) } };
+  };
+
+  it('an off WAV mic with a drop switches on lossless (the website does the same)', () => {
+    const offWavDrop: Schedule['microphone'] = { enabled: false, codec: 0, lsbDrop: 2 };
+    expect(slotMicCodec(offWavDrop)).toBe(MIC_CODEC_NEW_DEFAULT);
+    expect(slotMicLsbDrop(offWavDrop)).toBe(0);
+    // The codec left alone keeps the slot's own drop.
+    expect(slotMicLsbDrop({ enabled: false, codec: 1, lsbDrop: 2 })).toBe(2);
+    expect(slotMicLsbDrop({ enabled: true, codec: 1, lsbDrop: 2 })).toBe(2);
+    expect(slotMicLsbDrop({ enabled: true, lsbDrop: 0 })).toBe(0);
+    expect(slotMicLsbDrop(undefined)).toBe(0);
+    const s: Schedule = { ...defaultScheduleSlot(), id: 'drop', name: 'drop', microphone: offWavDrop };
+    const mic = editorSave(s, true, editorFeatureGates(382, 0, true)).microphone;
+    expect(mic?.codec).toBe(1);
+    expect(mic?.lsbDrop).toBe(0);
+  });
+
+  it('the new-slot default is compressed, and it is what the stock slot carries', () => {
+    expect(MIC_CODEC_NEW_DEFAULT).toBe(1);
+    expect(defaultScheduleSlot().microphone?.codec).toBe(MIC_CODEC_NEW_DEFAULT);
+  });
+
+  it('mic off: no block, a disabled block, or a disabled block naming WAV', () => {
+    expect(slotMicCodec(undefined)).toBe(MIC_CODEC_NEW_DEFAULT);
+    expect(slotMicCodec({ enabled: false })).toBe(MIC_CODEC_NEW_DEFAULT);
+    expect(slotMicCodec({ enabled: false, codec: 0 })).toBe(MIC_CODEC_NEW_DEFAULT);
+    expect(slotMicCodec({ enabled: false, codec: 1 })).toBe(MIC_CODEC_NEW_DEFAULT);
+  });
+
+  it('mic on: its own codec, and WAV when it names none', () => {
+    expect(slotMicCodec({ enabled: true })).toBe(0);
+    expect(slotMicCodec({ enabled: true, codec: 0 })).toBe(0);
+    expect(slotMicCodec({ enabled: true, codec: 1 })).toBe(1);
+    // continuous mode is under the enable, not a second way of being on
+    expect(slotMicCodec({ enabled: false, continuousMode: true, codec: 0 })).toBe(
+      MIC_CODEC_NEW_DEFAULT,
+    );
+  });
+
+  it('a read-back slot with the mic off has no block; switched on it goes out FLAC on 380+', () => {
+    const back = readBack({ id: 'c', name: 'Schedule 1', ...defaultScheduleSlot() });
+    expect(back.microphone).toBeUndefined();
+    const d = [editorSave(back, true, editorFeatureGates(MIC_CODEC_MIN_FW_BUILD, 0, true))];
+    expect(d[0].microphone).toMatchObject({ enabled: true, codec: 1, lsbDrop: 0 });
+    expect(echoOf(d)[0].microphone!.codec).toBe(1);
+    expect(schedulesEqual(d, echoOf(d))).toBe(true);
+  });
+
+  it('... and WAV on a collar below 380 or with no reported build, still verified', () => {
+    const back = readBack({ id: 'c', name: 'Schedule 1', ...defaultScheduleSlot() });
+    for (const b of [375, 340, 0]) {
+      const d = [editorSave(back, true, editorFeatureGates(b, 0, true))];
+      expect(d[0].microphone).toMatchObject({ enabled: true, codec: 0, lsbDrop: 0 });
+      expect(echoOf(d)[0].microphone!.codec).toBe(0);
+      expect(schedulesEqual(d, b >= 375 ? echoOf(d) : legacyEchoOf(d))).toBe(true);
+    }
+  });
+
+  it('a disabled mic naming WAV (a saved preset or draft) switches on as FLAC', () => {
+    const s: Schedule = {
+      ...newSlotMicOn(),
+      microphone: { ...newSlotMicOn().microphone!, enabled: false, codec: 0 },
+    };
+    const d = editorSave(s, true, editorFeatureGates(382, 0, true));
+    expect(d.microphone).toMatchObject({ enabled: true, codec: 1 });
+    // a saved preset carrying it: same
+    const viaPreset = presetToAppSchedule(appToPresetSchedule(s), 0);
+    expect(viaPreset.microphone).toMatchObject({ enabled: false, codec: 0 });
+    expect(slotMicCodec(viaPreset.microphone)).toBe(MIC_CODEC_NEW_DEFAULT);
+  });
+
+  it('a mic that is on and names no codec stays WAV (what the collar records)', () => {
+    const back = readBack({
+      ...newSlotMicOn(),
+      microphone: { enabled: true, continuousMode: false, sampleLengthMin: 1, sampleWindowMin: 10 },
+    });
+    expect(back.microphone).toMatchObject({ enabled: true, codec: 0 });
+    const d = [editorSave(back, true, editorFeatureGates(382, 0, true))];
+    expect(d[0].microphone).toMatchObject({ codec: 0, lsbDrop: 0 });
+    expect(schedulesEqual(d, echoOf(d))).toBe(true);
+  });
+
+  it('saving a mic-off slot unchanged: no unsent change, no mismatch, same preset', () => {
+    for (const p of SCHEDULE_PRESETS.filter(x => !x.slot.microphone?.enabled)) {
+      const collar = asSchedule(p);
+      const back = readBack(collar);
+      expect(back.microphone).toBeUndefined();
+      for (const b of [0, 340, 375, MIC_CODEC_MIN_FW_BUILD]) {
+        const g = editorFeatureGates(b, 0, b > 0);
+        const d = editorSave(back, false, g);
+        // the codec the editor now holds for the off mic is invisible to the
+        // draft-vs-collar compare, the read-back check and the wire
+        expect(appSchedulesEqual([d], [back])).toBe(true);
+        expect(schedulesEqual([d], echoOf([collar]))).toBe(true);
+        expect(matchingSchedulePreset(back, g)).toBe(p.key);
+        expect(matchingSchedulePreset(d, g)).toBe(p.key);
+      }
+    }
+  });
+
+  it('a read-back Standard with continuous audio switched on IS the Audio study on 380+', () => {
+    const back = readBack(asSchedule(byKey('standard')));
+    const on = editorSave(back, true, editorFeatureGates(382, 0, true));
+    on.microphone = { ...on.microphone!, continuousMode: true, sampleLengthMin: 60, sampleWindowMin: 60 };
+    expect(matchingSchedulePreset(on, editorFeatureGates(382, 0, true))).toBe('audio');
+    // and on a 375 collar too, where the Audio study itself is held to WAV
+    const old = editorSave(back, true, editorFeatureGates(375, 0, true));
+    old.microphone = { ...old.microphone!, continuousMode: true, sampleLengthMin: 60, sampleWindowMin: 60 };
+    expect(old.microphone.codec).toBe(0);
+    expect(matchingSchedulePreset(old, editorFeatureGates(375, 0, true))).toBe('audio');
   });
 });

@@ -6,22 +6,27 @@
  *    and reads an absent codec as WAV,
  *  - SEND TO DEVICE holds a saved set or a restored draft to the connected
  *    collar's codec gate: WAV on the wire below build 380 (or with no build),
- *    the read-back verifies, and "Unsent changes" goes away.
+ *    the read-back verifies, and "Unsent changes" goes away,
+ *  - (2026-09-24) a slot read back from the collar with the mic off (no mic
+ *    block) opens in the editor at the new-slot default: switched on, it
+ *    goes out FLAC to a 380+ collar and WAV to an older or unreported one.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 import type { ReactTestInstance, ReactTestRenderer as Renderer } from 'react-test-renderer';
-import { Alert, Text } from 'react-native';
+import { Alert, Switch, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as PB from '../src/proto/collar_pb.js';
 import { SchedulesProvider, useSchedules } from '../src/context/SchedulesContext';
 import SchedulesScreen from '../src/screens/SchedulesScreen';
 import EditScheduleScreen from '../src/screens/EditScheduleScreen';
 import {
+  MIC_CODEC_NEW_DEFAULT,
   SCHEDULE_PRESETS,
   defaultScheduleSlot,
   slotMicCodec,
 } from '../src/utils/schedulePresets';
+import type { SchedulePreset, SchedulePresetKey } from '../src/utils/schedulePresets';
 import { editorFeatureGates, micFieldsForGates, micFormatForCollar } from '../src/utils/fw';
 import { appToPresetSchedule, presetToAppSchedule } from '../src/utils/presetShape';
 import type { Schedule } from '../src/navigation/ScheduleNavigator';
@@ -371,7 +376,9 @@ describe('the editor', () => {
       microphone: { enabled: true, continuousMode: false, sampleLengthMin: 1, sampleWindowMin: 10 },
     };
     expect(slotMicCodec(legacy.microphone)).toBe(0);
-    expect(slotMicCodec(undefined)).toBe(0);
+    // no block at all is a mic that is off: the new-slot default (2026-09-24)
+    expect(slotMicCodec(undefined)).toBe(MIC_CODEC_NEW_DEFAULT);
+    // old: expect(slotMicCodec(undefined)).toBe(0);
     const r = await openEditor(legacy);
     expect(texts(r)).toContain('Standard (WAV)');
     await press(r, 'SAVE');
@@ -390,5 +397,156 @@ describe('the editor', () => {
     await press(r, audio.label);
     await press(r, 'SAVE');
     expect(savedMic()).toMatchObject({ enabled: true, codec: 1, lsbDrop: 0 });
+  });
+});
+
+/* ---------------- read back, switched on, sent ---------------- */
+
+// The Schedules screen and the editor under ONE provider, the way the
+// navigator stacks them: the editor opens on a slot the collar read back
+// and saves into the same draft SEND TO DEVICE writes.
+let showEditor: (v: boolean) => void = () => {};
+function ListAndEditor() {
+  const [open, setOpen] = useState(false);
+  showEditor = setOpen;
+  return (
+    <>
+      <SchedulesScreen />
+      {open && <EditScheduleScreen />}
+    </>
+  );
+}
+
+/** Flip the switch in a card's header (the card titled `title`). */
+async function toggleCard(r: Renderer, title: string, value: boolean) {
+  const t = r.root.findAll(n => n.type === Text && flat(n.props.children) === title)[0];
+  if (!t) throw new Error(`no "${title}" card`);
+  let n: ReactTestInstance | null = t.parent;
+  while (n && n.findAll(x => x.type === Switch).length === 0) n = n.parent;
+  if (!n) throw new Error(`"${title}" has no switch`);
+  const sw = n.findAll(x => x.type === Switch)[0];
+  await act(async () => {
+    sw.props.onValueChange(value);
+  });
+  await flush();
+}
+
+describe('a mic switched on in a slot read back from the collar (2026-09-24)', () => {
+  const CASES = [
+    { build: 382, knowsCodec: true, codec: 1 },
+    { build: 375, knowsCodec: true, codec: 0 },
+    { build: 340, knowsCodec: false, codec: 0 },
+    { build: 0, knowsCodec: false, codec: 0 }, // connected, build not reported
+  ];
+
+  for (const { build, knowsCodec, codec } of CASES) {
+    it(`build ${build}: goes out as ${codec ? 'FLAC' : 'WAV'} and verifies`, async () => {
+      mockDeviceState = { device: DEVICE, fwBuild: build, caps: 0 };
+      mockCollar.knowsCodec = knowsCodec;
+      mockCollar.stored = collarBefore();
+      const r = await mount(<ListAndEditor />);
+
+      // the collar left its disabled microphone out of the echo
+      const back = ctx.draftSchedules[0];
+      expect(back.microphone).toBeUndefined();
+      expect(ctx.isDirty).toBe(false);
+
+      mockRoute = { params: { schedule: back, index: 0 } };
+      await act(async () => showEditor(true));
+      await flush();
+      await toggleCard(r, '🎙️ Microphone', true);
+      await press(r, 'SAVE');
+      expect(ctx.draftSchedules[0].microphone).toMatchObject({ enabled: true, codec, lsbDrop: 0 });
+      await act(async () => showEditor(false));
+
+      await press(r, 'SEND TO DEVICE');
+
+      expect(sentMics()).toHaveLength(1);
+      expect(sentMics()[0]).toMatchObject({ enabled: true, codec, lsbDrop: 0 });
+      expect(await verdict()).toMatchObject({ ok: true });
+      expect(ctx.isDirty).toBe(false);
+    });
+  }
+
+  it('a disabled mic that names WAV (a saved set or draft), switched on: compressed', async () => {
+    mockDeviceState = { device: DEVICE, fwBuild: 382, caps: 0 };
+    mockCollar.stored = collarBefore();
+    const r = await mount(<ListAndEditor />);
+    const off: Schedule = {
+      ...newSlotMicOn('c'),
+      microphone: { ...newSlotMicOn().microphone!, enabled: false, codec: 0 },
+    };
+    await act(async () => ctx.replaceDraft([off]));
+    mockRoute = { params: { schedule: off, index: 0 } };
+    await act(async () => showEditor(true));
+    await flush();
+    await toggleCard(r, '🎙️ Microphone', true);
+    expect(texts(r)).toContain(COMPRESSED);
+    await press(r, 'SAVE');
+    expect(ctx.draftSchedules[0].microphone).toMatchObject({ enabled: true, codec: 1, lsbDrop: 0 });
+  });
+
+  it('a quick setup with the mic off naming WAV, then the mic switched on: compressed', async () => {
+    // Every real quick setup builds its mic block from defaultScheduleSlot()
+    // (codec 1), so none can tell applySlot's half of the rule from the old
+    // one. This one can: an off mic that names WAV, over a slot that is WAV.
+    const base = defaultScheduleSlot();
+    const offWav: SchedulePreset = {
+      key: 'test-off-wav' as SchedulePresetKey,
+      label: 'Test: mic off, WAV',
+      description: '',
+      slot: { ...base, microphone: { ...base.microphone!, enabled: false, codec: 0 } },
+    };
+    SCHEDULE_PRESETS.push(offWav);
+    try {
+      mockDeviceState = { device: DEVICE, fwBuild: 382, caps: 0 };
+      const wavOn: Schedule = {
+        ...newSlotMicOn(),
+        microphone: { ...newSlotMicOn().microphone!, codec: 0 },
+      };
+      const r = await openEditor(wavOn);
+      expect(texts(r)).toContain('Standard (WAV)');
+      await press(r, offWav.label);
+      await toggleCard(r, '🎙️ Microphone', true);
+      expect(texts(r)).toContain(COMPRESSED);
+      await press(r, 'SAVE');
+      expect(savedMic()).toMatchObject({ enabled: true, codec: 1, lsbDrop: 0 });
+    } finally {
+      SCHEDULE_PRESETS.splice(SCHEDULE_PRESETS.indexOf(offWav), 1);
+    }
+  });
+
+  it('the mic left off: saving it is not an unsent change', async () => {
+    mockDeviceState = { device: DEVICE, fwBuild: 382, caps: 0 };
+    mockCollar.stored = collarBefore();
+    const r = await mount(<ListAndEditor />);
+    const back = ctx.draftSchedules[0];
+    mockRoute = { params: { schedule: back, index: 0 } };
+    await act(async () => showEditor(true));
+    await flush();
+    await press(r, 'SAVE');
+    // the editor holds the new-slot default for the off mic ...
+    expect(ctx.draftSchedules[0].microphone).toMatchObject({ enabled: false, codec: 1 });
+    // ... which neither the draft-vs-collar compare nor the wire can see
+    expect(ctx.isDirty).toBe(false);
+    expect(texts(r)).not.toContain('Unsent changes');
+  });
+
+  it('a read-back Standard deployment still highlights as Standard', async () => {
+    const standard = SCHEDULE_PRESETS.find(p => p.key === 'standard')!;
+    mockDeviceState = { device: DEVICE, fwBuild: 382, caps: 0 };
+    mockCollar.stored = mockEcho(
+      buildSchedulePacketFromAppState(
+        [{ id: 'c', name: 'Schedule 1', ...standard.slot }],
+        true,
+      ),
+    );
+    const r = await mount(<ListAndEditor />);
+    const back = ctx.draftSchedules[0];
+    expect(back.microphone).toBeUndefined();
+    mockRoute = { params: { schedule: back, index: 0 } };
+    await act(async () => showEditor(true));
+    await flush();
+    expect(texts(r)).toContain(`● ${standard.label}`);
   });
 });

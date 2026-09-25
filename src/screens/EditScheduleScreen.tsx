@@ -28,6 +28,7 @@ import {
   applySchedulePreset,
   matchingSchedulePreset,
   slotMicCodec,
+  slotMicLsbDrop,
 } from '../utils/schedulePresets';
 import type { ScheduleSlot } from '../utils/schedulePresets';
 import { scheduleConsequences } from '../utils/scheduleSummary';
@@ -179,15 +180,18 @@ export default function EditScheduleScreen() {
   );
   const [micRate, setMicRate] = useState(schedule.microphone?.sampleRate ?? 0);
   const [micSens, setMicSens] = useState(schedule.microphone?.sensitivity ?? 0);
-  // fw 380: recording format and low-bit drop. Absent = WAV / nothing
-  // dropped, which is what a collar or preset predating the fields records
-  // (slotMicCodec). A NEW slot arrives with codec 1 from defaultScheduleSlot()
-  // (compressed is the default), so only an absent codec reads as WAV here.
+  // fw 380: recording format and low-bit drop (slotMicCodec). A mic that is
+  // on keeps its codec, and absent = WAV, which is what a collar or preset
+  // predating the fields records. A mic that is off starts at the new-slot
+  // default (compressed): its codec never reached the collar (a read-back
+  // has no block for it), so switching it on here starts as FLAC, like a
+  // new slot. The save path still holds it to WAV below build 380.
   // <any>: typed like its sibling pickers' state (the route's schedule is
   // untyped), so the setter still takes StyledPicker's value as-is.
   const [micCodec, setMicCodec] = useState<any>(slotMicCodec(schedule.microphone));
   // old: const [micCodec, setMicCodec] = useState(schedule.microphone?.codec ?? 0);
-  const [micLsbDrop, setMicLsbDrop] = useState(schedule.microphone?.lsbDrop ?? 0);
+  const [micLsbDrop, setMicLsbDrop] = useState<any>(slotMicLsbDrop(schedule.microphone));
+  // old: const [micLsbDrop, setMicLsbDrop] = useState(schedule.microphone?.lsbDrop ?? 0);
 
   /* Firmware gates. A connected collar's build decides what it can honour;
      with no collar every option is offered and the line at the top says so.
@@ -306,7 +310,8 @@ export default function EditScheduleScreen() {
     setMicSens(s.microphone?.sensitivity ?? 0);
     setMicCodec(slotMicCodec(s.microphone));
     // old: setMicCodec(s.microphone?.codec ?? 0);
-    setMicLsbDrop(s.microphone?.lsbDrop ?? 0);
+    setMicLsbDrop(slotMicLsbDrop(s.microphone));
+    // old: setMicLsbDrop(s.microphone?.lsbDrop ?? 0);
     setAccelEnabled(!!s.accelerometer?.enabled);
     setAccelRate(s.accelerometer?.sampleRate ?? 0);
     setAccelSensitivity(s.accelerometer?.sensitivity ?? 0);

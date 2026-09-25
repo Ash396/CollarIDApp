@@ -46,8 +46,9 @@ export type Schedule = {
     sensitivity?: number;
     /** MicCodec: 0 = WAV, 1 = FLAC (lossless, 16-bit at 8/16 kHz only — the
      *  collar records WAV at higher rates). Fw 380+. New slots start at 1
-     *  (defaultScheduleSlot); absent still means 0, the proto3 default and
-     *  what a collar predating the field records. */
+     *  (defaultScheduleSlot), and so does a mic switched on in the editor
+     *  from off (slotMicCodec); on a mic that is on, absent still means 0,
+     *  the proto3 default and what a collar predating the field records. */
     codec?: number;
     /** Low bits dropped from every sample before storing, 0-4. Lossy, ~6 dB
      *  of noise floor per bit; only affects FLAC takes. Fw 380+. */
