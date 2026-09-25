@@ -3,6 +3,12 @@ import { Buffer } from 'buffer';
 import * as PB from '../proto/collar_pb.js';
 import { ENV_INTERVAL_FIXED_MIN } from '../utils/fw';
 import {
+  DYNAMIC_GPS_DEFAULT_HIGH_MIN,
+  DYNAMIC_GPS_DEFAULT_MEDIUM_MIN,
+} from '../utils/gpsIntervals';
+import { MAG_CAL, MAG_CMD } from '../utils/magCal';
+import type { MagCalIo, MagCalReport } from '../utils/magCal';
+import {
   hexToBytes,
   hexByteToInt,
   clampInt,
@@ -421,13 +427,18 @@ export function buildSchedulePacketFromAppState(
         mediumMotionVedbaThresholdX100: Number(
           s.gps?.mediumMotionVedbaThresholdX100 ?? 20,
         ),
+        // Fallbacks for a schedule that names no motion interval: the stock
+        // 2 / 1 minutes (gpsIntervals.ts), under any base the editor allows.
         mediumMotionGpsIntervalMin: Number(
-          s.gps?.mediumMotionGpsIntervalMin ?? 10,
+          s.gps?.mediumMotionGpsIntervalMin ?? DYNAMIC_GPS_DEFAULT_MEDIUM_MIN,
         ),
         highMotionVedbaThresholdX100: Number(
           s.gps?.highMotionVedbaThresholdX100 ?? 100,
         ),
-        highMotionGpsIntervalMin: Number(s.gps?.highMotionGpsIntervalMin ?? 5),
+        highMotionGpsIntervalMin: Number(
+          s.gps?.highMotionGpsIntervalMin ?? DYNAMIC_GPS_DEFAULT_HIGH_MIN,
+        ),
+        // old: ?? 10 and ?? 5 — inverted against the editor's 5-minute base
         // TX-on-fix flags live on GPSConfig; only meaningful while the
         // matching radio is enabled (the editor forces them off otherwise).
         lorawanTxOnGpsFix: Boolean(
@@ -638,6 +649,205 @@ export async function sendRadioConfig(device: Device, packet: PB.BlePacket) {
 
   console.log('✅ Radio write complete');
   return true;
+}
+
+/* -------------------------------------------------------------------------- */
+/*        BLE config tunnel (fw 305+): one frame in the mailbox at a time     */
+/* -------------------------------------------------------------------------- */
+// The frames are the DownlinkPacket vocabulary the server sends over the
+// radio, serialized into ScheduleConfigPacket.cfg_downlink on the update
+// characteristic (the deployed radio chips tag-gate writes on the schedule
+// payload arm and pass raw bytes through, so they needed no change).
+//
+// Pacing contract: the settings blob is a single mailbox. The collar echoes
+// every consumed frame with a bumped echo_seq; the NEXT frame may only be
+// written after the previous frame's echo arrives. Writing faster silently
+// overwrites an undrained frame. Every operation here reads the echo
+// baseline, writes, then waits for an echo past that baseline, and they run
+// one at a time app-wide (tunnelExclusive), so two of them cannot take each
+// other's echo. Same contract as the website's js/ble-cfg-tunnel.js; only
+// the magnetometer calibration uses it in the app so far.
+
+/** ble_query = 1: a status echo (schedule count, engaged, mag_cal, ...). */
+export const BLE_QUERY_STATUS = 1;
+
+/** One tunnel frame: a serialized DownlinkPacket, or a read-back query.
+ *  Exported for the tests that pin the wire shape. */
+export function encodeTunnelFrame(fields: {
+  cfgDownlink?: Uint8Array;
+  bleQuery?: number;
+}): Uint8Array {
+  const pkt = PB.BlePacket.create({
+    header: PB.PacketHeader.create({
+      systemUid: 0,
+      msFromStart: 0,
+      epoch: unixNow(),
+      packetIndex: 0,
+    }),
+    scheduleConfigPacket: PB.ScheduleConfigPacket.create(fields),
+  });
+  return PB.BlePacket.encode(pkt).finish();
+}
+
+/** A command-only DownlinkPacket (no transaction), for cfg_downlink. */
+export function encodeDownlinkCommand(cmd: number): Uint8Array {
+  const u8 = PB.DownlinkPacket.encode(
+    PB.DownlinkPacket.create({ epoch: unixNow(), command: cmd }),
+  ).finish();
+  return u8.slice(); // a plain copy for the bytes field
+}
+
+/** The echo in a settings-blob read, or null for a mid-transition blob or
+ *  a plain schedule packet (echo_seq is never 0 on a real echo). */
+export function parseCfgEcho(bytes: Uint8Array): PB.CfgEchoPacket | null {
+  try {
+    const pkt = PB.BlePacket.decode(bytes);
+    const echo = pkt.scheduleConfigPacket?.cfgEcho;
+    if (echo && echo.echoSeq) return echo as PB.CfgEchoPacket;
+  } catch (_) {
+    /* not an echo */
+  }
+  return null;
+}
+
+async function readCfgEcho(device: Device): Promise<PB.CfgEchoPacket | null> {
+  const ch = await device.readCharacteristicForService(
+    COLLAR_SERVICE_UUID,
+    UPDATE_CHAR_UUID,
+  );
+  if (!ch?.value) return null;
+  return parseCfgEcho(new Uint8Array(Buffer.from(ch.value, 'base64')));
+}
+
+const ECHO_POLL_MS = 200;
+const ECHO_TIMEOUT_MS = 8000;
+
+/* Poll until the collar pushes an echo newer than lastSeq. A read that
+   throws (the link dropped) propagates to the caller as is. */
+async function waitEcho(
+  device: Device,
+  lastSeq: number,
+  timeoutMs = ECHO_TIMEOUT_MS,
+): Promise<PB.CfgEchoPacket> {
+  const t0 = Date.now();
+  for (;;) {
+    const e = await readCfgEcho(device);
+    if (e && e.echoSeq !== lastSeq) return e;
+    if (Date.now() - t0 >= timeoutMs) {
+      throw new Error('collar did not answer over BLE (echo timeout)');
+    }
+    await new Promise<void>(r => setTimeout(r, ECHO_POLL_MS));
+  }
+}
+
+/* One operation at a time, app-wide. Not re-entrant: nothing run inside
+   may call another tunnel operation. */
+let tunnelTail: Promise<unknown> = Promise.resolve();
+function tunnelExclusive<T>(fn: () => Promise<T>): Promise<T> {
+  const run = tunnelTail.then(() => fn());
+  tunnelTail = run.then(
+    () => {},
+    () => {}, // a failed operation frees the next
+  );
+  return run;
+}
+
+/* One paced frame: baseline, write, then wait for its consumption echo. */
+async function tunnelFrameRoundTrip(
+  device: Device,
+  frame: Uint8Array,
+  timeoutMs?: number,
+): Promise<PB.CfgEchoPacket> {
+  const before = await readCfgEcho(device);
+  const seq = before ? before.echoSeq : 0;
+  await device.writeCharacteristicWithResponseForService(
+    COLLAR_SERVICE_UUID,
+    UPDATE_CHAR_UUID,
+    Buffer.from(frame).toString('base64'),
+  );
+  return waitEcho(device, seq, timeoutMs);
+}
+
+/** One command frame (CommandType), no transaction. Resolves with the echo
+ *  that consumed it. */
+export function tunnelSendCommand(
+  device: Device,
+  cmd: number,
+  timeoutMs?: number,
+): Promise<PB.CfgEchoPacket> {
+  return tunnelExclusive(() =>
+    tunnelFrameRoundTrip(
+      device,
+      encodeTunnelFrame({ cfgDownlink: encodeDownlinkCommand(cmd) }),
+      timeoutMs,
+    ),
+  );
+}
+
+/** A status query (ble_query = 1). Resolves with the status echo. */
+export function tunnelQueryStatus(device: Device): Promise<PB.CfgEchoPacket> {
+  return tunnelExclusive(() =>
+    tunnelFrameRoundTrip(device, encodeTunnelFrame({ bleQuery: BLE_QUERY_STATUS })),
+  );
+}
+
+/* Simulated calibration on the mock collar: the run climbs 25 % per status
+   poll, fits, and ends good; an abort ends it aborted. Enough to walk the
+   modal through every step in the simulator. */
+const mockMagCal = { run: 0, seq: 0, report: null as MagCalReport | null };
+function mockMagCalIo(): MagCalIo {
+  const S = MAG_CAL.STATE;
+  const echo = async () => ({
+    echoSeq: ++mockMagCal.seq,
+    magCal: mockMagCal.report ? { ...mockMagCal.report } : null,
+  });
+  const active = () =>
+    !!mockMagCal.report &&
+    (mockMagCal.report.state === S.COLLECTING || mockMagCal.report.state === S.FITTING);
+  return {
+    status: async () => {
+      const r = mockMagCal.report;
+      if (r && r.state === S.COLLECTING) {
+        r.progressPct = Math.min(100, r.progressPct + 25);
+        r.sectorsHit = Math.round((r.progressPct / 100) * MAG_CAL.SECTORS);
+        if (r.progressPct >= 100) r.state = S.FITTING;
+      } else if (r && r.state === S.FITTING) {
+        r.state = S.DONE;
+        r.verdict = MAG_CAL.VERDICT.GOOD;
+        r.fieldUtX10 = 503;
+        r.residualPermille = 18;
+      }
+      return echo();
+    },
+    command: async cmd => {
+      if (cmd === MAG_CMD.CALIBRATE && !active()) {
+        mockMagCal.report = {
+          state: S.COLLECTING,
+          run: ++mockMagCal.run,
+          progressPct: 0,
+          sectorsHit: 0,
+          verdict: 0,
+          reason: 0,
+          fieldUtX10: 0,
+          residualPermille: 0,
+        };
+      } else if (cmd === MAG_CMD.ABORT && active()) {
+        mockMagCal.report!.state = S.ABORTED;
+      }
+      return echo();
+    },
+  };
+}
+
+/** The magnetometer calibration's transport (utils/magCal.ts runMagCal):
+ *  every call writes one frame and resolves with the echo that consumed it,
+ *  paced on echo_seq like every tunnel frame. */
+export function magCalIo(device: Device): MagCalIo {
+  if (isMockDevice(device)) return mockMagCalIo();
+  return {
+    status: () => tunnelQueryStatus(device),
+    command: cmd => tunnelSendCommand(device, cmd),
+  };
 }
 
 /* -------------------------------------------------------------------------- */

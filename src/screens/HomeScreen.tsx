@@ -20,6 +20,8 @@ import { useDevice } from '../context/DeviceContext';
 
 import CollarCard from '../components/CollarCard';
 import AccountCard from '../components/AccountCard';
+import MagCalModal from '../components/MagCalModal';
+import type { MagCalOutcome } from '../utils/magCal';
 import {
   manager,
   COLLAR_SERVICE_UUID,
@@ -34,7 +36,12 @@ import {
 
 import { useSchedules } from '../context/SchedulesContext';
 import { useRadioConfig } from '../context/RadioConfigContext';
-import { parseFwBuild } from '../utils/fw';
+import {
+  MAG_CAL_MIN_FW_BUILD,
+  bleFeatureGates,
+  fwGateNote,
+  parseFwBuild,
+} from '../utils/fw';
 
 // uint64 proto fields decode as Long objects when the long lib is bundled,
 // plain numbers otherwise — same tolerance as the website's longToNumber().
@@ -60,8 +67,39 @@ interface Collar {
 export default function HomeScreen() {
   const [collars, setCollars] = useState<Collar[]>([]);
   const [scanning, setScanning] = useState(false);
-  const { device, setDevice, setFwBuild, setCaps, setSystemUid } = useDevice();
+  const { device, setDevice, fwBuild, setFwBuild, caps, setCaps, setSystemUid } =
+    useDevice();
   const [connectedDevice, setConnectedDevice] = useState<Collar | null>(null);
+
+  /* ---------- Magnetometer calibration (fw 398+, over the BLE tunnel) ---------- */
+  // Lives with the collar card, like the website's calibration card in its
+  // Bluetooth panel: physical possession is the authority, and the run
+  // needs the collar in hand. Gated on the reported build; the modal does
+  // the run (components/MagCalModal.tsx).
+  const gates = bleFeatureGates(fwBuild, caps);
+  const [magCalOpen, setMagCalOpen] = useState(false);
+  const [magCalLast, setMagCalLast] = useState('');
+  useEffect(() => {
+    // Nothing about the collar that just left carries over to the next.
+    if (!device) {
+      setMagCalOpen(false);
+      setMagCalLast('');
+    }
+  }, [device]);
+  const openMagCal = () => {
+    if (!gates.magCal) {
+      Alert.alert(
+        'Magnetometer calibration',
+        `Magnetometer calibration needs firmware build ${MAG_CAL_MIN_FW_BUILD}+. ${fwGateNote(
+          fwBuild,
+          MAG_CAL_MIN_FW_BUILD,
+        )}`,
+      );
+      return;
+    }
+    setMagCalOpen(true);
+  };
+  const onMagCalResult = (o: MagCalOutcome) => setMagCalLast(`Last run: ${o.title}`);
 
   const navigation = useNavigation<any>();
   const lastSeenRef = useRef<Record<string, number>>({});
@@ -437,7 +475,10 @@ export default function HomeScreen() {
   /* ---------------- DEV: mock collar (simulator, no Bluetooth) ---------------- */
   const handleConnectMock = () => {
     setDevice(MOCK_COLLAR);
-    setFwBuild(310); // pretend current firmware so every gated feature shows
+    // Pretend current firmware so every gated feature shows (the newest gate
+    // is the magnetometer calibration's).
+    setFwBuild(MAG_CAL_MIN_FW_BUILD);
+    // old: setFwBuild(310);
     setCaps(0x01); // add-on relay available
     Alert.alert(
       'Mock collar connected',
@@ -535,6 +576,43 @@ export default function HomeScreen() {
           </View>
         )}
 
+      {/* Magnetometer calibration — with the connected collar (the mock
+          collar included, so the simulator can walk the modal). */}
+      {device && (
+        <View style={styles.magCalCard} testID="magcal-card">
+          <Text style={styles.magCalTitle}>MAGNETOMETER CALIBRATION</Text>
+          <Text style={styles.magCalText}>
+            Corrects the compass for the collar's own metal and electronics.
+            Do it before each deployment and after attaching or removing an
+            add-on. Takes about a minute of turning the collar in your hands.
+            The recorded data stay raw; the SD Card viewer applies the
+            calibration.
+          </Text>
+          <TouchableOpacity
+            style={[styles.magCalButton, !gates.magCal && styles.magCalButtonOff]}
+            onPress={openMagCal}
+            testID="magcal-open"
+          >
+            <Text style={styles.magCalButtonText}>Calibrate magnetometer…</Text>
+          </TouchableOpacity>
+          {!gates.magCal ? (
+            <Text style={styles.magCalNote} testID="magcal-gate-note">
+              {fwGateNote(fwBuild, MAG_CAL_MIN_FW_BUILD)}
+            </Text>
+          ) : magCalLast ? (
+            <Text style={styles.magCalNote} testID="magcal-last">
+              {magCalLast}
+            </Text>
+          ) : null}
+        </View>
+      )}
+      <MagCalModal
+        visible={magCalOpen}
+        device={device}
+        onClose={() => setMagCalOpen(false)}
+        onResult={onMagCalResult}
+      />
+
       {/* CollarID account — below the Bluetooth list so scanning/connecting
           stays exactly where it was. */}
       <Text style={styles.sectionTitle}>ACCOUNT</Text>
@@ -589,6 +667,33 @@ const styles = StyleSheet.create({
   mockButtonOff: { backgroundColor: '#9CA3AF' },
   mockButtonText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
   mockHint: { marginTop: 8, fontSize: 12, color: '#999' },
+
+  magCalCard: {
+    backgroundColor: '#FAFAFA',
+    padding: 16,
+    borderRadius: 16,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  magCalTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0E7490',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  magCalText: { fontSize: 13, color: '#555', lineHeight: 19, marginBottom: 12 },
+  magCalButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#22b8cf',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  magCalButtonOff: { opacity: 0.5 },
+  magCalButtonText: { color: '#0b1d22', fontWeight: '700', fontSize: 14 },
+  magCalNote: { marginTop: 8, fontSize: 12, color: '#6B7280', lineHeight: 17 },
 
   bleWarnBox: {
     backgroundColor: '#FFF7ED',

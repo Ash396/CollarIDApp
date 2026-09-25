@@ -1759,6 +1759,9 @@ export class CfgEchoPacket implements ICfgEchoPacket {
     /** CfgEchoPacket engaged. */
     public engaged: boolean;
 
+    /** CfgEchoPacket magCal. */
+    public magCal?: (IMagCalReport|null);
+
     /**
      * Creates a new CfgEchoPacket instance using the specified properties.
      * @param [properties] Properties to set
@@ -1831,6 +1834,146 @@ export class CfgEchoPacket implements ICfgEchoPacket {
 
     /**
      * Gets the default type url for CfgEchoPacket
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** MagCalState enum. */
+export enum MagCalState {
+    MAG_CAL_STATE_IDLE = 0,
+    MAG_CAL_STATE_COLLECTING = 1,
+    MAG_CAL_STATE_FITTING = 2,
+    MAG_CAL_STATE_DONE = 3,
+    MAG_CAL_STATE_FAILED = 4,
+    MAG_CAL_STATE_ABORTED = 5
+}
+
+/** MagCalVerdict enum. */
+export enum MagCalVerdict {
+    MAG_CAL_VERDICT_NONE = 0,
+    MAG_CAL_VERDICT_GOOD = 1,
+    MAG_CAL_VERDICT_FAIR = 2,
+    MAG_CAL_VERDICT_RETRY = 3
+}
+
+/** MagCalReason enum. */
+export enum MagCalReason {
+    MAG_CAL_REASON_NONE = 0,
+    MAG_CAL_REASON_TIMEOUT = 1,
+    MAG_CAL_REASON_NOT_ENOUGH_ROTATION = 2,
+    MAG_CAL_REASON_SENSOR_FAULT = 3,
+    MAG_CAL_REASON_FIELD_OUT_OF_RANGE = 4,
+    MAG_CAL_REASON_RESIDUAL_HIGH = 5,
+    MAG_CAL_REASON_STORAGE = 6
+}
+
+/** Represents a MagCalReport. */
+export class MagCalReport implements IMagCalReport {
+
+    /**
+     * Constructs a new MagCalReport.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IMagCalReport);
+
+    /** MagCalReport state. */
+    public state: MagCalState;
+
+    /** MagCalReport run. */
+    public run: number;
+
+    /** MagCalReport progressPct. */
+    public progressPct: number;
+
+    /** MagCalReport sectorsHit. */
+    public sectorsHit: number;
+
+    /** MagCalReport verdict. */
+    public verdict: MagCalVerdict;
+
+    /** MagCalReport reason. */
+    public reason: MagCalReason;
+
+    /** MagCalReport fieldUtX10. */
+    public fieldUtX10: number;
+
+    /** MagCalReport residualPermille. */
+    public residualPermille: number;
+
+    /**
+     * Creates a new MagCalReport instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns MagCalReport instance
+     */
+    public static create(properties?: IMagCalReport): MagCalReport;
+
+    /**
+     * Encodes the specified MagCalReport message. Does not implicitly {@link MagCalReport.verify|verify} messages.
+     * @param message MagCalReport message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IMagCalReport, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified MagCalReport message, length delimited. Does not implicitly {@link MagCalReport.verify|verify} messages.
+     * @param message MagCalReport message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IMagCalReport, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a MagCalReport message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns MagCalReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): MagCalReport;
+
+    /**
+     * Decodes a MagCalReport message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns MagCalReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): MagCalReport;
+
+    /**
+     * Verifies a MagCalReport message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a MagCalReport message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns MagCalReport
+     */
+    public static fromObject(object: { [k: string]: any }): MagCalReport;
+
+    /**
+     * Creates a plain object from a MagCalReport message. Also converts values to other types if specified.
+     * @param message MagCalReport
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: MagCalReport, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this MagCalReport to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for MagCalReport
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
@@ -4167,6 +4310,9 @@ export class Deployment implements IDeployment {
     /** Deployment addon. */
     public addon: IAddonReport[];
 
+    /** Deployment gpsBlock. */
+    public gpsBlock?: (Uint8Array|null);
+
     /** Deployment _particulateData. */
     public _particulateData?: "particulateData";
 
@@ -4184,6 +4330,9 @@ export class Deployment implements IDeployment {
 
     /** Deployment _errorFlags. */
     public _errorFlags?: "errorFlags";
+
+    /** Deployment _gpsBlock. */
+    public _gpsBlock?: "gpsBlock";
 
     /**
      * Creates a new Deployment instance using the specified properties.
@@ -4645,7 +4794,9 @@ export enum CommandType {
     CMD_RESEND = 15,
     CMD_CONFIG_REPORT = 16,
     CMD_TEST_FIX = 17,
-    CMD_FACTORY_RESET = 18
+    CMD_FACTORY_RESET = 18,
+    CMD_MAG_CALIBRATE = 20,
+    CMD_MAG_CALIBRATE_ABORT = 21
 }
 
 /** Represents a GeoPoint. */

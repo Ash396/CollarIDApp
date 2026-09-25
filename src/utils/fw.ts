@@ -13,6 +13,16 @@ import type { Schedule } from '../navigation/ScheduleNavigator';
  *  the server's api/main.py — one number, three repos. */
 export const MIC_CODEC_MIN_FW_BUILD = 380;
 
+/** First build with magnetometer calibration over the BLE config tunnel
+ *  (CMD_MAG_CALIBRATE / CMD_MAG_CALIBRATE_ABORT and CfgEchoPacket.mag_cal).
+ *  Firmware main build 398 (merge 74efac9, 2026-09-25) is the first main
+ *  build carrying it; that merge took main from 389 to 398, so no main build
+ *  390-397 exists without it. A collar below it logs the command as unknown
+ *  and never echoes mag_cal, which the flow reports as "not supported" after
+ *  a few polls (runMagCal) — the gate keeps the button honest before that.
+ *  Mirrors MAG_CAL_MIN_FW_BUILD in the website's js/collar-vocab.js. */
+export const MAG_CAL_MIN_FW_BUILD = 398;
+
 /** Extract the numeric build from a reported firmware_version string.
  *  Returns 0 when the shape is unfamiliar (legacy firmware, or a collar
  *  that just rebooted and hasn't sent a parsable status yet). */
@@ -42,6 +52,9 @@ export function bleFeatureGates(fwBuild: number, caps: number) {
     micSens: fwBuild >= 349,
     /** FLAC recording + low-bit drop — fw 380+ (MIC_CODEC_MIN_FW_BUILD). */
     micCodec: fwBuild >= MIC_CODEC_MIN_FW_BUILD,
+    /** Magnetometer calibration over the BLE tunnel — fw 398+
+     *  (MAG_CAL_MIN_FW_BUILD). */
+    magCal: fwBuild >= MAG_CAL_MIN_FW_BUILD,
     /** Thread add-on relay (local device list + DT forward commands).
      *  Gated on the capability characteristic, not the build: WB5M-era
      *  firmware exposes the caps char with bit 0 set; frozen WB15 builds

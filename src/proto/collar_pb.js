@@ -5410,6 +5410,7 @@ $root.CfgEchoPacket = (function() {
      * @property {Uint8Array|null} [slotReport] CfgEchoPacket slotReport
      * @property {number|null} [scheduleCount] CfgEchoPacket scheduleCount
      * @property {boolean|null} [engaged] CfgEchoPacket engaged
+     * @property {IMagCalReport|null} [magCal] CfgEchoPacket magCal
      */
 
     /**
@@ -5540,6 +5541,14 @@ $root.CfgEchoPacket = (function() {
     CfgEchoPacket.prototype.engaged = false;
 
     /**
+     * CfgEchoPacket magCal.
+     * @member {IMagCalReport|null|undefined} magCal
+     * @memberof CfgEchoPacket
+     * @instance
+     */
+    CfgEchoPacket.prototype.magCal = null;
+
+    /**
      * Creates a new CfgEchoPacket instance using the specified properties.
      * @function create
      * @memberof CfgEchoPacket
@@ -5591,6 +5600,8 @@ $root.CfgEchoPacket = (function() {
             writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.scheduleCount);
         if (message.engaged != null && Object.hasOwnProperty.call(message, "engaged"))
             writer.uint32(/* id 14, wireType 0 =*/112).bool(message.engaged);
+        if (message.magCal != null && Object.hasOwnProperty.call(message, "magCal"))
+            $root.MagCalReport.encode(message.magCal, writer.uint32(/* id 16, wireType 2 =*/130).fork()).ldelim();
         return writer;
     };
 
@@ -5683,6 +5694,10 @@ $root.CfgEchoPacket = (function() {
                     message.engaged = reader.bool();
                     break;
                 }
+            case 16: {
+                    message.magCal = $root.MagCalReport.decode(reader, reader.uint32());
+                    break;
+                }
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -5760,6 +5775,11 @@ $root.CfgEchoPacket = (function() {
         if (message.engaged != null && message.hasOwnProperty("engaged"))
             if (typeof message.engaged !== "boolean")
                 return "engaged: boolean expected";
+        if (message.magCal != null && message.hasOwnProperty("magCal")) {
+            var error = $root.MagCalReport.verify(message.magCal);
+            if (error)
+                return "magCal." + error;
+        }
         return null;
     };
 
@@ -5809,6 +5829,11 @@ $root.CfgEchoPacket = (function() {
             message.scheduleCount = object.scheduleCount >>> 0;
         if (object.engaged != null)
             message.engaged = Boolean(object.engaged);
+        if (object.magCal != null) {
+            if (typeof object.magCal !== "object")
+                throw TypeError(".CfgEchoPacket.magCal: object expected");
+            message.magCal = $root.MagCalReport.fromObject(object.magCal);
+        }
         return message;
     };
 
@@ -5852,6 +5877,7 @@ $root.CfgEchoPacket = (function() {
             }
             object.scheduleCount = 0;
             object.engaged = false;
+            object.magCal = null;
         }
         if (message.txnId != null && message.hasOwnProperty("txnId"))
             object.txnId = message.txnId;
@@ -5881,6 +5907,8 @@ $root.CfgEchoPacket = (function() {
             object.scheduleCount = message.scheduleCount;
         if (message.engaged != null && message.hasOwnProperty("engaged"))
             object.engaged = message.engaged;
+        if (message.magCal != null && message.hasOwnProperty("magCal"))
+            object.magCal = $root.MagCalReport.toObject(message.magCal, options);
         return object;
     };
 
@@ -5911,6 +5939,549 @@ $root.CfgEchoPacket = (function() {
     };
 
     return CfgEchoPacket;
+})();
+
+/**
+ * MagCalState enum.
+ * @exports MagCalState
+ * @enum {number}
+ * @property {number} MAG_CAL_STATE_IDLE=0 MAG_CAL_STATE_IDLE value
+ * @property {number} MAG_CAL_STATE_COLLECTING=1 MAG_CAL_STATE_COLLECTING value
+ * @property {number} MAG_CAL_STATE_FITTING=2 MAG_CAL_STATE_FITTING value
+ * @property {number} MAG_CAL_STATE_DONE=3 MAG_CAL_STATE_DONE value
+ * @property {number} MAG_CAL_STATE_FAILED=4 MAG_CAL_STATE_FAILED value
+ * @property {number} MAG_CAL_STATE_ABORTED=5 MAG_CAL_STATE_ABORTED value
+ */
+$root.MagCalState = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "MAG_CAL_STATE_IDLE"] = 0;
+    values[valuesById[1] = "MAG_CAL_STATE_COLLECTING"] = 1;
+    values[valuesById[2] = "MAG_CAL_STATE_FITTING"] = 2;
+    values[valuesById[3] = "MAG_CAL_STATE_DONE"] = 3;
+    values[valuesById[4] = "MAG_CAL_STATE_FAILED"] = 4;
+    values[valuesById[5] = "MAG_CAL_STATE_ABORTED"] = 5;
+    return values;
+})();
+
+/**
+ * MagCalVerdict enum.
+ * @exports MagCalVerdict
+ * @enum {number}
+ * @property {number} MAG_CAL_VERDICT_NONE=0 MAG_CAL_VERDICT_NONE value
+ * @property {number} MAG_CAL_VERDICT_GOOD=1 MAG_CAL_VERDICT_GOOD value
+ * @property {number} MAG_CAL_VERDICT_FAIR=2 MAG_CAL_VERDICT_FAIR value
+ * @property {number} MAG_CAL_VERDICT_RETRY=3 MAG_CAL_VERDICT_RETRY value
+ */
+$root.MagCalVerdict = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "MAG_CAL_VERDICT_NONE"] = 0;
+    values[valuesById[1] = "MAG_CAL_VERDICT_GOOD"] = 1;
+    values[valuesById[2] = "MAG_CAL_VERDICT_FAIR"] = 2;
+    values[valuesById[3] = "MAG_CAL_VERDICT_RETRY"] = 3;
+    return values;
+})();
+
+/**
+ * MagCalReason enum.
+ * @exports MagCalReason
+ * @enum {number}
+ * @property {number} MAG_CAL_REASON_NONE=0 MAG_CAL_REASON_NONE value
+ * @property {number} MAG_CAL_REASON_TIMEOUT=1 MAG_CAL_REASON_TIMEOUT value
+ * @property {number} MAG_CAL_REASON_NOT_ENOUGH_ROTATION=2 MAG_CAL_REASON_NOT_ENOUGH_ROTATION value
+ * @property {number} MAG_CAL_REASON_SENSOR_FAULT=3 MAG_CAL_REASON_SENSOR_FAULT value
+ * @property {number} MAG_CAL_REASON_FIELD_OUT_OF_RANGE=4 MAG_CAL_REASON_FIELD_OUT_OF_RANGE value
+ * @property {number} MAG_CAL_REASON_RESIDUAL_HIGH=5 MAG_CAL_REASON_RESIDUAL_HIGH value
+ * @property {number} MAG_CAL_REASON_STORAGE=6 MAG_CAL_REASON_STORAGE value
+ */
+$root.MagCalReason = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "MAG_CAL_REASON_NONE"] = 0;
+    values[valuesById[1] = "MAG_CAL_REASON_TIMEOUT"] = 1;
+    values[valuesById[2] = "MAG_CAL_REASON_NOT_ENOUGH_ROTATION"] = 2;
+    values[valuesById[3] = "MAG_CAL_REASON_SENSOR_FAULT"] = 3;
+    values[valuesById[4] = "MAG_CAL_REASON_FIELD_OUT_OF_RANGE"] = 4;
+    values[valuesById[5] = "MAG_CAL_REASON_RESIDUAL_HIGH"] = 5;
+    values[valuesById[6] = "MAG_CAL_REASON_STORAGE"] = 6;
+    return values;
+})();
+
+$root.MagCalReport = (function() {
+
+    /**
+     * Properties of a MagCalReport.
+     * @exports IMagCalReport
+     * @interface IMagCalReport
+     * @property {MagCalState|null} [state] MagCalReport state
+     * @property {number|null} [run] MagCalReport run
+     * @property {number|null} [progressPct] MagCalReport progressPct
+     * @property {number|null} [sectorsHit] MagCalReport sectorsHit
+     * @property {MagCalVerdict|null} [verdict] MagCalReport verdict
+     * @property {MagCalReason|null} [reason] MagCalReport reason
+     * @property {number|null} [fieldUtX10] MagCalReport fieldUtX10
+     * @property {number|null} [residualPermille] MagCalReport residualPermille
+     */
+
+    /**
+     * Constructs a new MagCalReport.
+     * @exports MagCalReport
+     * @classdesc Represents a MagCalReport.
+     * @implements IMagCalReport
+     * @constructor
+     * @param {IMagCalReport=} [properties] Properties to set
+     */
+    function MagCalReport(properties) {
+        if (properties)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * MagCalReport state.
+     * @member {MagCalState} state
+     * @memberof MagCalReport
+     * @instance
+     */
+    MagCalReport.prototype.state = 0;
+
+    /**
+     * MagCalReport run.
+     * @member {number} run
+     * @memberof MagCalReport
+     * @instance
+     */
+    MagCalReport.prototype.run = 0;
+
+    /**
+     * MagCalReport progressPct.
+     * @member {number} progressPct
+     * @memberof MagCalReport
+     * @instance
+     */
+    MagCalReport.prototype.progressPct = 0;
+
+    /**
+     * MagCalReport sectorsHit.
+     * @member {number} sectorsHit
+     * @memberof MagCalReport
+     * @instance
+     */
+    MagCalReport.prototype.sectorsHit = 0;
+
+    /**
+     * MagCalReport verdict.
+     * @member {MagCalVerdict} verdict
+     * @memberof MagCalReport
+     * @instance
+     */
+    MagCalReport.prototype.verdict = 0;
+
+    /**
+     * MagCalReport reason.
+     * @member {MagCalReason} reason
+     * @memberof MagCalReport
+     * @instance
+     */
+    MagCalReport.prototype.reason = 0;
+
+    /**
+     * MagCalReport fieldUtX10.
+     * @member {number} fieldUtX10
+     * @memberof MagCalReport
+     * @instance
+     */
+    MagCalReport.prototype.fieldUtX10 = 0;
+
+    /**
+     * MagCalReport residualPermille.
+     * @member {number} residualPermille
+     * @memberof MagCalReport
+     * @instance
+     */
+    MagCalReport.prototype.residualPermille = 0;
+
+    /**
+     * Creates a new MagCalReport instance using the specified properties.
+     * @function create
+     * @memberof MagCalReport
+     * @static
+     * @param {IMagCalReport=} [properties] Properties to set
+     * @returns {MagCalReport} MagCalReport instance
+     */
+    MagCalReport.create = function create(properties) {
+        return new MagCalReport(properties);
+    };
+
+    /**
+     * Encodes the specified MagCalReport message. Does not implicitly {@link MagCalReport.verify|verify} messages.
+     * @function encode
+     * @memberof MagCalReport
+     * @static
+     * @param {IMagCalReport} message MagCalReport message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    MagCalReport.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            writer.uint32(/* id 1, wireType 0 =*/8).int32(message.state);
+        if (message.run != null && Object.hasOwnProperty.call(message, "run"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.run);
+        if (message.progressPct != null && Object.hasOwnProperty.call(message, "progressPct"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.progressPct);
+        if (message.sectorsHit != null && Object.hasOwnProperty.call(message, "sectorsHit"))
+            writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.sectorsHit);
+        if (message.verdict != null && Object.hasOwnProperty.call(message, "verdict"))
+            writer.uint32(/* id 5, wireType 0 =*/40).int32(message.verdict);
+        if (message.reason != null && Object.hasOwnProperty.call(message, "reason"))
+            writer.uint32(/* id 6, wireType 0 =*/48).int32(message.reason);
+        if (message.fieldUtX10 != null && Object.hasOwnProperty.call(message, "fieldUtX10"))
+            writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.fieldUtX10);
+        if (message.residualPermille != null && Object.hasOwnProperty.call(message, "residualPermille"))
+            writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.residualPermille);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified MagCalReport message, length delimited. Does not implicitly {@link MagCalReport.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof MagCalReport
+     * @static
+     * @param {IMagCalReport} message MagCalReport message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    MagCalReport.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a MagCalReport message from the specified reader or buffer.
+     * @function decode
+     * @memberof MagCalReport
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {MagCalReport} MagCalReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    MagCalReport.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.MagCalReport();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.state = reader.int32();
+                    break;
+                }
+            case 2: {
+                    message.run = reader.uint32();
+                    break;
+                }
+            case 3: {
+                    message.progressPct = reader.uint32();
+                    break;
+                }
+            case 4: {
+                    message.sectorsHit = reader.uint32();
+                    break;
+                }
+            case 5: {
+                    message.verdict = reader.int32();
+                    break;
+                }
+            case 6: {
+                    message.reason = reader.int32();
+                    break;
+                }
+            case 7: {
+                    message.fieldUtX10 = reader.uint32();
+                    break;
+                }
+            case 8: {
+                    message.residualPermille = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a MagCalReport message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof MagCalReport
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {MagCalReport} MagCalReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    MagCalReport.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a MagCalReport message.
+     * @function verify
+     * @memberof MagCalReport
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    MagCalReport.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.state != null && message.hasOwnProperty("state"))
+            switch (message.state) {
+            default:
+                return "state: enum value expected";
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+                break;
+            }
+        if (message.run != null && message.hasOwnProperty("run"))
+            if (!$util.isInteger(message.run))
+                return "run: integer expected";
+        if (message.progressPct != null && message.hasOwnProperty("progressPct"))
+            if (!$util.isInteger(message.progressPct))
+                return "progressPct: integer expected";
+        if (message.sectorsHit != null && message.hasOwnProperty("sectorsHit"))
+            if (!$util.isInteger(message.sectorsHit))
+                return "sectorsHit: integer expected";
+        if (message.verdict != null && message.hasOwnProperty("verdict"))
+            switch (message.verdict) {
+            default:
+                return "verdict: enum value expected";
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+                break;
+            }
+        if (message.reason != null && message.hasOwnProperty("reason"))
+            switch (message.reason) {
+            default:
+                return "reason: enum value expected";
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+                break;
+            }
+        if (message.fieldUtX10 != null && message.hasOwnProperty("fieldUtX10"))
+            if (!$util.isInteger(message.fieldUtX10))
+                return "fieldUtX10: integer expected";
+        if (message.residualPermille != null && message.hasOwnProperty("residualPermille"))
+            if (!$util.isInteger(message.residualPermille))
+                return "residualPermille: integer expected";
+        return null;
+    };
+
+    /**
+     * Creates a MagCalReport message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof MagCalReport
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {MagCalReport} MagCalReport
+     */
+    MagCalReport.fromObject = function fromObject(object) {
+        if (object instanceof $root.MagCalReport)
+            return object;
+        var message = new $root.MagCalReport();
+        switch (object.state) {
+        default:
+            if (typeof object.state === "number") {
+                message.state = object.state;
+                break;
+            }
+            break;
+        case "MAG_CAL_STATE_IDLE":
+        case 0:
+            message.state = 0;
+            break;
+        case "MAG_CAL_STATE_COLLECTING":
+        case 1:
+            message.state = 1;
+            break;
+        case "MAG_CAL_STATE_FITTING":
+        case 2:
+            message.state = 2;
+            break;
+        case "MAG_CAL_STATE_DONE":
+        case 3:
+            message.state = 3;
+            break;
+        case "MAG_CAL_STATE_FAILED":
+        case 4:
+            message.state = 4;
+            break;
+        case "MAG_CAL_STATE_ABORTED":
+        case 5:
+            message.state = 5;
+            break;
+        }
+        if (object.run != null)
+            message.run = object.run >>> 0;
+        if (object.progressPct != null)
+            message.progressPct = object.progressPct >>> 0;
+        if (object.sectorsHit != null)
+            message.sectorsHit = object.sectorsHit >>> 0;
+        switch (object.verdict) {
+        default:
+            if (typeof object.verdict === "number") {
+                message.verdict = object.verdict;
+                break;
+            }
+            break;
+        case "MAG_CAL_VERDICT_NONE":
+        case 0:
+            message.verdict = 0;
+            break;
+        case "MAG_CAL_VERDICT_GOOD":
+        case 1:
+            message.verdict = 1;
+            break;
+        case "MAG_CAL_VERDICT_FAIR":
+        case 2:
+            message.verdict = 2;
+            break;
+        case "MAG_CAL_VERDICT_RETRY":
+        case 3:
+            message.verdict = 3;
+            break;
+        }
+        switch (object.reason) {
+        default:
+            if (typeof object.reason === "number") {
+                message.reason = object.reason;
+                break;
+            }
+            break;
+        case "MAG_CAL_REASON_NONE":
+        case 0:
+            message.reason = 0;
+            break;
+        case "MAG_CAL_REASON_TIMEOUT":
+        case 1:
+            message.reason = 1;
+            break;
+        case "MAG_CAL_REASON_NOT_ENOUGH_ROTATION":
+        case 2:
+            message.reason = 2;
+            break;
+        case "MAG_CAL_REASON_SENSOR_FAULT":
+        case 3:
+            message.reason = 3;
+            break;
+        case "MAG_CAL_REASON_FIELD_OUT_OF_RANGE":
+        case 4:
+            message.reason = 4;
+            break;
+        case "MAG_CAL_REASON_RESIDUAL_HIGH":
+        case 5:
+            message.reason = 5;
+            break;
+        case "MAG_CAL_REASON_STORAGE":
+        case 6:
+            message.reason = 6;
+            break;
+        }
+        if (object.fieldUtX10 != null)
+            message.fieldUtX10 = object.fieldUtX10 >>> 0;
+        if (object.residualPermille != null)
+            message.residualPermille = object.residualPermille >>> 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a MagCalReport message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof MagCalReport
+     * @static
+     * @param {MagCalReport} message MagCalReport
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    MagCalReport.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        var object = {};
+        if (options.defaults) {
+            object.state = options.enums === String ? "MAG_CAL_STATE_IDLE" : 0;
+            object.run = 0;
+            object.progressPct = 0;
+            object.sectorsHit = 0;
+            object.verdict = options.enums === String ? "MAG_CAL_VERDICT_NONE" : 0;
+            object.reason = options.enums === String ? "MAG_CAL_REASON_NONE" : 0;
+            object.fieldUtX10 = 0;
+            object.residualPermille = 0;
+        }
+        if (message.state != null && message.hasOwnProperty("state"))
+            object.state = options.enums === String ? $root.MagCalState[message.state] === undefined ? message.state : $root.MagCalState[message.state] : message.state;
+        if (message.run != null && message.hasOwnProperty("run"))
+            object.run = message.run;
+        if (message.progressPct != null && message.hasOwnProperty("progressPct"))
+            object.progressPct = message.progressPct;
+        if (message.sectorsHit != null && message.hasOwnProperty("sectorsHit"))
+            object.sectorsHit = message.sectorsHit;
+        if (message.verdict != null && message.hasOwnProperty("verdict"))
+            object.verdict = options.enums === String ? $root.MagCalVerdict[message.verdict] === undefined ? message.verdict : $root.MagCalVerdict[message.verdict] : message.verdict;
+        if (message.reason != null && message.hasOwnProperty("reason"))
+            object.reason = options.enums === String ? $root.MagCalReason[message.reason] === undefined ? message.reason : $root.MagCalReason[message.reason] : message.reason;
+        if (message.fieldUtX10 != null && message.hasOwnProperty("fieldUtX10"))
+            object.fieldUtX10 = message.fieldUtX10;
+        if (message.residualPermille != null && message.hasOwnProperty("residualPermille"))
+            object.residualPermille = message.residualPermille;
+        return object;
+    };
+
+    /**
+     * Converts this MagCalReport to JSON.
+     * @function toJSON
+     * @memberof MagCalReport
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    MagCalReport.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for MagCalReport
+     * @function getTypeUrl
+     * @memberof MagCalReport
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    MagCalReport.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/MagCalReport";
+    };
+
+    return MagCalReport;
 })();
 
 $root.SimpleSensorReading = (function() {
@@ -13238,6 +13809,7 @@ $root.Deployment = (function() {
      * @property {Array.<IGPSData_2>|null} [gpsData] Deployment gpsData
      * @property {IErrorFlags|null} [errorFlags] Deployment errorFlags
      * @property {Array.<IAddonReport>|null} [addon] Deployment addon
+     * @property {Uint8Array|null} [gpsBlock] Deployment gpsBlock
      */
 
     /**
@@ -13329,6 +13901,14 @@ $root.Deployment = (function() {
      */
     Deployment.prototype.addon = $util.emptyArray;
 
+    /**
+     * Deployment gpsBlock.
+     * @member {Uint8Array|null|undefined} gpsBlock
+     * @memberof Deployment
+     * @instance
+     */
+    Deployment.prototype.gpsBlock = null;
+
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
 
@@ -13399,6 +13979,17 @@ $root.Deployment = (function() {
     });
 
     /**
+     * Deployment _gpsBlock.
+     * @member {"gpsBlock"|undefined} _gpsBlock
+     * @memberof Deployment
+     * @instance
+     */
+    Object.defineProperty(Deployment.prototype, "_gpsBlock", {
+        get: $util.oneOfGetter($oneOfFields = ["gpsBlock"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
      * Creates a new Deployment instance using the specified properties.
      * @function create
      * @memberof Deployment
@@ -13442,6 +14033,8 @@ $root.Deployment = (function() {
         if (message.addon != null && message.addon.length)
             for (var i = 0; i < message.addon.length; ++i)
                 $root.AddonReport.encode(message.addon[i], writer.uint32(/* id 9, wireType 2 =*/74).fork()).ldelim();
+        if (message.gpsBlock != null && Object.hasOwnProperty.call(message, "gpsBlock"))
+            writer.uint32(/* id 10, wireType 2 =*/82).bytes(message.gpsBlock);
         return writer;
     };
 
@@ -13516,6 +14109,10 @@ $root.Deployment = (function() {
                     if (!(message.addon && message.addon.length))
                         message.addon = [];
                     message.addon.push($root.AddonReport.decode(reader, reader.uint32()));
+                    break;
+                }
+            case 10: {
+                    message.gpsBlock = reader.bytes();
                     break;
                 }
             default:
@@ -13617,6 +14214,11 @@ $root.Deployment = (function() {
                     return "addon." + error;
             }
         }
+        if (message.gpsBlock != null && message.hasOwnProperty("gpsBlock")) {
+            properties._gpsBlock = 1;
+            if (!(message.gpsBlock && typeof message.gpsBlock.length === "number" || $util.isString(message.gpsBlock)))
+                return "gpsBlock: buffer expected";
+        }
         return null;
     };
 
@@ -13678,6 +14280,11 @@ $root.Deployment = (function() {
                 message.addon[i] = $root.AddonReport.fromObject(object.addon[i]);
             }
         }
+        if (object.gpsBlock != null)
+            if (typeof object.gpsBlock === "string")
+                $util.base64.decode(object.gpsBlock, message.gpsBlock = $util.newBuffer($util.base64.length(object.gpsBlock)), 0);
+            else if (object.gpsBlock.length >= 0)
+                message.gpsBlock = object.gpsBlock;
         return message;
     };
 
@@ -13741,6 +14348,11 @@ $root.Deployment = (function() {
             object.addon = [];
             for (var j = 0; j < message.addon.length; ++j)
                 object.addon[j] = $root.AddonReport.toObject(message.addon[j], options);
+        }
+        if (message.gpsBlock != null && message.hasOwnProperty("gpsBlock")) {
+            object.gpsBlock = options.bytes === String ? $util.base64.encode(message.gpsBlock, 0, message.gpsBlock.length) : options.bytes === Array ? Array.prototype.slice.call(message.gpsBlock) : message.gpsBlock;
+            if (options.oneofs)
+                object._gpsBlock = "gpsBlock";
         }
         return object;
     };
@@ -15116,6 +15728,8 @@ $root.MessagePacket = (function() {
  * @property {number} CMD_CONFIG_REPORT=16 CMD_CONFIG_REPORT value
  * @property {number} CMD_TEST_FIX=17 CMD_TEST_FIX value
  * @property {number} CMD_FACTORY_RESET=18 CMD_FACTORY_RESET value
+ * @property {number} CMD_MAG_CALIBRATE=20 CMD_MAG_CALIBRATE value
+ * @property {number} CMD_MAG_CALIBRATE_ABORT=21 CMD_MAG_CALIBRATE_ABORT value
  */
 $root.CommandType = (function() {
     var valuesById = {}, values = Object.create(valuesById);
@@ -15137,6 +15751,8 @@ $root.CommandType = (function() {
     values[valuesById[16] = "CMD_CONFIG_REPORT"] = 16;
     values[valuesById[17] = "CMD_TEST_FIX"] = 17;
     values[valuesById[18] = "CMD_FACTORY_RESET"] = 18;
+    values[valuesById[20] = "CMD_MAG_CALIBRATE"] = 20;
+    values[valuesById[21] = "CMD_MAG_CALIBRATE_ABORT"] = 21;
     return values;
 })();
 
@@ -20973,6 +21589,8 @@ $root.DownlinkPacket = (function() {
             case 16:
             case 17:
             case 18:
+            case 20:
+            case 21:
                 break;
             }
         if (message.highFixParams != null && message.hasOwnProperty("highFixParams")) {
@@ -21119,6 +21737,14 @@ $root.DownlinkPacket = (function() {
         case "CMD_FACTORY_RESET":
         case 18:
             message.command = 18;
+            break;
+        case "CMD_MAG_CALIBRATE":
+        case 20:
+            message.command = 20;
+            break;
+        case "CMD_MAG_CALIBRATE_ABORT":
+        case 21:
+            message.command = 21;
             break;
         }
         if (object.highFixParams != null) {

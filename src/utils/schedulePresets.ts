@@ -16,6 +16,10 @@ import type { Schedule } from '../navigation/ScheduleNavigator';
 import { ENV_INTERVAL_FIXED_MIN, micFieldsForGates } from './fw';
 import type { FeatureGates } from './fw';
 import { appSchedulesEqual } from './scheduleEquality';
+import {
+  DYNAMIC_GPS_DEFAULT_HIGH_MIN,
+  DYNAMIC_GPS_DEFAULT_MEDIUM_MIN,
+} from './gpsIntervals';
 
 /** A schedule without its positional identity (id / "Schedule N"). */
 export type ScheduleSlot = Omit<Schedule, 'id' | 'name'>;
@@ -53,9 +57,13 @@ export function defaultScheduleSlot(): ScheduleSlot {
       accuracy: 5,
       dynamicSamplingMode: false,
       mediumMotionVedbaThresholdX100: 20,
-      mediumMotionGpsIntervalMin: 10,
+      // Faster while the animal moves: walking 2 min, running 1 min, both
+      // under the 20-minute base (gpsIntervals.ts). Was 10 / 5, which the
+      // editor's 5-minute placeholder base would have inverted.
+      mediumMotionGpsIntervalMin: DYNAMIC_GPS_DEFAULT_MEDIUM_MIN,
       highMotionVedbaThresholdX100: 100,
-      highMotionGpsIntervalMin: 5,
+      highMotionGpsIntervalMin: DYNAMIC_GPS_DEFAULT_HIGH_MIN,
+      // old: mediumMotionGpsIntervalMin: 10, highMotionGpsIntervalMin: 5,
       lorawanTxOnGpsFix: false,
       loraTxOnGpsFix: false,
     },

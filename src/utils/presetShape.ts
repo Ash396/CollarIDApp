@@ -7,6 +7,10 @@
 // keeps presets fully interchangeable between the app and configure.html.
 import type { Schedule } from '../navigation/ScheduleNavigator';
 import { ENV_INTERVAL_FIXED_MIN } from './fw';
+import {
+  DYNAMIC_GPS_DEFAULT_HIGH_MIN,
+  DYNAMIC_GPS_DEFAULT_MEDIUM_MIN,
+} from './gpsIntervals';
 
 /** App Schedule -> website snake_case preset schedule. Always emits the full
  *  shape (like the website's readModalSchedule) so a preset saved from the
@@ -24,10 +28,12 @@ export function appToPresetSchedule(s: Schedule): any {
       dynamic_sampling_mode: !!s.gps?.dynamicSamplingMode,
       medium_motion_vedba_threshold_x100:
         s.gps?.mediumMotionVedbaThresholdX100 ?? 20,
-      medium_motion_gps_interval_min: s.gps?.mediumMotionGpsIntervalMin ?? 10,
+      medium_motion_gps_interval_min:
+        s.gps?.mediumMotionGpsIntervalMin ?? DYNAMIC_GPS_DEFAULT_MEDIUM_MIN,
       high_motion_vedba_threshold_x100:
         s.gps?.highMotionVedbaThresholdX100 ?? 100,
-      high_motion_gps_interval_min: s.gps?.highMotionGpsIntervalMin ?? 5,
+      high_motion_gps_interval_min:
+        s.gps?.highMotionGpsIntervalMin ?? DYNAMIC_GPS_DEFAULT_HIGH_MIN,
       lorawan_tx_on_gps_fix: !!s.gps?.lorawanTxOnGpsFix,
       lora_tx_on_gps_fix: !!s.gps?.loraTxOnGpsFix,
     },
@@ -96,12 +102,14 @@ export function presetToAppSchedule(x: any, index: number): Schedule {
         gps.medium_motion_vedba_threshold_x100 ?? 20,
       ),
       mediumMotionGpsIntervalMin: Number(
-        gps.medium_motion_gps_interval_min ?? 10,
+        gps.medium_motion_gps_interval_min ?? DYNAMIC_GPS_DEFAULT_MEDIUM_MIN,
       ),
       highMotionVedbaThresholdX100: Number(
         gps.high_motion_vedba_threshold_x100 ?? 100,
       ),
-      highMotionGpsIntervalMin: Number(gps.high_motion_gps_interval_min ?? 5),
+      highMotionGpsIntervalMin: Number(
+        gps.high_motion_gps_interval_min ?? DYNAMIC_GPS_DEFAULT_HIGH_MIN,
+      ),
       lorawanTxOnGpsFix: !!gps.lorawan_tx_on_gps_fix,
       loraTxOnGpsFix: !!gps.lora_tx_on_gps_fix,
     },

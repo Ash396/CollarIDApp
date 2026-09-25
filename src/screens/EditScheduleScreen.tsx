@@ -38,6 +38,11 @@ import {
   saveAdvancedPrefs,
 } from '../utils/editorPrefs';
 import type { AdvancedPrefs, AdvancedSection } from '../utils/editorPrefs';
+import {
+  DYNAMIC_GPS_DEFAULT_HIGH_MIN,
+  DYNAMIC_GPS_DEFAULT_MEDIUM_MIN,
+  dynamicGpsIntervalError,
+} from '../utils/gpsIntervals';
 
 // "Active HH:00–HH:00 · N hours" readout for a time window. end_hour is
 // inclusive, so the window covers [start, end+1) and its length is
@@ -124,14 +129,16 @@ export default function EditScheduleScreen() {
     String(schedule.gps?.mediumMotionVedbaThresholdX100 ?? 20),
   );
   const [gpsMedInt, setGpsMedInt] = useState(
-    String(schedule.gps?.mediumMotionGpsIntervalMin ?? 10),
+    String(schedule.gps?.mediumMotionGpsIntervalMin ?? DYNAMIC_GPS_DEFAULT_MEDIUM_MIN),
   );
   const [gpsHighVedba, setGpsHighVedba] = useState(
     String(schedule.gps?.highMotionVedbaThresholdX100 ?? 100),
   );
   const [gpsHighInt, setGpsHighInt] = useState(
-    String(schedule.gps?.highMotionGpsIntervalMin ?? 5),
+    String(schedule.gps?.highMotionGpsIntervalMin ?? DYNAMIC_GPS_DEFAULT_HIGH_MIN),
   );
+  // old: ?? 10 and ?? 5 — inverted against the 5-minute base the editor's
+  // placeholder suggested (gpsIntervals.ts)
 
   const handleGpsToggle = (val: boolean) => {
     setGpsEnabled(val);
@@ -295,9 +302,11 @@ export default function EditScheduleScreen() {
     setGpsAccuracy(s.gps?.accuracy ?? 5);
     setGpsDynamic(!!s.gps?.dynamicSamplingMode);
     setGpsMedVedba(String(s.gps?.mediumMotionVedbaThresholdX100 ?? 20));
-    setGpsMedInt(String(s.gps?.mediumMotionGpsIntervalMin ?? 10));
+    setGpsMedInt(
+      String(s.gps?.mediumMotionGpsIntervalMin ?? DYNAMIC_GPS_DEFAULT_MEDIUM_MIN),
+    );
     setGpsHighVedba(String(s.gps?.highMotionVedbaThresholdX100 ?? 100));
-    setGpsHighInt(String(s.gps?.highMotionGpsIntervalMin ?? 5));
+    setGpsHighInt(String(s.gps?.highMotionGpsIntervalMin ?? DYNAMIC_GPS_DEFAULT_HIGH_MIN));
     setLightEnabled(!!s.light?.enabled);
     setLightInterval(String(s.light?.sampleIntervalMin ?? 10));
     setEnvEnabled(!!s.environmental?.enabled);
@@ -429,9 +438,14 @@ export default function EditScheduleScreen() {
       accuracy: gpsAccuracy,
       dynamicSamplingMode: gpsEnabled && gpsDynamic,
       mediumMotionVedbaThresholdX100: clamp(gpsMedVedba, 1, 10000),
-      mediumMotionGpsIntervalMin: clamp(gpsMedInt, 1, 720),
+      // The motion intervals may be 0 = "same as the base interval" (the
+      // firmware falls back to it), so they clamp from 0, not 1. Their
+      // order against the base is checked on Save (dynamicGpsIntervalError),
+      // not rewritten here.
+      mediumMotionGpsIntervalMin: clamp(gpsMedInt, 0, 720),
       highMotionVedbaThresholdX100: clamp(gpsHighVedba, 1, 10000),
-      highMotionGpsIntervalMin: clamp(gpsHighInt, 1, 720),
+      highMotionGpsIntervalMin: clamp(gpsHighInt, 0, 720),
+      // old: clamp(gpsMedInt, 1, 720) / clamp(gpsHighInt, 1, 720)
       lorawanTxOnGpsFix: gpsEnabled && lorawanEnabled && lorawanTxOnFix,
       loraTxOnGpsFix: gpsEnabled && loraEnabled && loraTxOnFix,
     },
@@ -498,6 +512,10 @@ export default function EditScheduleScreen() {
   );
 
   const solarEstimate = useMemo(() => estimateScheduleSolarHours(draft), [draft]);
+  // Faster-while-moving means faster: walking no slower than still, running
+  // no slower than walking. Said live under the GPS card and, on Save, in
+  // the operator's face; the values are never rewritten.
+  const gpsIntervalError = useMemo(() => dynamicGpsIntervalError(draft.gps), [draft]);
   // Consequences, not parameters: what this schedule does to the battery
   // and the card, live as the knobs move.
   const consequences = useMemo(() => scheduleConsequences(draft), [draft]);
@@ -522,6 +540,10 @@ export default function EditScheduleScreen() {
 
   /* ---------------- SAVE ---------------- */
   const handleSave = () => {
+    if (gpsIntervalError) {
+      Alert.alert('GPS intervals', gpsIntervalError);
+      return;
+    }
     if (conflictLabels.length) {
       Alert.alert(
         'Overlapping time window',
@@ -770,6 +792,12 @@ export default function EditScheduleScreen() {
               thresholds are under Advanced.
             </Text>
           )}
+          {gpsIntervalError && (
+            <View style={styles.conflictBox}>
+              <Text style={styles.conflictTitle}>Faster means faster</Text>
+              <Text style={styles.conflictText}>{gpsIntervalError}</Text>
+            </View>
+          )}
 
           {renderAdvanced(
             'gps',
@@ -836,7 +864,7 @@ export default function EditScheduleScreen() {
                         keyboardType="numeric"
                         value={gpsMedInt}
                         onChangeText={setGpsMedInt}
-                        placeholder="10"
+                        placeholder="0 = same as still"
                         placeholderTextColor="#999"
                       />
                     </View>
@@ -858,7 +886,7 @@ export default function EditScheduleScreen() {
                         keyboardType="numeric"
                         value={gpsHighInt}
                         onChangeText={setGpsHighInt}
-                        placeholder="5"
+                        placeholder="0 = same as still"
                         placeholderTextColor="#999"
                       />
                     </View>
