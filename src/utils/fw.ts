@@ -23,6 +23,20 @@ export const MIC_CODEC_MIN_FW_BUILD = 380;
  *  Mirrors MAG_CAL_MIN_FW_BUILD in the website's js/collar-vocab.js. */
 export const MAG_CAL_MIN_FW_BUILD = 398;
 
+/** First build with the magnetometer rate mode (MagnetometerConfig
+ *  .sample_rate_hz: 1, 2, 4, 8 or 16 Hz, paced by LPTIM1 on the RTC crystal
+ *  and stored as a WAV beside the accelerometer's; collarID_thread
+ *  docs/DESIGN_magnetometer_rate.md). A collar below it ignores the field
+ *  and samples on the minute interval, so the picker is gated and the save
+ *  and Send paths hold the rate to 0 (interval mode). Provisional: set at
+ *  the firmware merge. Mirrors MAG_RATE_MIN_FW_BUILD in the website's
+ *  js/collar-vocab.js and the server's api/main.py. */
+export const MAG_RATE_MIN_FW_BUILD = 424;
+
+/** The rates the collar can run in rate mode, Hz (powers of two: exact
+ *  LPTIM1 reloads on the 32.768 kHz crystal). 0 is interval mode. */
+export const MAG_RATE_HZ: readonly number[] = [1, 2, 4, 8, 16];
+
 /** Extract the numeric build from a reported firmware_version string.
  *  Returns 0 when the shape is unfamiliar (legacy firmware, or a collar
  *  that just rebooted and hasn't sent a parsable status yet). */
@@ -55,6 +69,10 @@ export function bleFeatureGates(fwBuild: number, caps: number) {
     /** Magnetometer calibration over the BLE tunnel — fw 398+
      *  (MAG_CAL_MIN_FW_BUILD). */
     magCal: fwBuild >= MAG_CAL_MIN_FW_BUILD,
+    /** Magnetometer at 1-16 Hz (MagnetometerConfig.sample_rate_hz) — fw
+     *  MAG_RATE_MIN_FW_BUILD+. Below it the field is ignored and the collar
+     *  samples on the minute interval. */
+    magRate: fwBuild >= MAG_RATE_MIN_FW_BUILD,
     /** Thread add-on relay (local device list + DT forward commands).
      *  Gated on the capability characteristic, not the build: WB5M-era
      *  firmware exposes the caps char with bit 0 set; frozen WB15 builds
@@ -78,6 +96,18 @@ export const MIC_GATE_MIN_BUILD: {
   { gate: 'micSens', minBuild: 349, option: 'microphone gain' },
   { gate: 'micRateExt', minBuild: 343, option: 'sample rates above 16 kHz' },
   { gate: 'micFormat', minBuild: 338, option: 'the sample rate' },
+];
+
+/** Every schedule-editor option the firmware line names, newest gate first:
+ *  the magnetometer rate mode, then the microphone ladder. The website's
+ *  FIRMWARE_GATES (js/collar-vocab.js) is the same list. */
+export const OPTION_GATE_MIN_BUILD: {
+  gate: 'magRate' | 'micCodec' | 'micSens' | 'micRateExt' | 'micFormat';
+  minBuild: number;
+  option: string;
+}[] = [
+  { gate: 'magRate', minBuild: MAG_RATE_MIN_FW_BUILD, option: 'heading at 1 to 16 Hz' },
+  ...MIC_GATE_MIN_BUILD,
 ];
 
 /** The gates the schedule EDITOR works against. A connected collar's build
@@ -105,7 +135,8 @@ export function editorFeatureGates(
 ): FeatureGates {
   const g = bleFeatureGates(fwBuild, caps);
   if (fwBuild > 0 || connected) return g;
-  return { ...g, micFormat: true, micRateExt: true, micSens: true, micCodec: true };
+  return { ...g, micFormat: true, micRateExt: true, micSens: true, micCodec: true, magRate: true };
+  // old: return { ...g, micFormat: true, micRateExt: true, micSens: true, micCodec: true };
 }
 // old:
 // export function editorFeatureGates(fwBuild: number, caps: number): FeatureGates {
@@ -159,6 +190,41 @@ export function micFormatForCollar(
   return { ...s, microphone: { ...m, codec: 0, lsbDrop: 0 } };
 }
 
+/** The magnetometer rate the collar will actually run, given its gates: the
+ *  value the editor's save path writes and the picker is held to. Below
+ *  MAG_RATE_MIN_FW_BUILD the collar ignores the field and samples on the
+ *  minute interval, so the draft must say interval mode (0) too or the
+ *  verify-after-write comparison would still pass while the collar samples
+ *  once a minute. A rate the collar cannot run (anything off MAG_RATE_HZ)
+ *  is interval mode as well — the firmware parses it that way. */
+export function magRateForGates(
+  m: Schedule['magnetometer'] | undefined,
+  g: Pick<FeatureGates, 'magRate'>,
+): number {
+  const rate = m?.sampleRateHz ?? 0;
+  if (!g.magRate || !MAG_RATE_HZ.includes(rate)) return 0;
+  return rate;
+}
+
+/** The Send path's hold on the magnetometer rate, beside micFormatForCollar:
+ *  for schedules that never went through the editor's Save against this
+ *  collar (a saved set, or a draft edited with no collar and restored on
+ *  reconnect). A collar below MAG_RATE_MIN_FW_BUILD, or one that has not
+ *  reported its build, samples on the interval whatever it is told, so it is
+ *  told interval mode: rate 0, the interval kept. That keeps the read-back
+ *  comparison true against a collar that predates the field (its echo has
+ *  no rate, which reads as 0) and the summary honest. Returns `s` itself
+ *  when nothing changes, so the caller can tell whether the draft moved. */
+export function magRateForCollar(
+  s: Schedule,
+  g: Pick<FeatureGates, 'magRate'>,
+): Schedule {
+  const m = s.magnetometer;
+  if (!m || g.magRate) return s;
+  if ((m.sampleRateHz ?? 0) === 0) return s;
+  return { ...s, magnetometer: { ...m, sampleRateHz: 0 } };
+}
+
 /** The one firmware line at the top of the schedule editor — instead of a
  *  note under every gated knob. "Connected collar: firmware 380, all
  *  options available", or "Connected collar: firmware 375: compressed audio
@@ -167,7 +233,7 @@ export function micFormatForCollar(
  *  editorFeatureGates), that the newer options wait for it. */
 export function fwOptionsLine(
   fwBuild: number,
-  g: Pick<FeatureGates, 'micFormat' | 'micRateExt' | 'micSens' | 'micCodec'>,
+  g: Pick<FeatureGates, 'micFormat' | 'micRateExt' | 'micSens' | 'micCodec' | 'magRate'>,
   connected = false,
 ): string {
   if (!fwBuild && connected) {
@@ -178,9 +244,10 @@ export function fwOptionsLine(
   }
   // Below 338 there is no sample-rate field at all, so "rates above 16 kHz"
   // would be a second way of saying the same thing.
-  const missing = MIC_GATE_MIN_BUILD.filter(
+  const missing = OPTION_GATE_MIN_BUILD.filter(
     r => !g[r.gate] && !(r.gate === 'micRateExt' && !g.micFormat),
   ).map(r => r.option);
+  // old: const missing = MIC_GATE_MIN_BUILD.filter(
   if (missing.length === 0) {
     return `Connected collar: firmware ${fwBuild}, all options available`;
   }

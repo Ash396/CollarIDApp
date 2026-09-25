@@ -80,6 +80,16 @@ export function microphoneText(m: Schedule['microphone'] | undefined): string {
   return parts.filter(Boolean).join(', ');
 }
 
+/** The magnetometer in one clause: "heading at 4 Hz" in rate mode (fw
+ *  MAG_RATE_MIN_FW_BUILD+, sampleRateHz 1-16), else "heading every N min"
+ *  on the minute interval. Rate 0 or absent is interval mode, which is what
+ *  a collar predating the field runs. */
+export function magnetometerText(m: NonNullable<Schedule['magnetometer']>): string {
+  const rate = m.sampleRateHz ?? 0;
+  if (rate > 0) return `heading at ${rate} Hz`;
+  return `heading ${everyText(Math.max(1, Math.round((m.sampleIntervalS ?? 60) / 60)))}`;
+}
+
 /** One line per enabled sensor, in plain words, for the list card. Empty
  *  when nothing is on. */
 export function scheduleSummaryLines(s: Schedule): string[] {
@@ -107,11 +117,7 @@ export function scheduleSummaryLines(s: Schedule): string[] {
   if (s.light?.enabled) extras.push(`light ${everyText(s.light.sampleIntervalMin ?? 10)}`);
   if (s.environmental?.enabled) extras.push('weather every 5 min');
   if (s.magnetometer?.enabled) {
-    extras.push(
-      `heading ${everyText(
-        Math.max(1, Math.round((s.magnetometer.sampleIntervalS ?? 60) / 60)),
-      )}`,
-    );
+    extras.push(magnetometerText(s.magnetometer));
   }
   if (s.particulate?.enabled) {
     extras.push(`particulates ${everyText(s.particulate.sampleIntervalMin ?? 15)}`);

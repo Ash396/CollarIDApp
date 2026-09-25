@@ -77,6 +77,7 @@ export default function PowerConsumptionScreen() {
     { label: 'GPS acquisition', value: components.gps, color: '#3CB371' },
     { label: 'Microphone', value: components.microphone, color: '#E0478A' },
     { label: 'Radio (LoRaWAN / LoRa)', value: components.lora, color: '#9B6DD6' },
+    { label: 'Heading (magnetometer at 1-16 Hz)', value: components.magnetometer, color: '#E8A33D' },
   ];
 
   return (

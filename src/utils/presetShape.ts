@@ -72,6 +72,8 @@ export function appToPresetSchedule(s: Schedule): any {
     magnetometer: {
       enabled: !!s.magnetometer?.enabled,
       sample_interval_s: s.magnetometer?.sampleIntervalS ?? 60,
+      // snake_case key matching the website's preset shape: 0 = interval mode.
+      sample_rate_hz: s.magnetometer?.sampleRateHz ?? 0,
     },
     lorawan_enabled: !!s.lorawan?.enabled,
     lorawan_send_interval_min: s.lorawan?.sendIntervalMin ?? 60,
@@ -147,6 +149,7 @@ export function presetToAppSchedule(x: any, index: number): Schedule {
     magnetometer: {
       enabled: !!x?.magnetometer?.enabled,
       sampleIntervalS: Number(x?.magnetometer?.sample_interval_s ?? 60),
+      sampleRateHz: Number(x?.magnetometer?.sample_rate_hz ?? 0),
     },
     lorawan: {
       enabled: !!x?.lorawan_enabled,

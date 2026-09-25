@@ -85,7 +85,10 @@ export function defaultScheduleSlot(): ScheduleSlot {
     accelerometer: { enabled: false, sampleRate: 0, sensitivity: 0 },
     lorawan: { enabled: false, sendIntervalMin: 60 },
     lora: { enabled: false, sendIntervalMin: 60 },
-    magnetometer: { enabled: false, sampleIntervalS: 60 },
+    // sampleRateHz 0: interval mode. Every quick setup inherits it — none
+    // of them runs the magnetometer, let alone at a rate.
+    magnetometer: { enabled: false, sampleIntervalS: 60, sampleRateHz: 0 },
+    // old: magnetometer: { enabled: false, sampleIntervalS: 60 },
   };
 }
 

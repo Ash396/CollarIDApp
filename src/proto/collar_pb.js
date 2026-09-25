@@ -4290,6 +4290,7 @@ $root.MagnetometerConfig = (function() {
      * @interface IMagnetometerConfig
      * @property {boolean|null} [enabled] MagnetometerConfig enabled
      * @property {number|null} [sampleIntervalS] MagnetometerConfig sampleIntervalS
+     * @property {number|null} [sampleRateHz] MagnetometerConfig sampleRateHz
      */
 
     /**
@@ -4324,6 +4325,14 @@ $root.MagnetometerConfig = (function() {
     MagnetometerConfig.prototype.sampleIntervalS = 0;
 
     /**
+     * MagnetometerConfig sampleRateHz.
+     * @member {number} sampleRateHz
+     * @memberof MagnetometerConfig
+     * @instance
+     */
+    MagnetometerConfig.prototype.sampleRateHz = 0;
+
+    /**
      * Creates a new MagnetometerConfig instance using the specified properties.
      * @function create
      * @memberof MagnetometerConfig
@@ -4351,6 +4360,8 @@ $root.MagnetometerConfig = (function() {
             writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enabled);
         if (message.sampleIntervalS != null && Object.hasOwnProperty.call(message, "sampleIntervalS"))
             writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.sampleIntervalS);
+        if (message.sampleRateHz != null && Object.hasOwnProperty.call(message, "sampleRateHz"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.sampleRateHz);
         return writer;
     };
 
@@ -4395,6 +4406,10 @@ $root.MagnetometerConfig = (function() {
                     message.sampleIntervalS = reader.uint32();
                     break;
                 }
+            case 3: {
+                    message.sampleRateHz = reader.uint32();
+                    break;
+                }
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -4436,6 +4451,9 @@ $root.MagnetometerConfig = (function() {
         if (message.sampleIntervalS != null && message.hasOwnProperty("sampleIntervalS"))
             if (!$util.isInteger(message.sampleIntervalS))
                 return "sampleIntervalS: integer expected";
+        if (message.sampleRateHz != null && message.hasOwnProperty("sampleRateHz"))
+            if (!$util.isInteger(message.sampleRateHz))
+                return "sampleRateHz: integer expected";
         return null;
     };
 
@@ -4455,6 +4473,8 @@ $root.MagnetometerConfig = (function() {
             message.enabled = Boolean(object.enabled);
         if (object.sampleIntervalS != null)
             message.sampleIntervalS = object.sampleIntervalS >>> 0;
+        if (object.sampleRateHz != null)
+            message.sampleRateHz = object.sampleRateHz >>> 0;
         return message;
     };
 
@@ -4474,11 +4494,14 @@ $root.MagnetometerConfig = (function() {
         if (options.defaults) {
             object.enabled = false;
             object.sampleIntervalS = 0;
+            object.sampleRateHz = 0;
         }
         if (message.enabled != null && message.hasOwnProperty("enabled"))
             object.enabled = message.enabled;
         if (message.sampleIntervalS != null && message.hasOwnProperty("sampleIntervalS"))
             object.sampleIntervalS = message.sampleIntervalS;
+        if (message.sampleRateHz != null && message.hasOwnProperty("sampleRateHz"))
+            object.sampleRateHz = message.sampleRateHz;
         return object;
     };
 
@@ -18262,6 +18285,7 @@ $root.ConfigMagnetometer = (function() {
      * @interface IConfigMagnetometer
      * @property {boolean|null} [enabled] ConfigMagnetometer enabled
      * @property {number|null} [sampleIntervalS] ConfigMagnetometer sampleIntervalS
+     * @property {number|null} [sampleRateHz] ConfigMagnetometer sampleRateHz
      */
 
     /**
@@ -18295,6 +18319,14 @@ $root.ConfigMagnetometer = (function() {
      */
     ConfigMagnetometer.prototype.sampleIntervalS = null;
 
+    /**
+     * ConfigMagnetometer sampleRateHz.
+     * @member {number|null|undefined} sampleRateHz
+     * @memberof ConfigMagnetometer
+     * @instance
+     */
+    ConfigMagnetometer.prototype.sampleRateHz = null;
+
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
 
@@ -18317,6 +18349,17 @@ $root.ConfigMagnetometer = (function() {
      */
     Object.defineProperty(ConfigMagnetometer.prototype, "_sampleIntervalS", {
         get: $util.oneOfGetter($oneOfFields = ["sampleIntervalS"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
+     * ConfigMagnetometer _sampleRateHz.
+     * @member {"sampleRateHz"|undefined} _sampleRateHz
+     * @memberof ConfigMagnetometer
+     * @instance
+     */
+    Object.defineProperty(ConfigMagnetometer.prototype, "_sampleRateHz", {
+        get: $util.oneOfGetter($oneOfFields = ["sampleRateHz"]),
         set: $util.oneOfSetter($oneOfFields)
     });
 
@@ -18348,6 +18391,8 @@ $root.ConfigMagnetometer = (function() {
             writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enabled);
         if (message.sampleIntervalS != null && Object.hasOwnProperty.call(message, "sampleIntervalS"))
             writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.sampleIntervalS);
+        if (message.sampleRateHz != null && Object.hasOwnProperty.call(message, "sampleRateHz"))
+            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.sampleRateHz);
         return writer;
     };
 
@@ -18390,6 +18435,10 @@ $root.ConfigMagnetometer = (function() {
                 }
             case 2: {
                     message.sampleIntervalS = reader.uint32();
+                    break;
+                }
+            case 3: {
+                    message.sampleRateHz = reader.uint32();
                     break;
                 }
             default:
@@ -18438,6 +18487,11 @@ $root.ConfigMagnetometer = (function() {
             if (!$util.isInteger(message.sampleIntervalS))
                 return "sampleIntervalS: integer expected";
         }
+        if (message.sampleRateHz != null && message.hasOwnProperty("sampleRateHz")) {
+            properties._sampleRateHz = 1;
+            if (!$util.isInteger(message.sampleRateHz))
+                return "sampleRateHz: integer expected";
+        }
         return null;
     };
 
@@ -18457,6 +18511,8 @@ $root.ConfigMagnetometer = (function() {
             message.enabled = Boolean(object.enabled);
         if (object.sampleIntervalS != null)
             message.sampleIntervalS = object.sampleIntervalS >>> 0;
+        if (object.sampleRateHz != null)
+            message.sampleRateHz = object.sampleRateHz >>> 0;
         return message;
     };
 
@@ -18482,6 +18538,11 @@ $root.ConfigMagnetometer = (function() {
             object.sampleIntervalS = message.sampleIntervalS;
             if (options.oneofs)
                 object._sampleIntervalS = "sampleIntervalS";
+        }
+        if (message.sampleRateHz != null && message.hasOwnProperty("sampleRateHz")) {
+            object.sampleRateHz = message.sampleRateHz;
+            if (options.oneofs)
+                object._sampleRateHz = "sampleRateHz";
         }
         return object;
     };

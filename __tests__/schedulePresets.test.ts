@@ -18,6 +18,7 @@ import {
   fwGateNote,
   fwOptionsLine,
   micFieldsForGates,
+  MAG_RATE_MIN_FW_BUILD,
   MIC_CODEC_MIN_FW_BUILD,
 } from '../src/utils/fw';
 import {
@@ -244,15 +245,23 @@ describe('compressed audio in a preset obeys the fw-380 gate', () => {
 
 describe('one firmware line', () => {
   it('says everything is available, or what needs an update', () => {
+    // The magnetometer rate mode (MAG_RATE_MIN_FW_BUILD) is the newest gate,
+    // so it is named first; magRate.test.ts pins its build.
+    expect(fwOptionsLine(MAG_RATE_MIN_FW_BUILD, bleFeatureGates(MAG_RATE_MIN_FW_BUILD, 0))).toBe(
+      `Connected collar: firmware ${MAG_RATE_MIN_FW_BUILD}, all options available`,
+    );
     expect(fwOptionsLine(380, bleFeatureGates(380, 0))).toBe(
-      'Connected collar: firmware 380, all options available',
+      'Connected collar: firmware 380: heading at 1 to 16 Hz needs a firmware update',
     );
+    // old: 'Connected collar: firmware 380, all options available'
     expect(fwOptionsLine(375, bleFeatureGates(375, 0))).toBe(
-      'Connected collar: firmware 375: compressed audio needs a firmware update',
+      'Connected collar: firmware 375: heading at 1 to 16 Hz and compressed audio need a firmware update',
     );
+    // old: 'Connected collar: firmware 375: compressed audio needs a firmware update'
     expect(fwOptionsLine(340, bleFeatureGates(340, 0))).toBe(
-      'Connected collar: firmware 340: compressed audio, microphone gain and sample rates above 16 kHz need a firmware update',
+      'Connected collar: firmware 340: heading at 1 to 16 Hz, compressed audio, microphone gain and sample rates above 16 kHz need a firmware update',
     );
+    // old: 'Connected collar: firmware 340: compressed audio, microphone gain and sample rates above 16 kHz need a firmware update'
     // below 338 there is no rate field at all — one clause, not two
     const old = fwOptionsLine(310, bleFeatureGates(310, 0));
     expect(old).toMatch(/^Connected collar: firmware 310: /);

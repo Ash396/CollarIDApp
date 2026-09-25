@@ -14,10 +14,13 @@ import { useSchedules } from '../context/SchedulesContext';
 import { useDevice } from '../context/DeviceContext';
 import {
   ENV_INTERVAL_FIXED_MIN,
+  MAG_RATE_HZ,
+  MAG_RATE_MIN_FW_BUILD,
   MIC_CODEC_MIN_FW_BUILD,
   editorFeatureGates,
   fwGateNote,
   fwOptionsLine,
+  magRateForGates,
   micFieldsForGates,
 } from '../utils/fw';
 import type { Schedule } from '../navigation/ScheduleNavigator';
@@ -213,6 +216,7 @@ export default function EditScheduleScreen() {
   const micRateExtCapable = gates.micRateExt;
   const micSensCapable = gates.micSens;
   const micCodecCapable = gates.micCodec;
+  const magRateCapable = gates.magRate;
 
   /* Accelerometer */
   const [accelEnabled, setAccelEnabled] = useState(
@@ -275,6 +279,10 @@ export default function EditScheduleScreen() {
   const [magIntervalMin, setMagIntervalMin] = useState(
     String(Math.max(1, Math.round((schedule.magnetometer?.sampleIntervalS ?? 60) / 60))),
   );
+  // Rate mode (fw MAG_RATE_MIN_FW_BUILD+): 0 = the minute interval above,
+  // else 1-16 Hz. Absent means 0, what a collar predating the field runs.
+  // The save path holds it to 0 below the gate (magRateForGates).
+  const [magRateHz, setMagRateHz] = useState<any>(schedule.magnetometer?.sampleRateHz ?? 0);
 
   /* Advanced groups — collapsed by default, remembered across sessions. */
   const [advanced, setAdvanced] = useState<AdvancedPrefs>(defaultAdvancedPrefs);
@@ -334,6 +342,7 @@ export default function EditScheduleScreen() {
     setMagIntervalMin(
       String(Math.max(1, Math.round((s.magnetometer?.sampleIntervalS ?? 60) / 60))),
     );
+    setMagRateHz(s.magnetometer?.sampleRateHz ?? 0);
   };
 
   /* ---------------- PICKER OPTIONS ---------------- */
@@ -422,6 +431,21 @@ export default function EditScheduleScreen() {
     { label: '±8 g', value: 2 },
   ];
 
+  // Magnetometer sampling: the minute interval every collar runs, or one of
+  // the rates (fw MAG_RATE_MIN_FW_BUILD+). Both are always listed — below
+  // the gate the picker is greyed, not emptied, like the mic's storage.
+  // Values are wire values (MagnetometerConfig.sample_rate_hz).
+  const magRateOptions = [
+    { label: 'Interval (every N min)', value: 0 },
+    ...MAG_RATE_HZ.map(hz => ({ label: `${hz} Hz`, value: hz })),
+  ];
+  // What the collar will actually run, given its build: the value the save
+  // path writes and the picker is held to (interval mode below the gate).
+  const magRateEffective = magRateForGates(
+    { enabled: magEnabled, sampleRateHz: magRateHz },
+    gates,
+  );
+
   /* ---------------- DERIVED ---------------- */
 
   // Live draft of this schedule from the current inputs — feeds the
@@ -492,7 +516,13 @@ export default function EditScheduleScreen() {
     },
     magnetometer: {
       enabled: magEnabled,
+      // The interval is kept in rate mode too (the field is hidden, not
+      // cleared), so switching back to Interval finds it where it was.
       sampleIntervalS: clamp(magIntervalMin, 1, 60) * 60,
+      // Held to what this collar honours (magRateForGates): interval mode
+      // below MAG_RATE_MIN_FW_BUILD, so the saved draft matches what the
+      // collar runs and the verify-after-write comparison holds.
+      sampleRateHz: magRateEffective,
     },
   });
 
@@ -507,7 +537,7 @@ export default function EditScheduleScreen() {
       micCodecEffective, micLsbDropEffective,
       accelEnabled, accelRate, accelSensitivity,
       lorawanEnabled, lorawanInterval, lorawanTxOnFix, loraEnabled,
-      loraInterval, loraTxOnFix, magEnabled, magIntervalMin,
+      loraInterval, loraTxOnFix, magEnabled, magIntervalMin, magRateEffective,
     ],
   );
 
@@ -645,7 +675,13 @@ export default function EditScheduleScreen() {
   const fwLine = fwOptionsLine(fwBuild, gates, !!device);
   // old: const fwLine = fwOptionsLine(fwBuild, gates);
   const fwAllOk =
-    fwBuild > 0 && micFormatCapable && micRateExtCapable && micSensCapable && micCodecCapable;
+    fwBuild > 0 &&
+    micFormatCapable &&
+    micRateExtCapable &&
+    micSensCapable &&
+    micCodecCapable &&
+    magRateCapable;
+  // old: fwBuild > 0 && micFormatCapable && micRateExtCapable && micSensCapable && micCodecCapable;
 
   return (
     <ScrollView
@@ -1123,16 +1159,40 @@ export default function EditScheduleScreen() {
                 that cadence.
               </Text>
 
-              <Text style={styles.label}>Heading every (minutes)</Text>
-              <TextInput
-                style={[styles.input, !magEnabled && styles.inputDisabled]}
-                keyboardType="numeric"
-                value={magIntervalMin}
-                onChangeText={setMagIntervalMin}
-                placeholder="1–60 min"
-                placeholderTextColor="#999"
-                editable={magEnabled}
+              <Text style={styles.label}>Heading sampling</Text>
+              <StyledPicker
+                selectedValue={magRateEffective}
+                onValueChange={setMagRateHz}
+                items={magRateOptions}
+                placeholder="Select heading sampling"
+                enabled={magEnabled && magRateCapable}
               />
+              {!magRateCapable && (
+                <Text style={styles.noteAmber}>
+                  {fwGateNote(fwBuild, MAG_RATE_MIN_FW_BUILD)} It samples on
+                  the minute interval.
+                </Text>
+              )}
+              {magRateEffective === 0 ? (
+                <>
+                  <Text style={styles.label}>Heading every (minutes)</Text>
+                  <TextInput
+                    style={[styles.input, !magEnabled && styles.inputDisabled]}
+                    keyboardType="numeric"
+                    value={magIntervalMin}
+                    onChangeText={setMagIntervalMin}
+                    placeholder="1–60 min"
+                    placeholderTextColor="#999"
+                    editable={magEnabled}
+                  />
+                </>
+              ) : (
+                <Text style={styles.helper}>
+                  Samples {magRateEffective} times a second on the collar's
+                  clock, stored beside the movement data (about{' '}
+                  {((magRateEffective * 6 * 86400) / 1e6).toFixed(1)} MB a day).
+                </Text>
+              )}
 
               <Text style={styles.label}>Particulates every (minutes)</Text>
               <TextInput

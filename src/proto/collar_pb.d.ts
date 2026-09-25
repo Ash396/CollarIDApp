@@ -1399,6 +1399,9 @@ export class MagnetometerConfig implements IMagnetometerConfig {
     /** MagnetometerConfig sampleIntervalS. */
     public sampleIntervalS: number;
 
+    /** MagnetometerConfig sampleRateHz. */
+    public sampleRateHz: number;
+
     /**
      * Creates a new MagnetometerConfig instance using the specified properties.
      * @param [properties] Properties to set
@@ -5606,11 +5609,17 @@ export class ConfigMagnetometer implements IConfigMagnetometer {
     /** ConfigMagnetometer sampleIntervalS. */
     public sampleIntervalS?: (number|null);
 
+    /** ConfigMagnetometer sampleRateHz. */
+    public sampleRateHz?: (number|null);
+
     /** ConfigMagnetometer _enabled. */
     public _enabled?: "enabled";
 
     /** ConfigMagnetometer _sampleIntervalS. */
     public _sampleIntervalS?: "sampleIntervalS";
+
+    /** ConfigMagnetometer _sampleRateHz. */
+    public _sampleRateHz?: "sampleRateHz";
 
     /**
      * Creates a new ConfigMagnetometer instance using the specified properties.

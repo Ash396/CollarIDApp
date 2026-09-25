@@ -499,6 +499,14 @@ export function buildSchedulePacketFromAppState(
         enabled: true,
         sampleIntervalS: Number(s.magnetometer?.sampleIntervalS ?? 0),
       });
+      // Rate mode (fw MAG_RATE_MIN_FW_BUILD+): the field goes on the wire
+      // only when it is non-zero. Unlike the mic's codec, this is not left
+      // to the proto3 default — pbjs writes any field that is SET, 0
+      // included — so an interval-mode schedule encodes to exactly the
+      // bytes it did before the field existed, and the collar's schedule
+      // CRC for a legacy config is unchanged.
+      const rateHz = Number(s.magnetometer?.sampleRateHz ?? 0);
+      if (rateHz > 0) fields.magnetometer.sampleRateHz = rateHz;
     }
     return PB.ScheduleConfig.create(fields);
   });

@@ -237,6 +237,12 @@ message AccelerometerConfig {
 message MagnetometerConfig {
   bool   enabled           = 1;
   uint32 sample_interval_s = 2; // in seconds
+  // Rate mode (collarID_thread docs/DESIGN_magnetometer_rate.md): 1, 2, 4, 8
+  // or 16 Hz, paced by LPTIM1 on the RTC crystal and stored as a 3-channel
+  // WAV beside the accelerometer's. 0 (or absent) is the interval mode above,
+  // byte-identical to every schedule that predates the field, so
+  // SchedSync_Crc is unchanged for a legacy config.
+  uint32 sample_rate_hz    = 3;
 }
 
 // schedule that is applied during each TimeWindow

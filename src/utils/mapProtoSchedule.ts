@@ -97,6 +97,9 @@ export function mapProtoSchedule(p: PB.ScheduleConfig, index: number): Schedule 
       ? {
           enabled: Boolean(p.magnetometer.enabled),
           sampleIntervalS: p.magnetometer.sampleIntervalS ?? undefined,
+          // A collar predating the field sends nothing, and 0 (interval
+          // mode) is exactly what it runs.
+          sampleRateHz: p.magnetometer.sampleRateHz ?? 0,
         }
       : undefined,
   };

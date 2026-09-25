@@ -44,6 +44,17 @@ const POWER_MW = {
   // POWER_MW.mic_flac_saving_16k in the website's js/power-model.js — keep
   // the two in step.
   micFlacSaving16k: 0.50,
+  // Magnetometer rate mode (fw MAG_RATE_MIN_FW_BUILD+), mW at the battery
+  // by MagnetometerConfig.sample_rate_hz. DESIGN ESTIMATES, not bench
+  // numbers (collarID_thread docs/DESIGN_magnetometer_rate.md §3.5): the
+  // LIS2MDL single-shot current with offset cancellation from the datasheet
+  // formula, plus one MCU wake per sample costed at ~4.6 uJ; 16 Hz is
+  // interpolated past the formula's range. Interval mode (rate 0, once a
+  // minute) is ~0.006 mW and already inside the base figure, so it adds
+  // nothing here. Mirrors POWER_MW.mag_rate_mw in the website's
+  // js/power-model.js — keep the two in step; the design's B5 Joulescope
+  // run replaces them both.
+  magRateMw: { 1: 0.029, 2: 0.052, 4: 0.099, 8: 0.192, 16: 0.38 },
   gpsAcqDelta:     36.3,   // GPS acquisition incremental above baseline
   loraPower:       40.3,   // LoRaWAN TX + Class A RX window, avg power (mW)
   loraDur:          6.3,   // Duration of TX + RX event (s), 100-byte payload
@@ -84,8 +95,19 @@ export type PowerEstimate = {
     gps: number;
     microphone: number;
     lora: number;
+    /** The magnetometer's rate mode; 0 in interval mode or with it off. */
+    magnetometer: number;
   };
 };
+
+/** The magnetometer's increment in mW for a config block: the rate-mode
+ *  figure for its rate, 0 in interval mode (rate 0 or absent, inside the
+ *  base) and for a rate the table does not know. */
+export function magRateMw(m: Schedule['magnetometer'] | undefined): number {
+  if (!m?.enabled) return 0;
+  const table: Readonly<Record<number, number>> = POWER_MW.magRateMw;
+  return table[m.sampleRateHz ?? 0] ?? 0;
+}
 
 function clamp(v: number, min: number, max: number): number {
   if (Number.isNaN(v)) return min;
@@ -124,11 +146,15 @@ function getAlwaysOnMw(s: Schedule): number {
 }
 
 /** Per-schedule power in mW: always-on baseline for its window + duty-cycled increments. */
-function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gps: number; lora: number } {
+function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gps: number; lora: number; mag: number } {
   const hours = s.window ? windowHours(s.window) : 24;
   const frac  = hours / 24;
 
   let mic = 0, gps = 0, lora = 0;
+
+  // Magnetometer rate mode: a fixed draw for the window (one sample per slot,
+  // no duty cycle). Interval mode adds nothing (see POWER_MW.magRateMw).
+  const mag = frac * magRateMw(s.magnetometer);
 
   if (s.microphone?.enabled) {
     // Increment for the rate, less what compression saves at that rate, at
@@ -185,7 +211,7 @@ function scheduleIncrementalMw(s: Schedule): { baseline: number; mic: number; gp
   // Always-on baseline during this schedule's active window (P_always-on per Eq. 5.1)
   const baseline = frac * getAlwaysOnMw(s);
 
-  return { baseline, mic, gps, lora };
+  return { baseline, mic, gps, lora, mag };
 }
 
 // Quiescent power (0.74 mW) for hours not covered by any schedule.
@@ -208,31 +234,33 @@ function getUncoveredBaselineMw(schedules: Schedule[]): number {
 
 /** Full power estimate across all schedules, expressed in solar-hours/day. */
 export function estimatePower(schedules: Schedule[]): PowerEstimate {
-  let baseline = 0, mic = 0, gps = 0, lora = 0;
+  let baseline = 0, mic = 0, gps = 0, lora = 0, mag = 0;
   for (const s of schedules) {
     const inc = scheduleIncrementalMw(s);
     baseline += inc.baseline;
     mic      += inc.mic;
     gps      += inc.gps;
     lora     += inc.lora;
+    mag      += inc.mag;
   }
   const totalBaseline = baseline + getUncoveredBaselineMw(schedules);
 
   return {
-    totalSolarHours: mwToSolarHours(totalBaseline + mic + gps + lora),
+    totalSolarHours: mwToSolarHours(totalBaseline + mic + gps + lora + mag),
     components: {
-      baseline:   mwToSolarHours(totalBaseline),
-      gps:        mwToSolarHours(gps),
-      microphone: mwToSolarHours(mic),
-      lora:       mwToSolarHours(lora),
+      baseline:     mwToSolarHours(totalBaseline),
+      gps:          mwToSolarHours(gps),
+      microphone:   mwToSolarHours(mic),
+      lora:         mwToSolarHours(lora),
+      magnetometer: mwToSolarHours(mag),
     },
   };
 }
 
 /** Solar-hours/day for a single schedule, including its always-on baseline. */
 export function estimateScheduleSolarHours(s: Schedule): number {
-  const { baseline, mic, gps, lora } = scheduleIncrementalMw(s);
-  return mwToSolarHours(baseline + mic + gps + lora);
+  const { baseline, mic, gps, lora, mag } = scheduleIncrementalMw(s);
+  return mwToSolarHours(baseline + mic + gps + lora + mag);
 }
 
 // ── Battery longevity (js/power-model.js estimateLongevityDays port) ──────

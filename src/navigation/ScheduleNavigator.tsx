@@ -70,6 +70,11 @@ export type Schedule = {
   magnetometer?: {
     enabled: boolean;
     sampleIntervalS?: number;
+    /** MagnetometerConfig.sample_rate_hz: 0 = interval mode (sampleIntervalS
+     *  above), else 1 / 2 / 4 / 8 / 16 Hz. Fw MAG_RATE_MIN_FW_BUILD+; absent
+     *  means 0, the proto3 default and what a collar predating the field
+     *  runs. */
+    sampleRateHz?: number;
   };
 };
 

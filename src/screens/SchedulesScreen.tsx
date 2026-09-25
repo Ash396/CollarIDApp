@@ -25,7 +25,7 @@ import { readSchedulesFromDevice } from '../ble/bleManager';
 import { Swipeable } from 'react-native-gesture-handler';
 import { defaultScheduleSlot } from '../utils/schedulePresets';
 import { scheduleSummaryLines } from '../utils/scheduleSummary';
-import { bleFeatureGates, micFormatForCollar } from '../utils/fw';
+import { bleFeatureGates, magRateForCollar, micFormatForCollar } from '../utils/fw';
 
 type Nav = NativeStackNavigationProp<ScheduleStackParamList, 'Schedules'>;
 
@@ -170,8 +170,15 @@ export default function SchedulesScreen() {
       // what goes out, what the read-back is checked against, and what the
       // cards show. No refusal — the collar records either way. Mirrors
       // micFormatForCollar in the website's sendSchedules.
+      // The magnetometer rate gate's last line is the same shape: a collar
+      // below MAG_RATE_MIN_FW_BUILD samples on the minute interval whatever
+      // it is told, so a rate-mode schedule goes out as interval mode
+      // (magRateForCollar) and the read-back is checked against that.
       const sendGates = bleFeatureGates(fwBuild, caps);
-      const toSend = draftSchedules.map(s => micFormatForCollar(s, sendGates));
+      const toSend = draftSchedules.map(s =>
+        magRateForCollar(micFormatForCollar(s, sendGates), sendGates),
+      );
+      // old: const toSend = draftSchedules.map(s => micFormatForCollar(s, sendGates));
       if (toSend.some((s, i) => s !== draftSchedules[i])) replaceDraft(toSend);
 
       const result = await verifyWrite({

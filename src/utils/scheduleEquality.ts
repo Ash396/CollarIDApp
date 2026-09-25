@@ -60,6 +60,9 @@ function normalizeScheduleApp(s: Schedule) {
     magnetometer: {
       enabled: !!s.magnetometer?.enabled,
       sampleIntervalS: s.magnetometer?.enabled ? s.magnetometer?.sampleIntervalS ?? 0 : 0,
+      // Normalized like the mic's codec: a collar predating the field
+      // echoes nothing, which must equal a rate-0 (interval mode) draft.
+      sampleRateHz: s.magnetometer?.enabled ? s.magnetometer?.sampleRateHz ?? 0 : 0,
     },
     lorawan: {
       enabled: !!s.lorawan?.enabled,
