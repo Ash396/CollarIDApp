@@ -375,6 +375,29 @@ export async function verifySession(): Promise<
   }
 }
 
+/** Authed fetch for a binary body (a firmware image). Same 401 policy as
+ *  apiFetch; the body comes back as bytes. */
+async function apiFetchBytes(path: string): Promise<Uint8Array> {
+  const usedToken = _token;
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: { Authorization: `Bearer ${usedToken}` },
+    });
+  } catch (_) {
+    throw new ApiError(0, CANNOT_REACH_SERVER);
+  }
+  if (res.status === 401 && usedToken) {
+    await expireSession(usedToken);
+    throw new ApiError(401, 'Session expired — sign in again.');
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new ApiError(res.status, `HTTP ${res.status}`, detailText(data));
+  }
+  return new Uint8Array(await res.arrayBuffer());
+}
+
 /* ── Devices ──────────────────────────────────────────────────────────── */
 
 /** GET /devices/{uid}/config — the collar's LoRaWAN identity and keys as the
@@ -426,4 +449,32 @@ export function overwritePreset(id: number, schedules: any[]): Promise<any> {
 
 export function deletePreset(id: number): Promise<any> {
   return apiFetch(`/schedules/${id}`, { method: 'DELETE' });
+}
+
+/* ── Firmware images ──────────────────────────────────────────────────── */
+// The website's update-device.html lists GET /firmware?target=u5 (signed in)
+// and downloads GET /firmware/{id}/download; the release's `version` string
+// rides in the U5FW stream header as the "git hash" (u5bGetImage). Same here.
+
+export type FirmwareRelease = {
+  id: number;
+  version: string;
+  target: string;
+  filename: string;
+  description?: string | null;
+  release_notes?: string | null;
+  release_date?: string | null;
+  file_size?: number | null;
+  created_at?: string | null;
+  uploaded_by?: string | null;
+};
+
+/** The server's main-processor images, newest first (auth). */
+export function listFirmware(target: 'u5' | 'wb5m' = 'u5'): Promise<FirmwareRelease[]> {
+  return apiFetch(`/firmware?target=${encodeURIComponent(target)}`);
+}
+
+/** One image's bytes (auth). */
+export function downloadFirmware(id: number): Promise<Uint8Array> {
+  return apiFetchBytes(`/firmware/${encodeURIComponent(String(id))}/download`);
 }

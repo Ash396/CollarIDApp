@@ -1,0 +1,189 @@
+{
+  "crc32": {
+    "123456789": 3421780262,
+    "empty": 0,
+    "imgCrc": 1142848421,
+    "imgFirst28": 2729069369
+  },
+  "imageLen": 102437,
+  "imageSha256": "d511aeb0d4301bff5009ec9999916f1d7bb9bc6009ab60c2bd9aa7350c005c82",
+  "header": "553546570100000025900100a57b1e4461626331323334640000000057919f30",
+  "headerNoHash": "553546570100000025900100a57b1e44000000000000000000000000d28a7025",
+  "streamSha256": "62dfbac566bc66464e62340de09778795b2bce7502826f21f81275e25d6e507a",
+  "padded": {
+    "p96": 102688,
+    "p171": 102568,
+    "p182": 103708
+  },
+  "paddedSha256": {
+    "p182": "5c745fdf1f087b8c3c697fd5e36db32315a5162b9fbdefd0c340b8f4b980ecf1"
+  },
+  "specialMode": {
+    "enter": "12021801",
+    "ready": "12021802",
+    "restart": "12021803"
+  },
+  "decodeSpecialMode": {
+    "enter": 1,
+    "mtu185": "120618b981d0ea04",
+    "empty": 0,
+    "junk": 0,
+    "mtu185Value": 1297350841
+  },
+  "e2e": {
+    "notify185": {
+      "res": {
+        "delivered": true,
+        "confirmed": true
+      },
+      "writes": 602,
+      "writesSha256": "48fefc35f9959890e6fcc833eee358db0b50cff6056609bc79d9e24acbca1acb",
+      "first": [
+        "12021801",
+        "1100000000ab005535465701000000a8900100b7c49c2c616263313233346400000000a07cfd6c00001220010001089bde95b392bbfadffc43da6e2fb4357ea506006f10e37050322527ea6da0b109f3ec1838478fd2eacaee98fc06938ec64cb10fe924437618486be9a6b80a546eb7e3332fa49401d40dde30d4614f267fa4b47f02490c73663e0301dcfda718babd97a8358204dc5d0e198f6ee03f5ec7fa1385cae06619b21722b6e3ff3579973ba8c6a67453e9",
+        "1101000000ab00608536af7855184d161e4b644a9201e64869ceac2d0734cd72a2a9a68faae078a0511afded318cf40f4364364f50aa222c62b261cc01f52bb5dc198660d659ed9b241f87bcaef1eaec3dc4c4be3631821f5db003ffeb515666912bc3169bf4a61e61659ce67c907073ae331dbbf935008f6b8c89f7a8f877d1081e21096cc173240fb66fd762e5b9f01f1a64558f51f1aedcd1288d591f7cf871a428fed40f398fc1cf6708bcec25c91221f1ad513c"
+      ],
+      "last": [
+        "1157020000ab0040244ac2330a618f3fbb6e681f8858f55377e315399c6b3819439f8abd02f3d4135bda1db6805951ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc1245f6a",
+        "12"
+      ],
+      "log": [
+        "enter",
+        "end"
+      ],
+      "lastProgress": [
+        102600,
+        102600
+      ]
+    },
+    "notify247": {
+      "res": {
+        "delivered": true,
+        "confirmed": true
+      },
+      "writes": 572,
+      "writesSha256": "c7332d2e2755d6ee034844a6c08171fd88fb6174e0cb34b05c2fd07b63c3bb8e",
+      "first": [
+        "12021801",
+        "1100000000b60055354657010000001c950100dca0dd8d6162633132333464000000001b86bd3400001220010001089bde95b392bbfadffc43da6e2fb4357ea506006f10e37050322527ea6da0b109f3ec1838478fd2eacaee98fc06938ec64cb10fe924437618486be9a6b80a546eb7e3332fa49401d40dde30d4614f267fa4b47f02490c73663e0301dcfda718babd97a8358204dc5d0e198f6ee03f5ec7fa1385cae06619b21722b6e3ff3579973ba8c6608536af7855184d161e4b71af18bb",
+        "1101000000b600644a9201e64869ceac2d0734cd72a2a9a68faae078a0511afded318cf40f4364364f50aa222c62b261cc01f52bb5dc198660d659ed9b241f87bcaef1eaec3dc4c4be3631821f5db003ffeb515666912bc3169bf4a61e61659ce67c907073ae331dbbf935008f6b8c89f7a8f877d1081e21096cc173240fb66fd762e5b9f01f1a64558f51f1aedcd1288d591f7cf871a428fed40f398fc1cf6708bcec25c9122173fdd955652b42551dfb22c0039b48f0ed5fdd421a92d81a5fa5"
+      ],
+      "last": [
+        "1139020000b600ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe6a0c11a",
+        "12"
+      ],
+      "log": [
+        "enter",
+        "end"
+      ],
+      "lastProgress": [
+        103740,
+        103740
+      ]
+    },
+    "pollLegacy": {
+      "res": {
+        "delivered": true,
+        "confirmed": true
+      },
+      "writes": 1072,
+      "writesSha256": "890651fe3b7a63bdf1f6a8ca8d97cfe704cff2a87c89d2c44eb8c58a3bbd2aa3",
+      "first": [
+        "12021801",
+        "110000000060005535465701000000209101002542cc156162633132333464000000007c94d5bb00001220010001089bde95b392bbfadffc43da6e2fb4357ea506006f10e37050322527ea6da0b109f3ec1838478fd2eacaee98fc06938ec64cb10fe924437618c2543d50",
+        "11010000006000486be9a6b80a546eb7e3332fa49401d40dde30d4614f267fa4b47f02490c73663e0301dcfda718babd97a8358204dc5d0e198f6ee03f5ec7fa1385cae06619b21722b6e3ff3579973ba8c6608536af7855184d161e4b644a9201e64869ceac2d5dedfe1b"
+      ],
+      "last": [
+        "112d0400006000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff29ef3d6a",
+        "12"
+      ],
+      "log": [
+        "enter",
+        "end"
+      ],
+      "lastProgress": [
+        102720,
+        102720
+      ]
+    },
+    "notifyWithResp": {
+      "res": {
+        "delivered": true,
+        "confirmed": true
+      },
+      "writes": 602,
+      "writesSha256": "48fefc35f9959890e6fcc833eee358db0b50cff6056609bc79d9e24acbca1acb",
+      "first": [
+        "12021801",
+        "1100000000ab005535465701000000a8900100b7c49c2c616263313233346400000000a07cfd6c00001220010001089bde95b392bbfadffc43da6e2fb4357ea506006f10e37050322527ea6da0b109f3ec1838478fd2eacaee98fc06938ec64cb10fe924437618486be9a6b80a546eb7e3332fa49401d40dde30d4614f267fa4b47f02490c73663e0301dcfda718babd97a8358204dc5d0e198f6ee03f5ec7fa1385cae06619b21722b6e3ff3579973ba8c6a67453e9",
+        "1101000000ab00608536af7855184d161e4b644a9201e64869ceac2d0734cd72a2a9a68faae078a0511afded318cf40f4364364f50aa222c62b261cc01f52bb5dc198660d659ed9b241f87bcaef1eaec3dc4c4be3631821f5db003ffeb515666912bc3169bf4a61e61659ce67c907073ae331dbbf935008f6b8c89f7a8f877d1081e21096cc173240fb66fd762e5b9f01f1a64558f51f1aedcd1288d591f7cf871a428fed40f398fc1cf6708bcec25c91221f1ad513c"
+      ],
+      "last": [
+        "1157020000ab0040244ac2330a618f3fbb6e681f8858f55377e315399c6b3819439f8abd02f3d4135bda1db6805951ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc1245f6a",
+        "12"
+      ],
+      "log": [
+        "enter",
+        "end"
+      ],
+      "lastProgress": [
+        102600,
+        102600
+      ]
+    },
+    "notifyRestart5": {
+      "res": {
+        "delivered": true,
+        "confirmed": true
+      },
+      "writes": 1083,
+      "writesSha256": "4acd6dcf8d4bf62ee2a757d56ce68fca42bbb0ccaeb04b9e49ae5d16408a3688",
+      "first": [
+        "12021801",
+        "1100000000b60055354657010000001c950100dca0dd8d6162633132333464000000001b86bd3400001220010001089bde95b392bbfadffc43da6e2fb4357ea506006f10e37050322527ea6da0b109f3ec1838478fd2eacaee98fc06938ec64cb10fe924437618486be9a6b80a546eb7e3332fa49401d40dde30d4614f267fa4b47f02490c73663e0301dcfda718babd97a8358204dc5d0e198f6ee03f5ec7fa1385cae06619b21722b6e3ff3579973ba8c6608536af7855184d161e4b71af18bb",
+        "1101000000b600644a9201e64869ceac2d0734cd72a2a9a68faae078a0511afded318cf40f4364364f50aa222c62b261cc01f52bb5dc198660d659ed9b241f87bcaef1eaec3dc4c4be3631821f5db003ffeb515666912bc3169bf4a61e61659ce67c907073ae331dbbf935008f6b8c89f7a8f877d1081e21096cc173240fb66fd762e5b9f01f1a64558f51f1aedcd1288d591f7cf871a428fed40f398fc1cf6708bcec25c9122173fdd955652b42551dfb22c0039b48f0ed5fdd421a92d81a5fa5"
+      ],
+      "last": [
+        "112d0400006000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff29ef3d6a",
+        "12"
+      ],
+      "log": [
+        "enter",
+        "restart@5",
+        "enter",
+        "end"
+      ],
+      "lastProgress": [
+        102720,
+        102720
+      ]
+    },
+    "notifyRestart25": {
+      "res": {
+        "delivered": true,
+        "confirmed": true
+      },
+      "writes": 603,
+      "writesSha256": "52d953500e59f77a860f6e77ba7e31ae6ee7cda8c35ffc7f29fdbca64e6651e5",
+      "first": [
+        "12021801",
+        "1100000000b60055354657010000001c950100dca0dd8d6162633132333464000000001b86bd3400001220010001089bde95b392bbfadffc43da6e2fb4357ea506006f10e37050322527ea6da0b109f3ec1838478fd2eacaee98fc06938ec64cb10fe924437618486be9a6b80a546eb7e3332fa49401d40dde30d4614f267fa4b47f02490c73663e0301dcfda718babd97a8358204dc5d0e198f6ee03f5ec7fa1385cae06619b21722b6e3ff3579973ba8c6608536af7855184d161e4b71af18bb",
+        "1101000000b600644a9201e64869ceac2d0734cd72a2a9a68faae078a0511afded318cf40f4364364f50aa222c62b261cc01f52bb5dc198660d659ed9b241f87bcaef1eaec3dc4c4be3631821f5db003ffeb515666912bc3169bf4a61e61659ce67c907073ae331dbbf935008f6b8c89f7a8f877d1081e21096cc173240fb66fd762e5b9f01f1a64558f51f1aedcd1288d591f7cf871a428fed40f398fc1cf6708bcec25c9122173fdd955652b42551dfb22c0039b48f0ed5fdd421a92d81a5fa5"
+      ],
+      "last": [
+        "1139020000b600ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe6a0c11a",
+        "12"
+      ],
+      "log": [
+        "enter",
+        "restart@25",
+        "enter",
+        "end"
+      ],
+      "lastProgress": [
+        103740,
+        103740
+      ]
+    }
+  }
+}

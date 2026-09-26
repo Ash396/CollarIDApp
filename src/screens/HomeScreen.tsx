@@ -21,7 +21,9 @@ import { useDevice } from '../context/DeviceContext';
 import CollarCard from '../components/CollarCard';
 import AccountCard from '../components/AccountCard';
 import MagCalModal from '../components/MagCalModal';
+import FirmwareUpdateModal from '../components/FirmwareUpdateModal';
 import type { MagCalOutcome } from '../utils/magCal';
+import { MIN_SAFE_U5_BLE_BUILD, isU5BleSafe } from '../ble/ota';
 import {
   manager,
   COLLAR_SERVICE_UUID,
@@ -100,6 +102,26 @@ export default function HomeScreen() {
     setMagCalOpen(true);
   };
   const onMagCalResult = (o: MagCalOutcome) => setMagCalLast(`Last run: ${o.title}`);
+
+  /* ---------- Main-processor firmware update over Bluetooth ---------- */
+  // The website's Update Device page, in a modal (components/
+  // FirmwareUpdateModal.tsx). Deliberately NOT closed when the collar
+  // leaves: the collar rebooting into the new image is what ends the
+  // Bluetooth link, and the modal turns that into "update installed".
+  const [fwUpdateOpen, setFwUpdateOpen] = useState(false);
+  const openFwUpdate = () => {
+    if (!isU5BleSafe(fwBuild)) {
+      Alert.alert(
+        'Firmware update',
+        `Updating over Bluetooth needs firmware v1.14.0 (build ${MIN_SAFE_U5_BLE_BUILD})+ on the collar. ${fwGateNote(
+          fwBuild,
+          MIN_SAFE_U5_BLE_BUILD,
+        )} Update it once over USB-C from the website’s Update Device page; after that, every update can be wireless.`,
+      );
+      return;
+    }
+    setFwUpdateOpen(true);
+  };
 
   const navigation = useNavigation<any>();
   const lastSeenRef = useRef<Record<string, number>>({});
@@ -613,6 +635,38 @@ export default function HomeScreen() {
         onResult={onMagCalResult}
       />
 
+      {/* Firmware update over Bluetooth — with the connected collar. */}
+      {device && (
+        <View style={styles.magCalCard} testID="fwupdate-card">
+          <Text style={[styles.magCalTitle, styles.fwTitle]}>FIRMWARE UPDATE</Text>
+          <Text style={styles.magCalText}>
+            Sends a new main-processor firmware to the collar over this
+            Bluetooth connection, relayed through its radio module. The
+            collar checks the image, swaps to it and restarts itself; the
+            transfer takes a few minutes with the phone next to the collar.
+          </Text>
+          <TouchableOpacity
+            style={[styles.magCalButton, styles.fwButton, !isU5BleSafe(fwBuild) && styles.magCalButtonOff]}
+            onPress={openFwUpdate}
+            testID="fwupdate-open"
+          >
+            <Text style={styles.fwButtonText}>Update firmware…</Text>
+          </TouchableOpacity>
+          {!isU5BleSafe(fwBuild) && (
+            <Text style={styles.magCalNote} testID="fwupdate-gate-note">
+              {fwGateNote(fwBuild, MIN_SAFE_U5_BLE_BUILD)}
+            </Text>
+          )}
+        </View>
+      )}
+      <FirmwareUpdateModal
+        visible={fwUpdateOpen}
+        device={device}
+        fwBuild={fwBuild}
+        firmwareVersion={connectedDevice?.firmwareVersion}
+        onClose={() => setFwUpdateOpen(false)}
+      />
+
       {/* CollarID account — below the Bluetooth list so scanning/connecting
           stays exactly where it was. */}
       <Text style={styles.sectionTitle}>ACCOUNT</Text>
@@ -694,6 +748,9 @@ const styles = StyleSheet.create({
   magCalButtonOff: { opacity: 0.5 },
   magCalButtonText: { color: '#0b1d22', fontWeight: '700', fontSize: 14 },
   magCalNote: { marginTop: 8, fontSize: 12, color: '#6B7280', lineHeight: 17 },
+  fwTitle: { color: '#9A3412' },
+  fwButton: { backgroundColor: '#f8b26a' },
+  fwButtonText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
 
   bleWarnBox: {
     backgroundColor: '#FFF7ED',
