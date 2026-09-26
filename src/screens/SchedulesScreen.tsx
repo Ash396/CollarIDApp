@@ -128,7 +128,7 @@ export default function SchedulesScreen() {
     if (draftSchedules.length >= MAX_SCHEDULES) {
       Alert.alert(
         'Maximum 4 schedules',
-        'A fully-loaded config with more than 4 schedules exceeds what deployed collars can accept in a single Bluetooth write.',
+        'The app can send at most 4 schedules to a collar. Remove one before adding another.',
       );
       return;
     }
@@ -147,7 +147,7 @@ export default function SchedulesScreen() {
   const handleSendToDevice = async () => {
     try {
       if (!device) {
-        Alert.alert('No Device', 'You must connect to a collar first.');
+        Alert.alert('No collar connected', 'Connect to a collar on the Home tab first.');
         return;
       }
 
@@ -156,7 +156,7 @@ export default function SchedulesScreen() {
           'Overlapping Schedules',
           `Schedule ${overlapPair[0] + 1} overlaps with Schedule ${
             overlapPair[1] + 1
-          }. Please resolve schedule conflicts before sending to the collar.`,
+          }. Change their hours so they do not overlap, then send again.`,
         );
         return;
       }
@@ -211,20 +211,23 @@ export default function SchedulesScreen() {
           // The engaged flag rides along in the schedule packet, but a
           // disengaged device won't act on the schedule.
           Alert.alert(
-            'Schedule sent — device not engaged',
-            'The schedule was saved to the device, but it is currently disengaged and will not run the schedule or collect data. Turn on "System engaged" and send again to start it.',
+            'Schedule sent — collar not engaged',
+            'The schedule was saved to the collar, but the collar is switched off (not engaged), so it will not run the schedule or collect data. Turn on "System engaged" and send again to start it.',
           );
         } else {
-          Alert.alert('Success', 'Schedules updated successfully.');
+          Alert.alert('Schedules sent', 'The collar has the new schedules.');
         }
       } else {
         Alert.alert(
-          'Warning',
-          'Schedules were sent but could not be verified from the device.',
+          'Sent, but not confirmed',
+          'The schedules were sent, but the app could not read them back from the collar to check. Reconnect and look at the schedules to make sure.',
         );
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to send schedule config.');
+      Alert.alert(
+        'Send failed',
+        'Could not send the schedules to the collar. Keep the phone next to the collar and try again.',
+      );
       console.error(err);
     }
   };
@@ -260,8 +263,8 @@ export default function SchedulesScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.draftTitle}>Unsent changes</Text>
             <Text style={styles.draftText}>
-              This draft differs from the collar's stored config. Send to
-              apply, or discard to go back to what the collar holds.
+              These schedules differ from what is on the collar. Send them to
+              apply, or discard to go back to what the collar has.
             </Text>
           </View>
           <TouchableOpacity
@@ -269,7 +272,7 @@ export default function SchedulesScreen() {
             onPress={() =>
               Alert.alert(
                 'Discard draft?',
-                "Throw away local edits and reload the collar's config?",
+                "Throw away your changes and go back to the collar's schedules?",
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {
@@ -290,7 +293,7 @@ export default function SchedulesScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.engagedTitle}>System engaged</Text>
           <Text style={styles.engagedSub}>
-            Device:{' '}
+            Collar:{' '}
             {collarEngaged === null ? '—' : collarEngaged ? 'ON' : 'OFF'} •
             Draft: {draftEngaged === null ? '—' : draftEngaged ? 'ON' : 'OFF'}
           </Text>
@@ -314,7 +317,7 @@ export default function SchedulesScreen() {
 
       {draftSchedules.length === 0 && (
         <Text style={{ color: '#777', marginBottom: 20 }}>
-          No schedules loaded from device.
+          No schedules loaded from the collar.
         </Text>
       )}
 
@@ -369,7 +372,7 @@ export default function SchedulesScreen() {
               </Text>
 
               <Text style={styles.cardText}>
-                ☀️ {shEstimate.toFixed(2)} sh/day
+                ☀️ {shEstimate.toFixed(2)} h sun/day
               </Text>
 
               <View style={styles.detailsContainer}>
@@ -400,7 +403,7 @@ export default function SchedulesScreen() {
         style={[styles.sendButton, hasOverlaps && styles.sendButtonDisabled]}
         onPress={handleSendToDevice}
       >
-        <Text style={styles.sendText}>SEND TO DEVICE</Text>
+        <Text style={styles.sendText}>SEND TO COLLAR</Text>
       </TouchableOpacity>
     </ScrollView>
   );

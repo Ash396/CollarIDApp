@@ -27,7 +27,7 @@ import StyledPicker from '../components/StyledPicker';
 import ZoneMapPicker from '../components/ZoneMapPicker';
 import { useDevice } from '../context/DeviceContext';
 import { tunnelRunTxn } from '../ble/bleManager';
-import { BLE_ZONES_MIN_FW_BUILD, bleFeatureGates } from '../utils/fw';
+import { BLE_ZONES_MIN_FW_BUILD, bleFeatureGates, fwGateNote } from '../utils/fw';
 import {
   CFG_ACK,
   DEFAULT_CONFIRM_FIXES,
@@ -103,9 +103,13 @@ function epochFromFields(date: string, time: string): number | undefined {
  *  field's own message for a half-filled or malformed date. */
 export function formFromDraft(d: Draft): FenceForm {
   const start = epochFromFields(d.startDate, d.startTime);
-  if (start === undefined) throw new Error('start needs a date (YYYY-MM-DD) and a time (HH:MM), or both empty');
+  if (start === undefined) {
+    throw new Error('The start needs both a date (YYYY-MM-DD) and a time (HH:MM), or leave both empty.');
+  }
   const expiry = epochFromFields(d.expiryDate, d.expiryTime);
-  if (expiry === undefined) throw new Error('expiry needs a date (YYYY-MM-DD) and a time (HH:MM), or both empty');
+  if (expiry === undefined) {
+    throw new Error('The expiry needs both a date (YYYY-MM-DD) and a time (HH:MM), or leave both empty.');
+  }
   return {
     id: d.id,
     action: d.action,
@@ -194,7 +198,10 @@ export default function EditZoneScreen() {
   const send = async () => {
     setError(null);
     if (!device || !gates.cfgTunnel) {
-      Alert.alert('Zones over Bluetooth', `Bluetooth zone delivery needs firmware v1.15+ (build ${BLE_ZONES_MIN_FW_BUILD}).`);
+      Alert.alert(
+        'Zones over Bluetooth',
+        !device ? 'Connect a collar on the Home tab first.' : fwGateNote(fwBuild, BLE_ZONES_MIN_FW_BUILD),
+      );
       return;
     }
     let frags;
@@ -213,7 +220,7 @@ export default function EditZoneScreen() {
       setProgress('');
       if (fin.ackStatus === CFG_ACK.APPLIED) {
         AsyncStorage.removeItem(key).catch(() => {});
-        Alert.alert('Zone delivered', 'Zone delivered and applied.');
+        Alert.alert('Zone sent', 'The collar has the zone and is using it.');
         navigation.goBack();
       } else {
         setError(`The collar ${verdictText(fin)}.`);
@@ -221,7 +228,7 @@ export default function EditZoneScreen() {
     } catch (e: any) {
       if (!aliveRef.current) return;
       setProgress('');
-      setError(`Delivery failed: ${e?.message ?? e}`);
+      setError(`Couldn’t send the zone. ${e?.message ?? e}`);
     } finally {
       if (aliveRef.current) setSending(false);
     }
@@ -242,16 +249,16 @@ export default function EditZoneScreen() {
       </TouchableOpacity>
       <Text style={styles.header}>{editing ? `EDIT ZONE ${editing.id}` : 'ADD ZONE'}</Text>
       <Text style={styles.note}>
-        Delivered and verified over this Bluetooth connection in a few seconds — no LoRaWAN needed.
-        The collar applies the same safety rules as a radio push.
+        Sent to the collar over Bluetooth and checked in a few seconds. The collar applies the same
+        safety checks as when a zone is sent over the network.
       </Text>
 
-      <Text style={styles.label}>Zone slot #</Text>
+      <Text style={styles.label}>Zone number</Text>
       <StyledPicker
         selectedValue={draft.id}
         onValueChange={v => set('id', Number(v))}
         items={FENCE_IDS.map(id => ({ label: `Zone ${id}`, value: id }))}
-        placeholder="Zone slot"
+        placeholder="Zone number"
       />
 
       <Text style={styles.label}>Action</Text>
@@ -264,19 +271,19 @@ export default function EditZoneScreen() {
 
       {isSwitch && (
         <>
-          <Text style={styles.label}>Schedule slot</Text>
+          <Text style={styles.label}>Switch to schedule</Text>
           <StyledPicker
             selectedValue={draft.zoneSlot}
             onValueChange={v => set('zoneSlot', Number(v))}
-            items={ZONE_SCHEDULE_SLOTS.map(s => ({ label: `Slot ${s} (Schedule ${s + 1})`, value: s }))}
-            placeholder="Schedule slot"
+            items={ZONE_SCHEDULE_SLOTS.map(s => ({ label: `Schedule ${s + 1}`, value: s }))}
+            placeholder="Schedule"
           />
         </>
       )}
 
       <View style={styles.pairRow}>
         <View style={styles.pairCol}>
-          <Text style={styles.label}>Confirm fixes (1–10)</Text>
+          <Text style={styles.label}>Positions to confirm (1–10)</Text>
           <TextInput
             style={styles.input}
             keyboardType="number-pad"
@@ -286,7 +293,7 @@ export default function EditZoneScreen() {
           />
         </View>
         <View style={styles.pairCol}>
-          <Text style={styles.label}>Accuracy gate (m, 0 = none)</Text>
+          <Text style={styles.label}>Max GPS error (m, 0 = any)</Text>
           <TextInput
             style={styles.input}
             keyboardType="number-pad"
@@ -297,7 +304,7 @@ export default function EditZoneScreen() {
         </View>
       </View>
 
-      <Text style={styles.label}>Start (optional — armed on delivery when empty)</Text>
+      <Text style={styles.label}>Start (optional; empty = starts when sent)</Text>
       <View style={styles.pairRow}>
         <TextInput
           style={[styles.input, styles.pairCol]}
@@ -342,7 +349,7 @@ export default function EditZoneScreen() {
       </View>
 
       <View style={styles.cornersHead}>
-        <Text style={styles.label}>Corners — one lat, lon per line (3–8 points)</Text>
+        <Text style={styles.label}>Corners: one “latitude, longitude” per line (3–8 corners)</Text>
         <TouchableOpacity onPress={() => setMapOpen(true)} testID="editzone-map">
           <Text style={styles.link}>🗺 Pick on map</Text>
         </TouchableOpacity>
@@ -372,7 +379,7 @@ export default function EditZoneScreen() {
         disabled={sending}
         testID="editzone-send"
       >
-        <Text style={styles.sendText}>SEND ZONE OVER BLUETOOTH</Text>
+        <Text style={styles.sendText}>SEND ZONE TO COLLAR</Text>
       </TouchableOpacity>
       {!!progress && (
         <Text style={styles.progress} testID="editzone-progress">
@@ -381,9 +388,9 @@ export default function EditZoneScreen() {
       )}
 
       <Text style={styles.footnote}>
-        A detach zone puts the release unit into a faster check-in mode (higher battery use) until it
-        fires, expires, or you delete it. Test-only zones report entries and exits and act on nothing —
-        the way to validate a placement for a few days before trusting it with a detach.
+        A detach zone makes the release unit check in more often (using more battery) until it
+        triggers, expires, or you delete it. Test-only zones just report when the animal enters and
+        leaves, and do nothing else: try one for a few days before trusting a zone with a detach.
       </Text>
 
       <ZoneMapPicker

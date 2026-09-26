@@ -197,16 +197,19 @@ describe('a collar that cannot record FLAC gets WAV', () => {
 
   it('says why in the firmware line and under the greyed control', () => {
     expect(fwOptionsLine(0, editorFeatureGates(0, 0, true), true)).toBe(
-      'Connected collar: firmware not reported yet. Options that need a newer firmware stay off until it is.',
+      'Connected collar: its software version has not come in yet. Newer options stay off until it does.',
     );
     expect(fwOptionsLine(0, editorFeatureGates(0, 0))).toMatch(/^No collar connected/);
     expect(fwOptionsLine(382, bleFeatureGates(382, 0), true)).toBe(
-      'Connected collar: firmware 382: heading at 1 to 16 Hz needs a firmware update',
+      'Connected collar: heading at 1 to 16 Hz needs a newer collar software version. Update the collar first.',
     );
     // old (before the magnetometer rate gate, MAG_RATE_MIN_FW_BUILD):
     //   'Connected collar: firmware 382, all options available'
-    expect(fwGateNote(0, 380)).toBe('Needs firmware 380+ — this collar has not reported its firmware.');
-    expect(fwGateNote(375, 380)).toBe('Needs firmware 380+ — this collar reports 375.');
+    // Plain words, no build numbers (the app is for non-technical users).
+    expect(fwGateNote(0, 380)).toBe(
+      'This may need a newer collar software version. The collar has not reported its version yet.',
+    );
+    expect(fwGateNote(375, 380)).toBe('This needs a newer collar software version. Update the collar first.');
   });
 });
 

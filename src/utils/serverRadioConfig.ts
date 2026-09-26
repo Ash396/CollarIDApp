@@ -190,9 +190,8 @@ export async function loadServerRadioCredentials(
     return {
       kind: 'error',
       message:
-        'The CollarID server could not answer' +
-        (status > 0 ? ` (HTTP ${status})` : '') +
-        '. Nothing was changed.',
+        'The CollarID server could not answer. Try again later. Nothing was changed.',
+      // old: 'The CollarID server could not answer' + (status > 0 ? ` (HTTP ${status})` : '') + '. Nothing was changed.',
     };
   }
 
@@ -202,7 +201,7 @@ export async function loadServerRadioCredentials(
       message:
         `${uid} is not on the CollarID LoRaWAN network, or has not been ` +
         'heard on it yet' +
-        (cfg.detail ? ` (server: "${cfg.detail}")` : '') +
+        (cfg.detail ? ` (details: "${cfg.detail}")` : '') +
         '. ' +
         OWN_NETWORK,
     };

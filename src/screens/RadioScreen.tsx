@@ -54,7 +54,7 @@ export default function RadioScreen() {
   const handleSend = async () => {
     try {
       if (!device) {
-        Alert.alert('No Device', 'You must connect to a collar first.');
+        Alert.alert('No collar connected', 'Connect to a collar on the Home tab first.');
         return;
       }
 
@@ -86,22 +86,25 @@ export default function RadioScreen() {
 
       if (result.ok) {
         await loadRadioFromDevice(device); // update UI after verified
-        Alert.alert('✅ Success', 'Radio config verified on device!');
+        Alert.alert('✅ Radio settings sent', 'The collar has the new radio settings.');
       } else if (result.reason === 'mismatch') {
         await loadRadioFromDevice(device);
         Alert.alert(
-          '⚠️ Sent, but mismatch',
-          'Device radio config differs from what you sent (may be clamped).',
+          '⚠️ Sent, but different',
+          'The collar’s radio settings differ from what you sent. The collar may have adjusted a value to fit its limits.',
         );
       } else {
         Alert.alert(
-          '⚠️ Sent, but not verified',
-          'Could not read radio config back from device.',
+          '⚠️ Sent, but not confirmed',
+          'The app could not read the radio settings back from the collar to check. Reconnect and look again.',
         );
       }
     } catch (e: any) {
       console.error(e);
-      Alert.alert('Send failed', e?.message ?? 'Failed to send radio config.');
+      Alert.alert(
+        'Send failed',
+        `Could not send the radio settings to the collar.${e?.message ? `\nDetails: ${e.message}` : ''}`,
+      );
     }
   };
 
@@ -120,13 +123,18 @@ export default function RadioScreen() {
       <Text style={styles.sub}>
         Configure radio settings for {device?.name ?? 'Collar'}
       </Text>
+      <Text style={styles.sub}>
+        Advanced settings for how the collar talks to the network (LoRaWAN), to
+        a nearby handheld receiver (LoRa), and when it is lost. Most people
+        never need to change these.
+      </Text>
 
       {isDirty && (
         <View style={styles.draftBox}>
           <View style={{ flex: 1 }}>
             <Text style={styles.draftTitle}>Unsent changes</Text>
             <Text style={styles.draftText}>
-              The draft differs from the radio config on the device.
+              These settings differ from what is on the collar.
             </Text>
           </View>
           <TouchableOpacity
@@ -134,7 +142,7 @@ export default function RadioScreen() {
             onPress={() =>
               Alert.alert(
                 'Discard draft?',
-                "Throw away local edits and go back to the device's radio config?",
+                "Throw away your changes and go back to the collar's radio settings?",
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {
@@ -152,7 +160,7 @@ export default function RadioScreen() {
       )}
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>On Device</Text>
+        <Text style={styles.cardTitle}>On the Collar</Text>
 
         {deviceRadioConfig ? (
           <>
@@ -162,7 +170,7 @@ export default function RadioScreen() {
             </View>
 
             <View style={styles.subCard}>
-              <Text style={styles.subCardTitle}>LoRa</Text>
+              <Text style={styles.subCardTitle}>Direct radio (LoRa)</Text>
               <Text style={styles.mono}>{deviceSections.lora}</Text>
             </View>
 
@@ -177,12 +185,12 @@ export default function RadioScreen() {
             </View>
           </>
         ) : (
-          <Text style={styles.muted}>No radio config loaded from device.</Text>
+          <Text style={styles.muted}>No radio settings loaded from the collar.</Text>
         )}
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Draft (Saved Locally)</Text>
+        <Text style={styles.cardTitle}>Draft (Saved on This Phone)</Text>
 
         {draftRadioConfig ? (
           <>
@@ -192,7 +200,7 @@ export default function RadioScreen() {
             </View>
 
             <View style={styles.subCard}>
-              <Text style={styles.subCardTitle}>LoRa</Text>
+              <Text style={styles.subCardTitle}>Direct radio (LoRa)</Text>
               <Text style={styles.mono}>{draftSections.lora}</Text>
             </View>
 
@@ -218,7 +226,7 @@ export default function RadioScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-        <Text style={styles.sendText}>SEND TO DEVICE</Text>
+        <Text style={styles.sendText}>SEND TO COLLAR</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -268,7 +276,7 @@ function formatRadioSections(cfg: PB.RadioConfigPacket | null): {
   if (lorawanEnabled) {
     lorawanLines.push(`Region: ${regionLabel(lorawan.region ?? 0)}`);
     lorawanLines.push(`Auth: ${authLabel(lorawan.auth ?? 0)}`);
-    lorawanLines.push(`TX power (dBm): ${lorawan.txPowerDbm ?? 0} (fixed)`);
+    lorawanLines.push(`Transmit power (dBm): ${lorawan.txPowerDbm ?? 0} (fixed)`);
 
     const otaa = lorawan.otaa;
     const abp = lorawan.abp;
@@ -290,7 +298,7 @@ function formatRadioSections(cfg: PB.RadioConfigPacket | null): {
       lorawanLines.push(`sNwkSIntKey: ${bytesToHex(abp.sNwkSIntKey)}`);
     } else {
       lorawanLines.push('');
-      lorawanLines.push('Credentials: (not set)');
+      lorawanLines.push('Network keys: (not set)');
     }
   }
 
@@ -306,7 +314,7 @@ function formatRadioSections(cfg: PB.RadioConfigPacket | null): {
     );
     loraLines.push(`Bandwidth: ${bwLabel(lora.radioBandwidth ?? 0)}`);
     loraLines.push(`Coding rate: ${crLabel(lora.radioCodingRate ?? 0)}`);
-    loraLines.push(`TX power (dBm): ${lora.txPowerDbm ?? 0} (fixed)`);
+    loraLines.push(`Transmit power (dBm): ${lora.txPowerDbm ?? 0} (fixed)`);
     loraLines.push(`Sync word: 0x${pad2(Number(lora.syncWord ?? 0))}`);
     loraLines.push(`Frequency (MHz): ${lora.frequency ?? 0}`);
     loraLines.push(`Listen after transmit: ${lora.rxListen ? 'ON' : 'OFF'}`);
@@ -320,8 +328,8 @@ function formatRadioSections(cfg: PB.RadioConfigPacket | null): {
     lostLines.push(
       `Activates: ${epoch > 0 ? new Date(epoch * 1000).toLocaleString() : 'immediately'}`,
     );
-    lostLines.push(`Transmit interval (min): ${lostCfg.transmitIntervalMin}`);
-    lostLines.push(`TX power (dBm): ${lostCfg.txPowerDbm} (fixed)`);
+    lostLines.push(`Beacon every (min): ${lostCfg.transmitIntervalMin}`);
+    lostLines.push(`Transmit power (dBm): ${lostCfg.txPowerDbm} (fixed)`);
   }
 
   // ---------------- Mortality section ----------------

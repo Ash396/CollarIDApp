@@ -199,9 +199,10 @@ export default function LiveMapScreen() {
             </TouchableOpacity>
           </View>
         )}
-        onHttpError={e =>
+        onHttpError={() =>
           setLoadError(
-            `The live map did not load (HTTP ${e.nativeEvent.statusCode}).`,
+            'The live map did not load. The server may be busy: try again in a moment.',
+            // old: `The live map did not load (HTTP ${e.nativeEvent.statusCode}).`,
           )
         }
         onLoadStart={() => {

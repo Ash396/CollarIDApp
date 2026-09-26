@@ -1,11 +1,11 @@
 /**
  * The magnetometer rate mode through the screens (fw MAG_RATE_MIN_FW_BUILD+):
- *  - the editor offers "Interval (every N min) | 1 Hz | ... | 16 Hz" under
+ *  - the editor offers "Every few minutes (set below) | 1 Hz | ... | 16 Hz" under
  *    Other sensors > Advanced; a rate hides the minutes field,
  *  - below the gate the picker is greyed with the usual firmware note and
  *    SAVE holds the rate to interval mode, the interval kept; at or above
  *    it, and with no collar, the rate is saved,
- *  - SEND TO DEVICE holds a saved set or a restored draft to the connected
+ *  - SEND TO COLLAR holds a saved set or a restored draft to the connected
  *    collar's gate: no rate on the wire below the gate, the read-back
  *    verifies against a collar that predates the field, and the draft says
  *    what the collar runs.
@@ -231,10 +231,11 @@ async function openEditor(schedule: Schedule) {
 }
 const savedMag = () => ctx.draftSchedules[0].magnetometer;
 
-const INTERVAL = 'Interval (every N min)';
+const INTERVAL = 'Every few minutes (set below)';
 const MINUTES = 'Heading every (minutes)';
-const NOTE = (build: number) =>
-  `Needs firmware ${MAG_RATE_MIN_FW_BUILD}+ — this collar reports ${build}. It samples on the minute interval.`;
+// Plain words, no build numbers (the app is for non-technical users).
+const NOTE = (_build: number) =>
+  'This needs a newer collar software version. Update the collar first. Until then the collar samples every few minutes.';
 
 describe('the editor', () => {
   it('lists the interval and the five rates, in order', async () => {
@@ -280,7 +281,7 @@ describe('the editor', () => {
     const r = await openEditor(slotAt(8));
     expect(shownLabel(r)).toBe('8 Hz');
     expect(headingPicker(r).props.enabled).toBe(true);
-    expect(texts(r).join('\n')).not.toMatch(/Needs firmware/);
+    expect(texts(r).join('\n')).not.toMatch(/newer collar software version/);
     await press(r, 'SAVE');
     expect(savedMag()).toEqual({ enabled: true, sampleIntervalS: 300, sampleRateHz: 8 });
   });
@@ -293,7 +294,7 @@ describe('the editor', () => {
     expect(texts(r)).toContain(NOTE(398));
     expect(texts(r)).toContain(MINUTES);
     expect(texts(r)).toContain(
-      'Connected collar: firmware 398: heading at 1 to 16 Hz needs a firmware update',
+      'Connected collar: heading at 1 to 16 Hz needs a newer collar software version. Update the collar first.',
     );
     await press(r, 'SAVE');
     expect(savedMag()).toEqual({ enabled: true, sampleIntervalS: 300, sampleRateHz: 0 });
@@ -305,7 +306,7 @@ describe('the editor', () => {
     expect(shownLabel(r)).toBe(INTERVAL);
     expect(headingPicker(r).props.enabled).toBe(false);
     expect(texts(r)).toContain(
-      `Needs firmware ${MAG_RATE_MIN_FW_BUILD}+ — this collar has not reported its firmware. It samples on the minute interval.`,
+      'This may need a newer collar software version. The collar has not reported its version yet. Until then the collar samples every few minutes.',
     );
     await press(r, 'SAVE');
     expect(savedMag()).toEqual({ enabled: true, sampleIntervalS: 300, sampleRateHz: 0 });
@@ -318,9 +319,9 @@ describe('the editor', () => {
   });
 });
 
-/* ---------------- SEND TO DEVICE ---------------- */
+/* ---------------- SEND TO COLLAR ---------------- */
 
-describe('SEND TO DEVICE holds the rate to the collar', () => {
+describe('SEND TO COLLAR holds the rate to the collar', () => {
   const OLD = [
     { build: 0, knowsRate: false },
     { build: 398, knowsRate: false },
@@ -339,7 +340,7 @@ describe('SEND TO DEVICE holds the rate to the collar', () => {
       await act(async () => ctx.replaceDraft([loaded]));
       expect(texts(r)).toContain('Unsent changes');
 
-      await press(r, 'SEND TO DEVICE');
+      await press(r, 'SEND TO COLLAR');
 
       // interval mode on the wire: no rate field at all
       expect(sentMags()).toHaveLength(1);
@@ -348,7 +349,7 @@ describe('SEND TO DEVICE holds the rate to the collar', () => {
       expect(Array.from(PB.MagnetometerConfig.encode(sentMags()[0]).finish())).not.toContain(0x18);
       // the read-back verified, and the draft is the collar's config again
       expect(await verdict()).toMatchObject({ ok: true });
-      expect(alertSpy).toHaveBeenCalledWith('Success', 'Schedules updated successfully.');
+      expect(alertSpy).toHaveBeenCalledWith('Schedules sent', 'The collar has the new schedules.');
       expect(ctx.isDirty).toBe(false);
       expect(texts(r)).not.toContain('Unsent changes');
       // the draft says what the collar runs (every 5 min, no rate on the card)
@@ -371,7 +372,7 @@ describe('SEND TO DEVICE holds the rate to the collar', () => {
     expect(texts(r)).toContain('Unsent changes');
     expect(ctx.draftSchedules[0].magnetometer?.sampleRateHz).toBe(8);
 
-    await press(r, 'SEND TO DEVICE');
+    await press(r, 'SEND TO COLLAR');
 
     expect(sentMags()[0].hasOwnProperty('sampleRateHz')).toBe(false);
     expect(await verdict()).toMatchObject({ ok: true });
@@ -385,11 +386,11 @@ describe('SEND TO DEVICE holds the rate to the collar', () => {
     const r = await mount(<SchedulesScreen />);
     await act(async () => ctx.replaceDraft([savedSetSchedule(4)]));
 
-    await press(r, 'SEND TO DEVICE');
+    await press(r, 'SEND TO COLLAR');
 
     expect(sentMags()[0]).toMatchObject({ enabled: true, sampleIntervalS: 300, sampleRateHz: 4 });
     expect(await verdict()).toMatchObject({ ok: true });
-    expect(alertSpy).toHaveBeenCalledWith('Success', 'Schedules updated successfully.');
+    expect(alertSpy).toHaveBeenCalledWith('Schedules sent', 'The collar has the new schedules.');
     expect(ctx.isDirty).toBe(false);
     expect(ctx.draftSchedules[0].magnetometer?.sampleRateHz).toBe(4);
     expect(texts(r).join('\n')).toMatch(/Heading at 4 Hz/);

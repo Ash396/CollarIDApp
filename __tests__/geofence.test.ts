@@ -138,9 +138,22 @@ describe('buildFenceFragments (js/geofence-ui.js)', () => {
     expect(frags.every(f => f.scheduleIndex === 0)).toBe(true);
   });
 
-  it.each(Object.keys(ERR_CASES))('refuses with the website’s words: %s', k => {
+  // The app says the website's refusals in plain words for non-technical
+  // users; the website keeps its older wording until it is aligned. The
+  // fixture still decides WHICH forms are refused.
+  // old: expect(() => buildFenceFragments(ERR_CASES[k], NOW)).toThrow(FX.errors[k]);
+  const APP_ERRORS: Record<string, string> = {
+    twoCorners: 'A zone needs 3 to 8 corners.',
+    nineCorners: 'A zone needs 3 to 8 corners.',
+    badLine: 'Could not read this corner line: "3". Use "latitude, longitude", one corner per line.',
+    badLine2: 'Could not read this corner line: "foo, bar". Use "latitude, longitude", one corner per line.',
+    detachNoExpiry: 'A detach zone needs an expiry date, at most 30 days away.',
+    detachExpiryBeforeStart: 'The expiry must be after the start and within 30 days of it.',
+    detachExpiryTooFar: 'The expiry must be after the start and within 30 days of it.',
+  };
+  it.each(Object.keys(ERR_CASES))('refuses what the website refuses, in plain words: %s', k => {
     expect(FX.errors[k]).toBeTruthy();
-    expect(() => buildFenceFragments(ERR_CASES[k], NOW)).toThrow(FX.errors[k]);
+    expect(() => buildFenceFragments(ERR_CASES[k], NOW)).toThrow(APP_ERRORS[k]);
   });
 
   it('a detach zone with no start measures its 30 days from the clock', () => {
@@ -155,7 +168,7 @@ describe('buildFenceFragments (js/geofence-ui.js)', () => {
 
   it('parseVertsText is strict, gfParseVertsText lenient, vertsToText six decimals', () => {
     expect(parseVertsText(' 1.5 , 2\n3,4 ')).toEqual([[1.5, 2], [3, 4]]);
-    expect(() => parseVertsText('1,2\nnope')).toThrow('bad corner line: "nope"');
+    expect(() => parseVertsText('1,2\nnope')).toThrow('Could not read this corner line: "nope".');
     expect(gfParseVertsText('1,2\nnope\n3,4')).toEqual([[1, 2], [3, 4]]);
     expect(gfParseVertsText('')).toEqual([]);
     expect(vertsToText([[44.2645, -72.5755], [0, 0]])).toBe('44.264500, -72.575500\n0.000000, 0.000000');
@@ -248,15 +261,49 @@ describe('parseSlotRecord (CfgEchoPacket.fence_report)', () => {
 });
 
 describe('verdictText / ACK_TEXT / RAIL_TEXT', () => {
-  it('the tables are the website’s, word for word', () => {
-    expect(ACK_TEXT).toEqual(FX.ACK_TEXT);
-    expect(RAIL_TEXT).toEqual(FX.RAIL_TEXT);
+  // The same codes as the website's tables, in plain words for
+  // non-technical users (the website keeps its older wording until it is
+  // aligned). The screens show a verdict after "The collar ".
+  // old: expect(ACK_TEXT).toEqual(FX.ACK_TEXT); expect(RAIL_TEXT).toEqual(FX.RAIL_TEXT);
+  it('the tables: the website’s codes, in plain words', () => {
+    expect(Object.keys(ACK_TEXT)).toEqual(Object.keys(FX.ACK_TEXT));
+    expect(Object.keys(RAIL_TEXT)).toEqual(Object.keys(FX.RAIL_TEXT));
+    expect(ACK_TEXT).toEqual({
+      0: 'gave no answer',
+      1: 'applied',
+      2: 'refused: part of the change did not arrive. Try again',
+      3: 'refused the change under its safety rules',
+      4: 'refused: it was not expecting this change. Try again',
+      5: 'refused: the change took too long to arrive. Try again',
+    });
+    expect(RAIL_TEXT).toEqual({
+      ...FX.RAIL_TEXT,
+      4: 'it would have checked in less than once a day',
+      5: 'one schedule had both network reports and direct radio on',
+      8: 'the zone pointed at a schedule that doesn’t exist or has GPS off',
+    });
+    expect([...Object.values(ACK_TEXT), ...Object.values(RAIL_TEXT)].join('\n')).not.toMatch(
+      /LoRaWAN|raw LoRa|transaction|verdict|slot/,
+    );
     expect(GF_ACTIONS).toEqual(FX.GF_ACTIONS);
   });
+  const APP_VERDICTS: Record<string, string> = {
+    null: 'did not answer',
+    '{"ack_status":1}': 'applied',
+    '{"ack_status":2,"missing_mask":26}': 'refused: part of the change did not arrive. Try again',
+    '{"ack_status":3,"missing_mask":7}': `refused: ${FX.RAIL_TEXT[7]}`,
+    '{"ack_status":3,"missing_mask":10}': `refused: ${FX.RAIL_TEXT[10]}`,
+    '{"ack_status":3,"missing_mask":99}': 'refused the change under its safety rules',
+    '{"ack_status":4}': 'refused: it was not expecting this change. Try again',
+    '{"ack_status":5}': 'refused: the change took too long to arrive. Try again',
+    '{"ack_status":0}': 'gave no answer',
+    '{"ack_status":9}': 'gave an unexpected answer (9)',
+  };
   it.each(Object.keys(FX.verdicts))('verdict for %s', k => {
     const e = JSON.parse(k);
     const echo = e && { ackStatus: e.ack_status, missingMask: e.missing_mask };
-    expect(verdictText(echo)).toBe(FX.verdicts[k]);
+    expect(APP_VERDICTS[k]).toBeDefined();
+    expect(verdictText(echo)).toBe(APP_VERDICTS[k]);
   });
   it('a PB.CfgEchoPacket is a verdict as is', () => {
     expect(verdictText(PB.CfgEchoPacket.create({ ackStatus: CFG_ACK.RAIL, missingMask: 9 }))).toBe(
@@ -273,7 +320,8 @@ describe('fenceRow', () => {
   it('names the action, the slot, the corners and the expiry; badges from the masks', () => {
     const r = fenceRow({ ...f, verts: [{ latitudeE7: 1, longitudeE7: 2 }, { latitudeE7: 3, longitudeE7: 4 }, { latitudeE7: 5, longitudeE7: 6 }] }, 0b10);
     expect(r.title).toBe('Zone 2');
-    expect(r.action).toBe('Switch schedule → slot 3');
+    expect(r.action).toBe('Switch schedule → Schedule 4');
+    // old: 'Switch schedule → slot 3' (slot 3 is Schedule 4, as the zone editor names it)
     expect(r.detail).toBe('3 corners · expires never');
     expect(r.inside).toBe(true);
     expect(r.fired).toBe(false);
@@ -364,7 +412,7 @@ describe('tunnelRunTxn against a fake collar', () => {
   it('a refused commit comes back as the verdict, not an exception', async () => {
     const { device } = fakeCollar({ ack: CFG_ACK.RAIL, mask: 8 });
     const fin = await tunnelRunTxn(device, deleteFenceFragments(1));
-    expect(verdictText(fin)).toBe('refused: the zone pointed at a schedule slot that doesn’t exist or has GPS off');
+    expect(verdictText(fin)).toBe('refused: the zone pointed at a schedule that doesn’t exist or has GPS off');
   });
 
   it('a collar that never echoes times out (no frame is written on top of an undrained one)', async () => {
@@ -372,7 +420,9 @@ describe('tunnelRunTxn against a fake collar', () => {
     const { device } = fakeCollar();
     device.readCharacteristicForService = jest.fn(async () => ({ value: null }));
     const p = tunnelRunTxn(device, deleteFenceFragments(1));
-    const rejection = expect(p).rejects.toThrow('collar did not answer over BLE (echo timeout)');
+    const rejection = expect(p).rejects.toThrow(
+      'The collar did not answer over Bluetooth. Keep the phone next to the collar and try again.',
+    );
     await jest.advanceTimersByTimeAsync(9000);
     await rejection;
     expect(device.writeCharacteristicWithResponseForService).toHaveBeenCalledTimes(1);

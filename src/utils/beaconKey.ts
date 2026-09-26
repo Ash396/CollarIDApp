@@ -77,32 +77,35 @@ export function beaconKeyReport(echo: BeaconKeyEcho | undefined): BeaconKeyRepor
   };
 }
 
-/* ── The words (the website's, character for character) ─────────────── */
+/* ── The words. They were the website's, character for character; the app
+ *  now says them in plain words for non-technical users (no generation, no
+ *  KCV), so the website's card still has the older wording until it is
+ *  aligned. ──────────────────────────────────────────────────────────── */
 
 export const BEACON_KEY_STATE_TEXT: Record<number, string> = {
-  0: 'Not provisioned: the collar sends its lost-mode beacon in plaintext, as every collar always has.',
-  1: 'Encrypted: the collar sends its lost-mode beacon encrypted under this key.',
+  0: 'Off: the collar sends its lost-mode beacon unencrypted, as collars always have.',
+  1: 'On: the collar’s lost-mode beacon is encrypted.',
   2:
-    'A key is held but cannot be used, so the collar has fallen back to plaintext beacons and logged why ' +
-    '(its key store could not be read, or the beacon counter is exhausted). Provisioning a new generation clears this.',
+    'Needs updating: the collar has a key it can no longer use, so its lost-mode beacon is not encrypted ' +
+    'for now. Install keys again to fix this.',
 };
 export const BEACON_KEY_RESULT_TEXT: Record<number, string> = {
   0: '',
-  1: 'key stored; in force from the next beacon',
-  2: 'key erased; the counter is kept',
-  3: 'refused: the collar already holds a newer generation — rotate on the server, then provision again',
-  4: 'refused: the collar did not accept the key set (generation out of range, an empty key, or a slot this firmware does not hold)',
-  5: 'the collar could not write its key store; the previous state stands',
+  1: 'key installed; used from the next beacon',
+  2: 'key removed',
+  3: 'refused: the collar already has a newer key. Ask your administrator to rotate keys on the website, then install again',
+  4: 'refused: the collar did not accept the key. Try again; if it keeps happening, contact the CollarID team',
+  5: 'the collar could not save the key; nothing changed',
 };
-export const BEACON_KEY_UNSUPPORTED_TEXT = 'This collar’s firmware cannot hold a beacon key; update it first.';
+export const BEACON_KEY_UNSUPPORTED_TEXT = 'This collar’s software cannot encrypt its beacon. Update the collar first.';
 
 export function beaconKeyStateText(r: BeaconKeyReport | null | undefined): string {
   if (!r || !r.supported) return BEACON_KEY_UNSUPPORTED_TEXT;
-  return BEACON_KEY_STATE_TEXT[r.state] || `unknown key state ${r.state}`;
+  return BEACON_KEY_STATE_TEXT[r.state] || `unknown encryption state (${r.state})`;
 }
 export function beaconKeyResultText(r: { result?: number } | null | undefined): string {
   const t = BEACON_KEY_RESULT_TEXT[(r && r.result) as number];
-  return t === undefined ? `unknown result ${r?.result}` : t;
+  return t === undefined ? `unexpected answer from the collar (${r?.result})` : t;
 }
 
 /** The card's badge (configure.html renderBeaconKeyCard). null = not read
@@ -111,19 +114,21 @@ export function beaconKeyBadge(r: BeaconKeyReport | null | undefined): string {
   if (!r) return 'Not read yet';
   if (!r.supported) return 'Not supported';
   const S = BEACON_KEY.STATE;
-  if (r.state === S.KEYED) return `Encrypted · generation ${r.gen} · KCV ${r.kcv}`;
-  if (r.state === S.FALLBACK) return `Fallback to plaintext · generation ${r.gen}`;
-  return 'Plaintext (no key)';
+  if (r.state === S.KEYED) return 'Encryption: on';
+  if (r.state === S.FALLBACK) return 'Encryption: needs updating';
+  return 'Encryption: off';
+  // old: KEYED `Encrypted · generation ${r.gen} · KCV ${r.kcv}`,
+  //      FALLBACK `Fallback to plaintext · generation ${r.gen}`, else 'Plaintext (no key)'
 }
 
 /** The card's status line: the state, the beacons sent under this
  *  generation, the last command's outcome. */
 export function beaconKeyStatusLine(r: BeaconKeyReport | null | undefined): string {
-  if (!r) return 'Waiting for the collar to report its key status.';
+  if (!r) return 'Waiting for the collar to report its encryption status.';
   if (!r.supported) return beaconKeyStateText(r);
-  const ctr = r.txCounter ? ` Beacons sent under this generation: ${r.txCounter & 0xffffff}.` : '';
+  const ctr = r.txCounter ? ` Beacons sent with this key: ${r.txCounter & 0xffffff}.` : '';
   const last = beaconKeyResultText(r);
-  return beaconKeyStateText(r) + ctr + (last ? ` Last command: ${last}.` : '');
+  return beaconKeyStateText(r) + ctr + (last ? ` Last change: ${last}.` : '');
 }
 
 /** What the server holds, in one line; stale and an unconfigured key store
@@ -132,19 +137,19 @@ export function serverKeyLine(s: RadioKeyStatus | null | undefined): string {
   if (!s) return '';
   const parts: string[] = [];
   if (!s.kek_configured) {
-    parts.push('The server has no key store configured, so it cannot issue keys yet (RADIO_MASTER_KEK on the server).');
+    parts.push('The CollarID server is not set up to issue keys yet. Ask your administrator.');
   }
   if (s.state === 'provisioned' && s.keyed) {
-    parts.push(`Server record: provisioned at generation ${s.gen}${s.kcv ? ` (KCV ${s.kcv})` : ''}.`);
+    parts.push('Server record: key installed on this collar.');
   } else if (s.state === 'issued' && s.keyed) {
-    parts.push(`Server record: a key at generation ${s.gen}${s.kcv ? ` (KCV ${s.kcv})` : ''} was issued but the collar never confirmed it.`);
+    parts.push('Server record: a key was issued but the collar never confirmed it. Install keys again.');
   } else if (s.state === 'cleared') {
-    parts.push('Server record: cleared (plaintext); the next key is a new generation.');
+    parts.push('Server record: no key (encryption off).');
   } else {
     parts.push('Server record: no key issued for this collar.');
   }
   if (s.stale) {
-    parts.push('This collar’s key is older than the organisation’s current generation — provision again.');
+    parts.push('This collar’s key is out of date: install keys again.');
   }
   return parts.join(' ');
 }
@@ -193,21 +198,23 @@ export type BeaconKeyApi = {
   clear: (uid: string) => Promise<RadioKeyStatus>;
 };
 
-export const BEACON_KEY_NO_REPORT = 'the collar reported no key status: its firmware cannot hold a key';
+export const BEACON_KEY_NO_REPORT = 'the collar did not report its encryption status: its software cannot encrypt the beacon. Update the collar first';
 
 /** The server's refusal in the operator's words. */
 export function issueErrorText(e: unknown): string {
   if (e instanceof ApiError) {
     if (e.status === 503) {
-      return `the server has no key store configured, so it cannot issue keys${e.detail ? ` (${e.detail})` : ''}`;
+      return 'the CollarID server is not set up to issue keys yet. Ask your administrator';
     }
     if (e.status === 409) {
-      return `the server refused: ${e.detail || 'the generations under this master are used up'}`;
+      return `the server has no new key for this collar. Ask your administrator to rotate keys${
+        e.detail ? ` (details: ${e.detail})` : ''
+      }`;
     }
-    if (e.status === 422) return `the server refused the collar’s echo: ${e.detail || e.message}`;
-    if (e.status === 403) return 'the server refused: this collar is not yours to provision';
-    if (e.status === 404) return 'the server does not know this collar';
-    return e.detail ? `${e.detail} (HTTP ${e.status})` : `server ${e.message}`;
+    if (e.status === 422) return `the server did not accept the collar’s answer (details: ${e.detail || e.message})`;
+    if (e.status === 403) return 'this collar is not on your CollarID account, so you cannot install its keys';
+    if (e.status === 404) return 'the CollarID server does not know this collar';
+    return e.detail ? `${e.message} (details: ${e.detail})` : e.message;
   }
   return String((e as any)?.message ?? e);
 }
@@ -235,7 +242,7 @@ export async function provisionBeaconKey(
   opts: { onProgress?: (text: string) => void } = {},
 ): Promise<ProvisionResult> {
   const progress = opts.onProgress || (() => {});
-  progress('reading the collar’s key status…');
+  progress('checking the collar…');
   const cur = beaconKeyReport(await io.status());
   if (!cur.supported) throw new Error(BEACON_KEY_NO_REPORT);
 
@@ -256,37 +263,37 @@ export async function provisionBeaconKey(
       key = new Uint8Array(0);
     }
     if (key.length !== BEACON_KEY.KEY_LEN || !Number.isInteger(gen) || gen < 1 || gen > BEACON_KEY.GEN_MAX) {
-      throw new Error('the server returned an unusable key set');
+      throw new Error('the server sent a key the app cannot use; nothing was written to the collar');
     }
     const kcv = kcvHex(key);
     const named = String((entry && entry.kcv) || issued.kcv || '').toLowerCase();
     if (named && named !== kcv) {
-      throw new Error(`the server’s key check value (${named}) does not match its key (${kcv}); nothing was written`);
+      throw new Error('the key from the server failed its check; nothing was written to the collar');
     }
 
-    progress(`writing generation ${gen} (KCV ${kcv}) to the collar…`);
+    progress('installing the key on the collar…');
     const echo = await io.set(key, gen);
     key.fill(0);
     key = null;
     const r = beaconKeyReport(echo);
     if (!r.supported) throw new Error(BEACON_KEY_NO_REPORT);
     if (r.result !== BEACON_KEY.RESULT.APPLIED) {
-      throw new Error(beaconKeyResultText(r) || `the collar answered result ${r.result}`);
+      throw new Error(beaconKeyResultText(r) || `the collar gave an unexpected answer (${r.result})`);
     }
     if (r.gen !== gen || r.kcv !== kcv) {
       throw new Error(
-        `the collar echoed generation ${r.gen}, KCV ${r.kcv}; the server issued generation ${gen}, KCV ${kcv}`,
+        'the key on the collar does not match the one the server issued. Try again',
       );
     }
 
-    progress(`generation ${gen} confirmed by the collar; telling the server…`);
+    progress('key confirmed by the collar; telling the server…');
     let server: RadioKeyStatus | null = null;
     try {
       server = await api.provisioned(uid, { gen, kcv });
     } catch (e) {
       const why = e instanceof ApiError && e.status === 409 ? e.detail || e.message : issueErrorText(e);
       throw new Error(
-        `the collar holds generation ${gen} (KCV ${kcv}), but the server would not record it: ${why}`,
+        `the collar has the new key, but the server would not record it: ${why}`,
       );
     }
     return { report: r, server, gen, kcv, action: issued.action };
@@ -311,14 +318,14 @@ export async function clearBeaconKey(
   opts: { onProgress?: (text: string) => void } = {},
 ): Promise<ClearResult> {
   const progress = opts.onProgress || (() => {});
-  progress('erasing the key on the collar…');
+  progress('removing the key from the collar…');
   const r = beaconKeyReport(await io.clear());
   if (!r.supported) throw new Error(BEACON_KEY_NO_REPORT);
   if (r.result !== BEACON_KEY.RESULT.CLEARED || r.state !== BEACON_KEY.STATE.NONE) {
-    throw new Error(beaconKeyResultText(r) || `the collar answered result ${r.result}`);
+    throw new Error(beaconKeyResultText(r) || `the collar gave an unexpected answer (${r.result})`);
   }
   if (!api || !uid) {
-    progress('key removed ✓ plaintext beacons');
+    progress('key removed ✓ beacon no longer encrypted');
     return { report: r, serverCleared: false };
   }
   progress('key removed ✓ telling the server…');
@@ -326,9 +333,10 @@ export async function clearBeaconKey(
     await api.clear(uid);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return { report: r, serverCleared: false };
-    const status = e instanceof ApiError ? `HTTP ${e.status}` : String((e as any)?.message ?? e);
+    const status = e instanceof ApiError ? e.message : String((e as any)?.message ?? e);
+    // old: const status = e instanceof ApiError ? `HTTP ${e.status}` : String((e as any)?.message ?? e);
     throw new Error(
-      `the collar is back to plaintext, but the server still records a key (${status}) and may alert on its plaintext beacons`,
+      `the collar’s beacon is no longer encrypted, but the server still lists a key for it and may raise alerts about unencrypted beacons. ${status}`,
     );
   }
   progress('key removed ✓ server record cleared ✓');

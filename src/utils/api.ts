@@ -224,9 +224,19 @@ async function clearSession(): Promise<void> {
 
 export const CANNOT_REACH_SERVER = 'Cannot reach server. Check your connection.';
 
+/** A server failure in plain words, for the ApiError message that the
+ *  screens show. No status codes: the app is for non-technical users, and
+ *  callers that need the code read ApiError.status. */
+export function serverStatusText(status: number): string {
+  if (status === 403) return 'Your CollarID account does not have access to this.';
+  if (status === 404) return 'The CollarID server could not find this.';
+  if (status >= 500) return 'The CollarID server can’t do this right now. Try again later.';
+  return 'The CollarID server could not accept this request. Try again later.';
+}
+
 /** An HTTP failure from the CollarID API. `status` 0 = never reached it.
- *  The message stays "HTTP <status>" (what callers showed before); the
- *  server's own `detail` text, when it sent one, is kept beside it. */
+ *  The message is serverStatusText(status) (it used to be "HTTP <status>");
+ *  the server's own `detail` text, when it sent one, is kept beside it. */
 export class ApiError extends Error {
   status: number;
   detail?: string;
@@ -267,8 +277,8 @@ export async function login(
     throw new Error(
       detailText(data) ||
         (res.status === 401
-          ? 'Invalid credentials'
-          : `Server error (HTTP ${res.status}). Try again later.`),
+          ? 'Wrong username or password.'
+          : 'The CollarID server can’t sign you in right now. Try again later.'),
     );
     // old: throw new Error(data.detail || 'Invalid credentials');
   }
@@ -351,7 +361,7 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<any> {
   // if (!res.ok) throw new Error(`HTTP ${res.status}`);
   if (!res.ok) {
     const data = await res.json().catch(() => null);
-    throw new ApiError(res.status, `HTTP ${res.status}`, detailText(data));
+    throw new ApiError(res.status, serverStatusText(res.status), detailText(data));
   }
   if (res.status === 204) return null;
   return res.json().catch(() => null);
@@ -393,7 +403,7 @@ async function apiFetchBytes(path: string): Promise<Uint8Array> {
   }
   if (!res.ok) {
     const data = await res.json().catch(() => null);
-    throw new ApiError(res.status, `HTTP ${res.status}`, detailText(data));
+    throw new ApiError(res.status, serverStatusText(res.status), detailText(data));
   }
   return new Uint8Array(await res.arrayBuffer());
 }

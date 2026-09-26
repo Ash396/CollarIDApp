@@ -182,20 +182,22 @@ describe('the firmware update card on Home', () => {
   it('below build 266 the button explains the gate (USB-C once) instead of opening', async () => {
     mockDeviceState.fwBuild = 260;
     const r = await render(<HomeScreen />);
-    expect(textOf(byId(r, 'fwupdate-gate-note')!)).toBe('Needs firmware 266+ — this collar reports 260.');
+    expect(textOf(byId(r, 'fwupdate-gate-note')!)).toBe('This needs a newer collar software version. Update the collar first.');
     await press(r, 'fwupdate-open');
     expect(alertSpy).toHaveBeenCalledTimes(1);
     const [title, msg] = alertSpy.mock.calls[0];
-    expect(title).toBe('Firmware update');
-    expect(msg).toMatch(/needs firmware v1\.14\.0 \(build 266\)\+/);
+    expect(title).toBe('Collar software update');
+    expect(msg).toMatch(/^Updating over Bluetooth needs a newer collar software version\./);
     expect(msg).toMatch(/USB-C/);
+    expect(msg).not.toMatch(/firmware|build|266/i);
+    // old: toMatch(/needs firmware v1\.14\.0 \(build 266\)\+/)
     expect(byId(r, 'fwupdate-modal')).toBeUndefined();
   });
 
   it('a collar with no parsable build (a bare hash) is blocked too', async () => {
     mockDeviceState.fwBuild = 0;
     const r = await render(<HomeScreen />);
-    expect(textOf(byId(r, 'fwupdate-gate-note')!)).toMatch(/has not reported its firmware/);
+    expect(textOf(byId(r, 'fwupdate-gate-note')!)).toMatch(/has not reported its version yet/);
     await press(r, 'fwupdate-open');
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
@@ -210,10 +212,10 @@ function Harness({ device, fwBuild = 425, version = 'b425 abc1234' }: { device: 
 describe('the update modal', () => {
   it('probes the radio, lists the server images with the website’s label, names the installed release', async () => {
     const r = await render(<Harness device={FAKE_DEVICE} />);
-    expect(textOf(byId(r, 'fwupdate-installed')!)).toBe('Installed: v1.21.0 · b425');
-    expect(textOf(byId(r, 'fwupdate-radio')!)).toBe('Radio firmware is up to date');
+    expect(textOf(byId(r, 'fwupdate-installed')!)).toBe('Installed version: v1.21.0 · b425');
+    expect(textOf(byId(r, 'fwupdate-radio')!)).toBe('Bluetooth radio software is up to date');
     expect(API.listFirmware).toHaveBeenCalledWith('u5');
-    const picker = r.root.findAll(n => n.props.placeholder === 'Firmware image' && typeof n.props.onValueChange === 'function')[0];
+    const picker = r.root.findAll(n => n.props.placeholder === 'Software version' && typeof n.props.onValueChange === 'function')[0];
     expect(picker.props.items.map((i: any) => i.label)).toEqual(['v1.21.0 — v1_21_0.bin (600 KB)', 'v1.20.4 — v1_20_4.bin (590 KB)']);
     expect(picker.props.selectedValue).toBe(7);
     expect(byId(r, 'fwupdate-start')!.props.disabled).toBe(false);
@@ -232,7 +234,7 @@ describe('the update modal', () => {
     mockCaps = radioCapsFrom(new Uint8Array([0x43, 0x50, 2, 0x03]), { canNotify: false, canWriteNoResp: false });
     const r = await render(<Harness device={FAKE_DEVICE} />);
     expect(textOf(byId(r, 'fwupdate-radio')!)).toBe(
-      'Radio firmware is out of date — Update the radio first — this then runs several times faster.',
+      'Bluetooth radio software is out of date — Update the Bluetooth radio software first (on the website’s Update Device page); this update then runs several times faster.',
     );
     expect(byId(r, 'fwupdate-start')!.props.disabled).toBe(true);
   });
@@ -265,7 +267,7 @@ describe('the update modal', () => {
       mockSendControl!.progress(51200, 204800);
     });
     await drain();
-    expect(textOf(byId(r, 'fwupdate-status')!)).toBe('Uploading… 50/200 KB');
+    expect(textOf(byId(r, 'fwupdate-status')!)).toBe('Sending to the collar… 50/200 KB');
     expect(textOf(byId(r, 'fwupdate-pct')!)).toBe('25%');
     await act(async () => {
       mockSendControl!.progress(204800, 204800);
@@ -285,6 +287,7 @@ describe('the update modal', () => {
     expect(textOf(byId(r, 'fwupdate-status')!)).toBe(DONE_WORDS);
     expect(byId(r, 'fwupdate-done')).toBeTruthy();
     expect(textOf(byId(r, 'fwupdate-modal')!)).not.toMatch(/WB5M|WB15/);
+    expect(textOf(byId(r, 'fwupdate-modal')!)).not.toMatch(/firmware|main.processor/i);
   });
 
   it('a link already gone when the transfer resolves is the reboot too', async () => {
@@ -309,7 +312,7 @@ describe('the update modal', () => {
       mockSendControl!.fail(new OtaAborted());
     });
     await drain();
-    expect(textOf(byId(r, 'fwupdate-failure')!)).toMatch(/^Update cancelled\. The collar keeps its current firmware/);
+    expect(textOf(byId(r, 'fwupdate-failure')!)).toMatch(/^Update cancelled\. The collar keeps its current software/);
     await press(r, 'fwupdate-again');
     expect(byId(r, 'fwupdate-start')).toBeTruthy();
   });
@@ -318,10 +321,14 @@ describe('the update modal', () => {
     const r = await render(<Harness device={FAKE_DEVICE} />);
     await press(r, 'fwupdate-start');
     await act(async () => {
-      mockSendControl!.fail(new Error('The collar stored nothing — its main-processor firmware is too old to update over Bluetooth. Update it once over USB-C, then this flow works.'));
+      mockSendControl!.fail(
+        new Error(
+          'The collar did not accept the update: its software is too old to update over Bluetooth. Update it once with a USB-C cable (on the website’s Update Device page); after that, Bluetooth updates work.',
+        ),
+      );
     });
     await drain();
-    expect(textOf(byId(r, 'fwupdate-failure')!)).toMatch(/^Failed: The collar stored nothing/);
+    expect(textOf(byId(r, 'fwupdate-failure')!)).toMatch(/^The update did not finish\. The collar did not accept the update/);
     expect(byId(r, 'fwupdate-trace')).toBeUndefined();
     await press(r, 'fwupdate-trace-toggle');
     expect(byId(r, 'fwupdate-trace')).toBeTruthy();

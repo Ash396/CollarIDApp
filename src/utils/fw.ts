@@ -251,9 +251,10 @@ export function magRateForCollar(
 }
 
 /** The one firmware line at the top of the schedule editor — instead of a
- *  note under every gated knob. "Connected collar: firmware 380, all
- *  options available", or "Connected collar: firmware 375: compressed audio
- *  needs a firmware update"; with no collar, that everything is shown; with
+ *  note under every gated knob. "Connected collar: all options available",
+ *  or "Connected collar: compressed audio needs a newer collar software
+ *  version. Update the collar first." (no build numbers: the app is for
+ *  non-technical users); with no collar, that everything is shown; with
  *  a collar that has not reported its build (`connected`, see
  *  editorFeatureGates), that the newer options wait for it. */
 export function fwOptionsLine(
@@ -262,10 +263,10 @@ export function fwOptionsLine(
   connected = false,
 ): string {
   if (!fwBuild && connected) {
-    return 'Connected collar: firmware not reported yet. Options that need a newer firmware stay off until it is.';
+    return 'Connected collar: its software version has not come in yet. Newer options stay off until it does.';
   }
   if (!fwBuild) {
-    return 'No collar connected: every option is shown. Connect a collar to see what its firmware supports.';
+    return 'No collar connected: every option is shown. Connect a collar to see which options it supports.';
   }
   // Below 338 there is no sample-rate field at all, so "rates above 16 kHz"
   // would be a second way of saying the same thing.
@@ -274,24 +275,28 @@ export function fwOptionsLine(
   ).map(r => r.option);
   // old: const missing = MIC_GATE_MIN_BUILD.filter(
   if (missing.length === 0) {
-    return `Connected collar: firmware ${fwBuild}, all options available`;
+    return 'Connected collar: all options available';
   }
   const list =
     missing.length === 1
       ? missing[0]
       : `${missing.slice(0, -1).join(', ')} and ${missing[missing.length - 1]}`;
-  return `Connected collar: firmware ${fwBuild}: ${list} need${
+  return `Connected collar: ${list} need${
     missing.length === 1 ? 's' : ''
-  } a firmware update`;
+  } a newer collar software version. Update the collar first.`;
 }
 
 /** The note under a control the connected collar cannot use (greyed under
  *  Advanced). Same words wherever it appears. */
-export function fwGateNote(fwBuild: number, minBuild: number): string {
+export function fwGateNote(fwBuild: number, _minBuild: number): string {
   // A connected collar with no parsable build greys these too (see
   // editorFeatureGates); "reports 0" would read as a real build.
-  if (!fwBuild) return `Needs firmware ${minBuild}+ — this collar has not reported its firmware.`;
-  return `Needs firmware ${minBuild}+ — this collar reports ${fwBuild}.`;
+  // Plain words for non-technical users: no build numbers. The gate's build
+  // stays in the signature (callers and tests name the gate they check).
+  // old: if (!fwBuild) return `Needs firmware ${minBuild}+ — this collar has not reported its firmware.`;
+  // old: return `Needs firmware ${minBuild}+ — this collar reports ${fwBuild}.`;
+  if (!fwBuild) return 'This may need a newer collar software version. The collar has not reported its version yet.';
+  return 'This needs a newer collar software version. Update the collar first.';
 }
 
 /** The one environmental sampling interval the collar can actually run.

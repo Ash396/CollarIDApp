@@ -118,7 +118,7 @@ export default function AccountCard() {
       <Text style={styles.cardTitle}>Sign in to CollarID</Text>
       <Text style={styles.helper}>
         Use your collarid.org account for saved schedules, the live map, and
-        your collars' LoRaWAN keys.
+        your collars' network keys.
       </Text>
 
       <Text style={styles.label}>Username</Text>

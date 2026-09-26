@@ -188,13 +188,13 @@ describe('firmware gate', () => {
       option: 'heading at 1 to 16 Hz',
     });
     expect(fwOptionsLine(398, bleFeatureGates(398, 0))).toBe(
-      'Connected collar: firmware 398: heading at 1 to 16 Hz needs a firmware update',
+      'Connected collar: heading at 1 to 16 Hz needs a newer collar software version. Update the collar first.',
     );
     expect(fwOptionsLine(MAG_RATE_MIN_FW_BUILD, bleFeatureGates(MAG_RATE_MIN_FW_BUILD, 0))).toBe(
-      `Connected collar: firmware ${MAG_RATE_MIN_FW_BUILD}, all options available`,
+      'Connected collar: all options available',
     );
     expect(fwGateNote(398, MAG_RATE_MIN_FW_BUILD)).toBe(
-      `Needs firmware ${MAG_RATE_MIN_FW_BUILD}+ — this collar reports 398.`,
+      'This needs a newer collar software version. Update the collar first.',
     );
   });
 });

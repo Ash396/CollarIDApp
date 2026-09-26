@@ -23,7 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { useDevice } from '../context/DeviceContext';
 import { tunnelQueryAllFences, tunnelRunTxn } from '../ble/bleManager';
-import { BLE_ZONES_MIN_FW_BUILD, bleFeatureGates } from '../utils/fw';
+import { bleFeatureGates } from '../utils/fw';
 import {
   CFG_ACK,
   FENCE_IDS,
@@ -60,7 +60,7 @@ export default function ZonesScreen() {
       setError(prev => (prev && prev.startsWith('Couldn’t read zones') ? null : prev));
     } catch (e: any) {
       setFences(null);
-      setError(`Couldn’t read zones over Bluetooth: ${e?.message ?? e}`);
+      setError(`Couldn’t read zones from the collar. ${e?.message ?? e}`);
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ export default function ZonesScreen() {
             }
           } catch (e: any) {
             setProgress('');
-            setError(`Delete failed: ${e?.message ?? e}`);
+            setError(`Couldn’t delete the zone. ${e?.message ?? e}`);
           }
           load();
         },
@@ -131,16 +131,15 @@ export default function ZonesScreen() {
         <View style={styles.gateBox} testID="zones-gate">
           <Text style={styles.gateText}>
             {fwBuild
-              ? `This collar’s firmware (build ${fwBuild}) predates Bluetooth zone delivery — firmware v1.15+ (build ${BLE_ZONES_MIN_FW_BUILD}) manages zones right here with no LoRaWAN. Until then, zones travel over the radio at the next check-in: manage them on the website’s Remote Schedule page.`
-              : `This collar has not reported its firmware yet. Zones over Bluetooth need firmware build ${BLE_ZONES_MIN_FW_BUILD}+; the list appears once the build is known.`}
+              ? 'This collar’s software is too old to manage zones over Bluetooth. Update the collar to manage zones right here. Until then, zones are sent over the network at the collar’s next check-in: manage them on the website’s Remote Schedule page.'
+              : 'This collar has not reported its software version yet. The zone list appears once it does.'}
           </Text>
         </View>
       ) : (
         <>
           <Text style={styles.note}>
-            Zones are managed over this Bluetooth link — delivered, safety-checked and verified in
-            seconds. No LoRaWAN needed. (They also sync to the dashboard at the next radio check-in,
-            if this collar has one.)
+            Zones are sent to the collar over Bluetooth and checked in seconds. (They also show on
+            the website’s dashboard after the collar’s next network check-in, if it has one.)
           </Text>
 
           {loading && (
@@ -178,7 +177,7 @@ export default function ZonesScreen() {
                 <View style={styles.badgeRow}>
                   {row.fired && (
                     <Text style={[styles.badge, styles.badgeFired]} testID={`zone-fired-${f.fenceId}`}>
-                      FIRED
+                      TRIGGERED
                     </Text>
                   )}
                   {row.inside && (
@@ -216,8 +215,8 @@ export default function ZonesScreen() {
           </TouchableOpacity>
 
           <Text style={styles.footnote}>
-            A detach zone puts the release unit into a faster check-in mode (higher battery use)
-            until it fires, expires, or you delete it.
+            A detach zone makes the release unit check in more often (using more battery) until it
+            triggers, expires, or you delete it.
           </Text>
         </>
       )}

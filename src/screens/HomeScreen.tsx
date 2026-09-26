@@ -94,11 +94,8 @@ export default function HomeScreen() {
   const openMagCal = () => {
     if (!gates.magCal) {
       Alert.alert(
-        'Magnetometer calibration',
-        `Magnetometer calibration needs firmware build ${MAG_CAL_MIN_FW_BUILD}+. ${fwGateNote(
-          fwBuild,
-          MAG_CAL_MIN_FW_BUILD,
-        )}`,
+        'Compass calibration',
+        fwGateNote(fwBuild, MAG_CAL_MIN_FW_BUILD),
       );
       return;
     }
@@ -115,11 +112,10 @@ export default function HomeScreen() {
   const openFwUpdate = () => {
     if (!isU5BleSafe(fwBuild)) {
       Alert.alert(
-        'Firmware update',
-        `Updating over Bluetooth needs firmware v1.14.0 (build ${MIN_SAFE_U5_BLE_BUILD})+ on the collar. ${fwGateNote(
-          fwBuild,
-          MIN_SAFE_U5_BLE_BUILD,
-        )} Update it once over USB-C from the website’s Update Device page; after that, every update can be wireless.`,
+        'Collar software update',
+        `${
+          fwBuild ? '' : 'This collar has not reported its software version yet. '
+        }Updating over Bluetooth needs a newer collar software version. Update the collar once with a USB-C cable from the website’s Update Device page; after that, every update can be wireless.`,
       );
       return;
     }
@@ -554,8 +550,8 @@ export default function HomeScreen() {
               : bleState === State.PoweredOff
               ? 'Turn on Bluetooth in Control Center or Settings to scan for collars.'
               : bleState === State.Unsupported
-              ? 'This device does not support Bluetooth Low Energy.'
-              : 'Waiting for the Bluetooth radio to become ready.'}
+              ? 'This phone does not support the kind of Bluetooth the collar uses.'
+              : 'Waiting for Bluetooth to become ready.'}
           </Text>
           {bleState === State.Unauthorized && (
             <TouchableOpacity
@@ -571,7 +567,7 @@ export default function HomeScreen() {
       {scanning && !connectedDevice && bleState === State.PoweredOn && (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#f8b26a" />
-          <Text style={styles.subtext}>Scanning for CollarID devices…</Text>
+          <Text style={styles.subtext}>Looking for collars nearby…</Text>
         </View>
       )}
 
@@ -597,7 +593,9 @@ export default function HomeScreen() {
         displayList.length === 0 &&
         bleState === State.PoweredOn && (
           <View style={styles.center}>
-            <Text style={styles.subtext}>No CollarID devices detected.</Text>
+            <Text style={styles.subtext}>
+              No collars found nearby. Swipe the magnet over a collar to wake it.
+            </Text>
           </View>
         )}
 
@@ -605,20 +603,20 @@ export default function HomeScreen() {
           collar included, so the simulator can walk the modal). */}
       {device && (
         <View style={styles.magCalCard} testID="magcal-card">
-          <Text style={styles.magCalTitle}>MAGNETOMETER CALIBRATION</Text>
+          <Text style={styles.magCalTitle}>COMPASS CALIBRATION</Text>
           <Text style={styles.magCalText}>
-            Corrects the compass for the collar's own metal and electronics.
-            Do it before each deployment and after attaching or removing an
-            add-on. Takes about a minute of turning the collar in your hands.
-            The recorded data stay raw; the SD Card viewer applies the
-            calibration.
+            Corrects the collar's compass (magnetometer) for its own metal and
+            electronics. Do it before each deployment and after attaching or
+            removing an add-on. Takes about a minute of turning the collar in
+            your hands. Your recorded data are not changed; the website's SD
+            Card viewer applies the correction.
           </Text>
           <TouchableOpacity
             style={[styles.magCalButton, !gates.magCal && styles.magCalButtonOff]}
             onPress={openMagCal}
             testID="magcal-open"
           >
-            <Text style={styles.magCalButtonText}>Calibrate magnetometer…</Text>
+            <Text style={styles.magCalButtonText}>Calibrate compass…</Text>
           </TouchableOpacity>
           {!gates.magCal ? (
             <Text style={styles.magCalNote} testID="magcal-gate-note">
@@ -641,19 +639,18 @@ export default function HomeScreen() {
       {/* Firmware update over Bluetooth — with the connected collar. */}
       {device && (
         <View style={styles.magCalCard} testID="fwupdate-card">
-          <Text style={[styles.magCalTitle, styles.fwTitle]}>FIRMWARE UPDATE</Text>
+          <Text style={[styles.magCalTitle, styles.fwTitle]}>COLLAR SOFTWARE UPDATE</Text>
           <Text style={styles.magCalText}>
-            Sends a new main-processor firmware to the collar over this
-            Bluetooth connection, relayed through its radio module. The
-            collar checks the image, swaps to it and restarts itself; the
-            transfer takes a few minutes with the phone next to the collar.
+            Installs new collar software over Bluetooth. Keep the phone next
+            to the collar for a few minutes; the collar checks the update and
+            restarts itself when it is done.
           </Text>
           <TouchableOpacity
             style={[styles.magCalButton, styles.fwButton, !isU5BleSafe(fwBuild) && styles.magCalButtonOff]}
             onPress={openFwUpdate}
             testID="fwupdate-open"
           >
-            <Text style={styles.fwButtonText}>Update firmware…</Text>
+            <Text style={styles.fwButtonText}>Update collar software…</Text>
           </TouchableOpacity>
           {!isU5BleSafe(fwBuild) && (
             <Text style={styles.magCalNote} testID="fwupdate-gate-note">

@@ -103,12 +103,12 @@ export function magCalEnded(r: MagCalReport | null | undefined): boolean {
    force says the previous calibration stays, because that is what the
    collar does. Same words as the website's magCalOutcome, so a researcher
    who calibrates from either sees one vocabulary. */
-const KEEP = 'The previous calibration, if any, stays in force.';
+const KEEP = 'Any earlier calibration is still used.';
 const FAIR_WHY: Record<number, string> = {
   1: 'time ran out before every direction was covered',
   2: 'some directions were covered only thinly',
-  4: 'the field it measured is at the edge of the Earth’s range',
-  5: 'the readings scattered more than a good fit allows',
+  4: 'the magnetic field it sensed was at the edge of normal (metal nearby?)',
+  5: 'the readings were a little uneven',
 };
 
 export function magCalOutcome(r: MagCalReport | null | undefined): MagCalOutcome {
@@ -123,16 +123,18 @@ export function magCalOutcome(r: MagCalReport | null | undefined): MagCalOutcome
       detail: `The collar did not report a result. ${KEEP}`,
     };
   }
-  const ut = (r.fieldUtX10 / 10).toFixed(1);
-  const fit = r.fieldUtX10
-    ? `Field ${ut} µT, fit error ${(r.residualPermille / 10).toFixed(1)} %.`
-    : '';
+  // Plain words for non-technical users: the field strength and fit error
+  // numbers are no longer shown.
+  // old: const ut = (r.fieldUtX10 / 10).toFixed(1);
+  // old: const fit = r.fieldUtX10
+  //   ? `Field ${ut} µT, fit error ${(r.residualPermille / 10).toFixed(1)} %.`
+  //   : '';
   if (r.state === S.ABORTED) {
     return {
       inForce: false,
       tone: 'aborted',
       title: 'Calibration stopped',
-      detail: `Stopped before a fit was made (Abort, or the collar’s Bluetooth session closed first). ${KEEP}`,
+      detail: `Stopped before it finished (you pressed Stop, or the Bluetooth connection closed first). ${KEEP}`,
     };
   }
   if (magCalInForce(r)) {
@@ -141,7 +143,7 @@ export function magCalOutcome(r: MagCalReport | null | undefined): MagCalOutcome
         inForce: true,
         tone: 'good',
         title: 'Calibrated — good',
-        detail: `${fit} Saved on the collar’s SD card (MAGCAL.CSV); the SD Card viewer applies it to the magnetometer data.`,
+        detail: 'Saved on the collar’s SD card; the website’s SD Card viewer applies it to the compass data.',
       };
     }
     return {
@@ -149,8 +151,8 @@ export function magCalOutcome(r: MagCalReport | null | undefined): MagCalOutcome
       tone: 'fair',
       title: 'Calibrated — fair, you can repeat',
       detail:
-        `In force, but ${FAIR_WHY[r.reason] || 'the fit is not as tight as it could be'}. ${fit} ` +
-        'Repeating it away from metal and electronics may give a better fit.',
+        `Saved and used, but ${FAIR_WHY[r.reason] || 'the result is not as good as it could be'}. ` +
+        'Repeating it away from metal and electronics may give a better result.',
     };
   }
   switch (r.reason) {
@@ -160,8 +162,8 @@ export function magCalOutcome(r: MagCalReport | null | undefined): MagCalOutcome
         tone: 'retry',
         title: 'Not enough rotation — try again',
         detail:
-          'The collar was not turned through enough directions for a fit. Turn it slowly through ' +
-          `every orientation: a few figure-8s, then a full roll about each axis. ${KEEP}`,
+          'The collar was not turned through enough directions to calibrate. Turn it slowly through ' +
+          `every orientation: a few figure-8s, then roll it all the way over in each direction. ${KEEP}`,
       };
     case R.TIMEOUT:
       return {
@@ -178,8 +180,8 @@ export function magCalOutcome(r: MagCalReport | null | undefined): MagCalOutcome
         tone: 'retry',
         title: 'Magnetic disturbance — try again elsewhere',
         detail:
-          `The field measured ${ut} µT, outside the Earth’s 20–70 µT: metal, a magnet or electronics ` +
-          `nearby. Move away from them (not on a steel bench, not next to a laptop) and try again. ${KEEP}`,
+          'The collar sensed a magnetic field much stronger or weaker than the Earth’s: metal, a magnet or ' +
+          `electronics are nearby. Move away from them (not on a steel bench, not next to a laptop) and try again. ${KEEP}`,
       };
     case R.RESIDUAL_HIGH:
       return {
@@ -187,16 +189,16 @@ export function magCalOutcome(r: MagCalReport | null | undefined): MagCalOutcome
         tone: 'retry',
         title: 'Readings too scattered — try again',
         detail:
-          `${fit} Something disturbed the capture: metal or electronics passing close, or a knock. ` +
+          'Something disturbed the readings: metal or electronics passing close, or a knock. ' +
           `Try again away from them. ${KEEP}`,
       };
     case R.SENSOR_FAULT:
       return {
         inForce: false,
         tone: 'fault',
-        title: 'Magnetometer fault — contact the team',
+        title: 'Compass sensor fault — contact the team',
         detail:
-          'The magnetometer did not answer, or its readings were stuck, so it cannot be calibrated. ' +
+          'The compass sensor did not answer, or its readings were stuck, so it cannot be calibrated. ' +
           `Contact the CollarID team. ${KEEP}`,
       };
     case R.STORAGE:
@@ -205,8 +207,8 @@ export function magCalOutcome(r: MagCalReport | null | undefined): MagCalOutcome
         tone: 'fault',
         title: 'Not saved — SD card problem',
         detail:
-          'The fit was made but could not be written to the card (MAGCAL.CSV), so it is not in ' +
-          `force. Check the SD card and try again. ${KEEP}`,
+          'The calibration worked but could not be saved to the SD card, so it is not used. ' +
+          `Check the SD card and try again. ${KEEP}`,
       };
     default:
       return { inForce: false, tone: 'retry', title: 'Not calibrated — try again', detail: KEEP };
@@ -222,7 +224,7 @@ export function magCalLastLine(r: MagCalReport | null | undefined): string {
   if (!r || !r.run) return '';
   const S = MAG_CAL.STATE;
   if (r.state === S.COLLECTING || r.state === S.FITTING) {
-    return 'A calibration is running on the collar: open Calibrate magnetometer and press Start to follow it.';
+    return 'A calibration is running on the collar: open Calibrate compass and press Start to follow it.';
   }
   return `Last run: ${magCalOutcome(r).title}`;
 }
@@ -249,8 +251,8 @@ export type RunMagCalResult = {
 /** Unsupported firmware: the collar echoed START_POLLS times after the
  *  start with no run of ours. */
 export const MAG_CAL_UNSUPPORTED_MSG =
-  'The collar did not start a calibration: its firmware does not support it yet. ' +
-  'Update the collar’s firmware and try again.';
+  'The collar did not start a calibration: its software does not support it yet. ' +
+  'Update the collar’s software and try again.';
 export const MAG_CAL_STALLED_MSG =
   'The collar stopped reporting the calibration. Reconnect and start again.';
 

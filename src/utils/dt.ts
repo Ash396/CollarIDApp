@@ -134,8 +134,8 @@ export type AddonEntry = {
 };
 
 export const ADDON_TYPE_LABELS: { [k: number]: string } = {
-  1: 'Detachment',
-  2: 'SatCom',
+  1: 'Release unit',
+  2: 'Satellite link',
 };
 
 /** Parse the collar's local-devices characteristic:

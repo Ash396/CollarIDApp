@@ -172,7 +172,7 @@ export const SCHEDULE_PRESETS: SchedulePreset[] = [
     key: 'standard',
     label: 'Standard deployment',
     description:
-      'GPS fix every 30 min, accelerometer at 25 Hz, light and environment on, no audio, uplink every 5 min.',
+      'GPS position every 30 min, movement sensor at 25 Hz, light and weather on, no audio, network report every 5 min.',
     slot: STANDARD,
   },
   {
@@ -201,7 +201,7 @@ export const SCHEDULE_PRESETS: SchedulePreset[] = [
     key: 'movement',
     label: 'Movement only',
     description:
-      'GPS every 15 min, faster while the animal moves (dynamic sampling), accelerometer at 25 Hz, no audio, uplink every 10 min.',
+      'GPS every 15 min, faster while the animal moves, movement sensor at 25 Hz, no audio, network report every 10 min.',
     slot: slot({
       gps: { enabled: true, sampleIntervalMin: 15, dynamicSamplingMode: true },
       accelerometer: { enabled: true, sampleRate: 0 },
@@ -212,7 +212,7 @@ export const SCHEDULE_PRESETS: SchedulePreset[] = [
     key: 'battery',
     label: 'Battery saver',
     description:
-      'GPS every 2 h, accelerometer on, no audio, light and environment off, uplink every 30 min.',
+      'GPS every 2 h, movement sensor on, no audio, light and weather off, network report every 30 min.',
     slot: slot({
       gps: { enabled: true, sampleIntervalMin: 120 },
       accelerometer: { enabled: true, sampleRate: 0 },

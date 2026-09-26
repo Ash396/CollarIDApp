@@ -436,7 +436,7 @@ export default function EditScheduleScreen() {
   // the gate the picker is greyed, not emptied, like the mic's storage.
   // Values are wire values (MagnetometerConfig.sample_rate_hz).
   const magRateOptions = [
-    { label: 'Interval (every N min)', value: 0 },
+    { label: 'Every few minutes (set below)', value: 0 },
     ...MAG_RATE_HZ.map(hz => ({ label: `${hz} Hz`, value: hz })),
   ];
   // What the collar will actually run, given its build: the value the save
@@ -571,7 +571,7 @@ export default function EditScheduleScreen() {
   /* ---------------- SAVE ---------------- */
   const handleSave = () => {
     if (gpsIntervalError) {
-      Alert.alert('GPS intervals', gpsIntervalError);
+      Alert.alert('Check the GPS intervals', gpsIntervalError);
       return;
     }
     if (conflictLabels.length) {
@@ -695,7 +695,7 @@ export default function EditScheduleScreen() {
             ? `Edit Schedule ${index + 1}`
             : 'Edit Schedule'}
         </Text>
-        <Text style={styles.solarEstimate}>{solarEstimate.toFixed(2)} sh</Text>
+        <Text style={styles.solarEstimate}>{solarEstimate.toFixed(2)} h sun/day</Text>
       </View>
 
       {/* QUICK SETUPS — pick one, then set the hours. Everything below is
@@ -830,7 +830,7 @@ export default function EditScheduleScreen() {
           )}
           {gpsIntervalError && (
             <View style={styles.conflictBox}>
-              <Text style={styles.conflictTitle}>Faster means faster</Text>
+              <Text style={styles.conflictTitle}>Check the movement intervals</Text>
               <Text style={styles.conflictText}>{gpsIntervalError}</Text>
             </View>
           )}
@@ -851,8 +851,9 @@ export default function EditScheduleScreen() {
                 <View style={styles.dynamicWrap}>
                   <Text style={styles.helper}>
                     Movement thresholds in{' '}
-                    <Text style={styles.bold}>0.01 g units</Text> of VeDBA
-                    (e.g. 20 = 0.20 g).
+                    <Text style={styles.bold}>0.01 g units</Text> of VeDBA,
+                    the collar's measure of how much the body moves (e.g. 20 =
+                    0.20 g).
                   </Text>
 
                   <View style={styles.vedbaTable}>
@@ -1046,11 +1047,14 @@ export default function EditScheduleScreen() {
               />
               {!micFormatCapable ? (
                 <Text style={styles.noteAmber}>
-                  {fwGateNote(fwBuild, 338)} It records at 16 kHz.
+                  {fwGateNote(fwBuild, 338)} Until then the collar records at
+                  16 kHz.
                 </Text>
               ) : !micRateExtCapable ? (
                 <Text style={styles.helper}>
-                  Rates above 16 kHz: {fwGateNote(fwBuild, 343).toLowerCase()}
+                  Rates above 16 kHz need a newer collar software version.
+                  Update the collar first.
+                  {/* old: Rates above 16 kHz: {fwGateNote(fwBuild, 343).toLowerCase()} */}
                 </Text>
               ) : null}
 
@@ -1077,8 +1081,8 @@ export default function EditScheduleScreen() {
                     enabled={false}
                   />
                   <Text style={styles.noteAmber}>
-                    {fwGateNote(fwBuild, MIC_CODEC_MIN_FW_BUILD)} It records
-                    standard WAV.
+                    {fwGateNote(fwBuild, MIC_CODEC_MIN_FW_BUILD)} Until then
+                    the collar records standard WAV.
                   </Text>
                 </>
               )}
@@ -1155,8 +1159,8 @@ export default function EditScheduleScreen() {
                 editable={false}
               />
               <Text style={styles.helper}>
-                Fixed at 5 minutes — the sensor's BSEC library supports only
-                that cadence.
+                Fixed at 5 minutes: the weather sensor only supports that
+                rate.
               </Text>
 
               <Text style={styles.label}>Heading sampling</Text>
@@ -1169,8 +1173,8 @@ export default function EditScheduleScreen() {
               />
               {!magRateCapable && (
                 <Text style={styles.noteAmber}>
-                  {fwGateNote(fwBuild, MAG_RATE_MIN_FW_BUILD)} It samples on
-                  the minute interval.
+                  {fwGateNote(fwBuild, MAG_RATE_MIN_FW_BUILD)} Until then the
+                  collar samples every few minutes.
                 </Text>
               )}
               {magRateEffective === 0 ? (
@@ -1211,9 +1215,9 @@ export default function EditScheduleScreen() {
 
       {/* LORAWAN — mutually exclusive with LoRa (shared radio) */}
       {renderCard(
-        '📡 LoRaWAN',
+        '📡 Network reports',
         <>
-          <Text style={styles.label}>Uplink every (minutes)</Text>
+          <Text style={styles.label}>Report every (minutes)</Text>
           <TextInput
             style={[
               styles.input,
@@ -1228,7 +1232,7 @@ export default function EditScheduleScreen() {
           />
           {lorawanEnabled && lorawanTxOnFix && (
             <Text style={styles.helper}>
-              Uplinks on every new GPS position instead (Advanced).
+              Reports on every new GPS position instead (see Advanced).
             </Text>
           )}
 
@@ -1237,7 +1241,7 @@ export default function EditScheduleScreen() {
             <>
               <View style={styles.row}>
                 <Text style={gpsEnabled ? styles.rowLabel : styles.rowLabelDim}>
-                  Uplink on every new GPS position
+                  Report on every new GPS position
                 </Text>
                 <Switch
                   value={lorawanTxOnFix}
@@ -1246,13 +1250,13 @@ export default function EditScheduleScreen() {
                 />
               </View>
               <Text style={styles.helperSmall}>
-                When off, GPS fixes are batched and sent together on each
-                scheduled uplink to save power.
+                When off, GPS positions are saved up and sent together with
+                each scheduled report, to save power.
                 {!gpsEnabled ? ' Requires GPS to be enabled.' : ''}
               </Text>
               <Text style={styles.helperSmall}>
-                LoRaWAN and direct LoRa share one radio — only one can be
-                active per schedule.
+                Network reports and direct radio share one radio: only one can
+                be on per schedule.
               </Text>
             </>,
           )}
@@ -1263,7 +1267,7 @@ export default function EditScheduleScreen() {
 
       {/* LORA — mutually exclusive with LoRaWAN (shared radio) */}
       {renderCard(
-        '📻 Direct LoRa',
+        '📻 Direct radio',
         <>
           <Text style={styles.label}>Transmit every (minutes)</Text>
           <TextInput
@@ -1280,7 +1284,7 @@ export default function EditScheduleScreen() {
           />
           {loraEnabled && loraTxOnFix && (
             <Text style={styles.helper}>
-              Transmits on every new GPS position instead (Advanced).
+              Transmits on every new GPS position instead (see Advanced).
             </Text>
           )}
 
@@ -1298,13 +1302,13 @@ export default function EditScheduleScreen() {
                 />
               </View>
               <Text style={styles.helperSmall}>
-                When off, GPS fixes are batched and sent together on each
-                scheduled transmit to save power.
+                When off, GPS positions are saved up and sent together with
+                each scheduled transmission, to save power.
                 {!gpsEnabled ? ' Requires GPS to be enabled.' : ''}
               </Text>
               <Text style={styles.helperSmall}>
-                LoRaWAN and direct LoRa share one radio — only one can be
-                active per schedule.
+                Network reports and direct radio share one radio: only one can
+                be on per schedule.
               </Text>
             </>,
           )}

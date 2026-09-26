@@ -136,7 +136,8 @@ export default function ZoneMapPicker({ visible, vertsText, onCancel, onUse }: P
           {failed && (
             <View style={styles.failBox} testID="zone-map-failed">
               <Text style={styles.failText}>
-                Could not load the map (offline?). Type corners as lat, lon lines instead.
+                Could not load the map (no internet?). Type the corners as “latitude, longitude” lines
+                instead.
               </Text>
             </View>
           )}

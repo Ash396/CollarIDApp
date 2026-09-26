@@ -47,8 +47,8 @@ export const MAG_CAL_LED_LINE =
  *  — that is the field manual's job; this is the calibration's. */
 export const MAG_CAL_STEPS = [
   'Away from metal and electronics: not on a steel bench, not next to a laptop or phone.',
-  'Press Start, then turn the collar slowly through every orientation: a few slow figure-8s, then a full roll about each axis.',
-  'Keep turning until the ring is full, usually 30–60 s. The collar gives up after 2 minutes. If the Bluetooth link drops, keep turning: the collar carries on by itself.',
+  'Press Start, then turn the collar slowly through every orientation: a few slow figure-8s, then roll it all the way over in each direction.',
+  'Keep turning until the ring is full, usually 30–60 seconds. The collar gives up after 2 minutes. If the Bluetooth connection drops, keep turning: the collar carries on by itself.',
 ];
 
 const TONE_COLOR: Record<MagCalTone, string> = {
@@ -166,7 +166,7 @@ export default function MagCalModal({ visible, device, onClose, onResult }: Prop
          wait for that frame's echo so a "Calibrate again" cannot write over
          it. */
       if (!lost) {
-        if (aliveRef.current) setStoppingNote('Stopping the run on the collar…');
+        if (aliveRef.current) setStoppingNote('Stopping the calibration on the collar…');
         await io.command(MAG_CMD.ABORT).catch(() => {});
       }
       showResult(
@@ -175,8 +175,8 @@ export default function MagCalModal({ visible, device, onClose, onResult }: Prop
           tone: lost ? 'retry' : 'fault',
           title: lost ? 'Connection lost — the collar carries on' : 'Calibration did not finish',
           detail: lost
-            ? 'The Bluetooth link dropped, but the collar finishes the calibration by itself and keeps a good or fair result. ' +
-              'Its LED shows how it ended: two green flashes if saved, two red if not. Reconnect within 3 minutes and open Calibrate magnetometer to see the result.'
+            ? 'The Bluetooth connection dropped, but the collar finishes the calibration by itself and keeps a good or fair result. ' +
+              'Its LED shows how it ended: two green flashes if saved, two red if not. Reconnect within 3 minutes and open Calibrate compass to see the result.'
             : String(e?.message ?? e),
         },
         !lost,
@@ -211,7 +211,7 @@ export default function MagCalModal({ visible, device, onClose, onResult }: Prop
     : !report
     ? 'Starting…'
     : fitting
-    ? 'Enough directions covered. Fitting…'
+    ? 'Enough directions covered. Finishing…'
     : 'Keep turning the collar through every orientation';
 
   return (
@@ -224,7 +224,7 @@ export default function MagCalModal({ visible, device, onClose, onResult }: Prop
       <Pressable style={styles.overlay} onPress={close}>
         <Pressable style={styles.card} onPress={() => {}} testID="magcal-modal">
           <View style={styles.headerRow}>
-            <Text style={styles.title}>Calibrate the magnetometer</Text>
+            <Text style={styles.title}>Calibrate the compass</Text>
             <TouchableOpacity
               onPress={close}
               accessibilityLabel="Close"
@@ -305,7 +305,7 @@ export default function MagCalModal({ visible, device, onClose, onResult }: Prop
                 disabled={stopping}
                 testID="magcal-abort"
               >
-                <Text style={styles.dangerBtnText}>Abort</Text>
+                <Text style={styles.dangerBtnText}>Stop</Text>
               </TouchableOpacity>
             )}
             {step === 'result' && (

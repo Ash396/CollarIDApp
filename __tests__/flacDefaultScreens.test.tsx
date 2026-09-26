@@ -4,7 +4,7 @@
  *  - "+ Add Schedule" creates a compressed slot, and the editor offers it,
  *  - the editor holds a connected collar with no reported build to WAV,
  *    and reads an absent codec as WAV,
- *  - SEND TO DEVICE holds a saved set or a restored draft to the connected
+ *  - SEND TO COLLAR holds a saved set or a restored draft to the connected
  *    collar's codec gate: WAV on the wire below build 380 (or with no build),
  *    the read-back verifies, and "Unsent changes" goes away,
  *  - (2026-09-24) a slot read back from the collar with the mic off (no mic
@@ -231,7 +231,7 @@ describe('+ Add Schedule', () => {
   });
 });
 
-describe('SEND TO DEVICE holds the codec to the collar', () => {
+describe('SEND TO COLLAR holds the codec to the collar', () => {
   // The codec field arrived before the FLAC recorder: 375-379 echo it but
   // record WAV; 340 and a collar with no reported build predate it.
   const OLD = [
@@ -253,14 +253,14 @@ describe('SEND TO DEVICE holds the codec to the collar', () => {
       await act(async () => ctx.replaceDraft([loaded]));
       expect(texts(r)).toContain('Unsent changes');
 
-      await press(r, 'SEND TO DEVICE');
+      await press(r, 'SEND TO COLLAR');
 
       // WAV on the wire, nothing dropped
       expect(sentMics()).toHaveLength(1);
       expect(sentMics()[0]).toMatchObject({ enabled: true, codec: 0, lsbDrop: 0 });
       // the read-back verified, and the draft is the collar's config again
       expect(await verdict()).toMatchObject({ ok: true });
-      expect(alertSpy).toHaveBeenCalledWith('Success', 'Schedules updated successfully.');
+      expect(alertSpy).toHaveBeenCalledWith('Schedules sent', 'The collar has the new schedules.');
       expect(ctx.isDirty).toBe(false);
       expect(texts(r)).not.toContain('Unsent changes');
       // the draft says what the collar records (no "compressed" on the card)
@@ -283,7 +283,7 @@ describe('SEND TO DEVICE holds the codec to the collar', () => {
     expect(texts(r)).toContain('Unsent changes');
     expect(ctx.draftSchedules[0].microphone?.codec).toBe(1);
 
-    await press(r, 'SEND TO DEVICE');
+    await press(r, 'SEND TO COLLAR');
 
     expect(sentMics()[0]).toMatchObject({ codec: 0, lsbDrop: 0 });
     expect(await verdict()).toMatchObject({ ok: true });
@@ -298,11 +298,11 @@ describe('SEND TO DEVICE holds the codec to the collar', () => {
     const loaded = savedSetSchedule();
     await act(async () => ctx.replaceDraft([loaded]));
 
-    await press(r, 'SEND TO DEVICE');
+    await press(r, 'SEND TO COLLAR');
 
     expect(sentMics()[0]).toMatchObject({ enabled: true, codec: 1, lsbDrop: 0 });
     expect(await verdict()).toMatchObject({ ok: true });
-    expect(alertSpy).toHaveBeenCalledWith('Success', 'Schedules updated successfully.');
+    expect(alertSpy).toHaveBeenCalledWith('Schedules sent', 'The collar has the new schedules.');
     expect(ctx.isDirty).toBe(false);
     expect(ctx.draftSchedules[0].microphone?.codec).toBe(1);
   });
@@ -348,7 +348,7 @@ describe('the editor', () => {
     mockDeviceState = { device: DEVICE, fwBuild: 0, caps: 0 };
     const r = await openEditor(newSlotMicOn());
     expect(texts(r)).toContain(
-      'Connected collar: firmware not reported yet. Options that need a newer firmware stay off until it is.',
+      'Connected collar: its software version has not come in yet. Newer options stay off until it does.',
     );
     expect(texts(r)).not.toContain(COMPRESSED);
     await press(r, 'SAVE');
@@ -404,7 +404,7 @@ describe('the editor', () => {
 
 // The Schedules screen and the editor under ONE provider, the way the
 // navigator stacks them: the editor opens on a slot the collar read back
-// and saves into the same draft SEND TO DEVICE writes.
+// and saves into the same draft SEND TO COLLAR writes.
 let showEditor: (v: boolean) => void = () => {};
 function ListAndEditor() {
   const [open, setOpen] = useState(false);
@@ -459,7 +459,7 @@ describe('a mic switched on in a slot read back from the collar (2026-09-24)', (
       expect(ctx.draftSchedules[0].microphone).toMatchObject({ enabled: true, codec, lsbDrop: 0 });
       await act(async () => showEditor(false));
 
-      await press(r, 'SEND TO DEVICE');
+      await press(r, 'SEND TO COLLAR');
 
       expect(sentMics()).toHaveLength(1);
       expect(sentMics()[0]).toMatchObject({ enabled: true, codec, lsbDrop: 0 });

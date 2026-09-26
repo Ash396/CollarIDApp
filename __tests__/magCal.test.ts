@@ -344,10 +344,14 @@ describe('runMagCal', () => {
     const gaps = o.log.map((l, i) => (i >= 3 && l.kind === 'status' ? l.t - o.log[i - 1].t : Infinity));
     expect(gaps.every(g => g >= MAG_CAL.POLL_MS)).toBe(true);
     expect(o.ups.map(r => r.progressPct)).toEqual([0, 40, 85, 100, 100]);
-    // a good fit ends in force, with its field and fit error in the words
+    // a good fit ends in force; the words say where it is saved (plain
+    // words: the field and fit-error numbers are no longer shown)
+    // old: expect(o.res.outcome.detail).toMatch(/51\.2 µT/); ... toMatch(/1\.8 %/);
     expect(o.res.outcome).toMatchObject({ inForce: true, tone: 'good', title: 'Calibrated — good' });
-    expect(o.res.outcome.detail).toMatch(/51\.2 µT/);
-    expect(o.res.outcome.detail).toMatch(/1\.8 %/);
+    expect(o.res.outcome.detail).toBe(
+      'Saved on the collar’s SD card; the website’s SD Card viewer applies it to the compass data.',
+    );
+    expect(o.res.outcome.detail).not.toMatch(/µT|%/);
     expect(o.res.adopted).toBe(false);
   });
 
@@ -367,7 +371,7 @@ describe('runMagCal', () => {
     expect(o.res.outcome.inForce).toBe(true);
     expect(o.res.outcome.tone).toBe('fair');
     expect(o.res.outcome.title).toMatch(/^Calibrated — fair/);
-    expect(o.res.outcome.detail).toMatch(/scattered/);
+    expect(o.res.outcome.detail).toMatch(/the readings were a little uneven/);
   });
 
   it('Abort sends CMD_MAG_CALIBRATE_ABORT once, as the next frame, then polls to the end, not in force', async () => {
@@ -390,14 +394,14 @@ describe('runMagCal', () => {
     expect(o.kinds).toEqual(['status', 20, 'status', 'status', 21, 'status']);
     expect(o.overlap).toBe(false);
     expect(o.res.outcome).toMatchObject({ tone: 'aborted', inForce: false, title: 'Calibration stopped' });
-    expect(o.res.outcome.detail).toMatch(/stays in force/);
+    expect(o.res.outcome.detail).toMatch(/Any earlier calibration is still used\./);
   });
 
   it('firmware without calibration (no mag_cal ever) fails in words after a few polls, and stops writing', async () => {
     const o = await run(() => null);
     expect(o.err).toBeDefined();
     expect(o.err.message).toBe(MAG_CAL_UNSUPPORTED_MSG);
-    expect(o.err.message).toMatch(/firmware does not support it/);
+    expect(o.err.message).toMatch(/software does not support it/);
     expect(o.kinds.length).toBe(2 + MAG_CAL.START_POLLS);
     expect(o.kinds).not.toContain(21);
   });
@@ -466,15 +470,18 @@ describe('outcome wording', () => {
     expect(out(S.FAILED, V.RETRY, R.NOT_ENOUGH_ROTATION)).toMatchObject({
       inForce: false, tone: 'retry', title: 'Not enough rotation — try again',
     });
-    expect(out(S.FAILED, V.RETRY, R.NOT_ENOUGH_ROTATION).detail).toMatch(/figure-8s, then a full roll about each axis/);
+    expect(out(S.FAILED, V.RETRY, R.NOT_ENOUGH_ROTATION).detail).toMatch(/figure-8s, then roll it all the way over in each direction/);
     expect(out(S.FAILED, V.RETRY, R.TIMEOUT).title).toBe('Not enough rotation in time — try again');
     expect(out(S.DONE, V.RETRY, R.FIELD_OUT_OF_RANGE, { fieldUtX10: 912 })).toMatchObject({
       inForce: false, tone: 'retry', title: 'Magnetic disturbance — try again elsewhere',
     });
-    expect(out(S.DONE, V.RETRY, R.FIELD_OUT_OF_RANGE, { fieldUtX10: 912 }).detail).toMatch(/91\.2 µT/);
+    expect(out(S.DONE, V.RETRY, R.FIELD_OUT_OF_RANGE, { fieldUtX10: 912 }).detail).toMatch(
+      /much stronger or weaker than the Earth’s: metal, a magnet or electronics are nearby/,
+    );
+    // old: toMatch(/91\.2 µT/) (the field strength is no longer shown)
     expect(out(S.DONE, V.RETRY, R.RESIDUAL_HIGH).title).toBe('Readings too scattered — try again');
     expect(out(S.FAILED, V.RETRY, R.SENSOR_FAULT)).toMatchObject({
-      inForce: false, tone: 'fault', title: 'Magnetometer fault — contact the team',
+      inForce: false, tone: 'fault', title: 'Compass sensor fault — contact the team',
     });
     expect(out(S.FAILED, V.RETRY, R.STORAGE)).toMatchObject({
       inForce: false, tone: 'fault', title: 'Not saved — SD card problem',
@@ -489,7 +496,7 @@ describe('outcome wording', () => {
       for (const r of Object.values(R)) {
         const o = out(st, st === S.DONE ? V.RETRY : V.NONE, r);
         expect(o.inForce).toBe(false);
-        expect(o.detail).toMatch(/previous calibration, if any, stays in force/);
+        expect(o.detail).toMatch(/Any earlier calibration is still used\./);
       }
     }
   });
@@ -504,7 +511,11 @@ describe('outcome wording', () => {
       ).flatMap(o => [o.title, o.detail]),
     ].join('\n');
     expect(all).not.toMatch(/assembl|batter|housing|sound|buzz|beep|WB5M|WB15/i);
-    expect(MAG_CAL_STEPS.join(' ')).toMatch(/slowly through every orientation: a few slow figure-8s, then a full roll about each axis/);
+    expect(MAG_CAL_STEPS.join(' ')).toMatch(
+      /slowly through every orientation: a few slow figure-8s, then roll it all the way over in each direction/,
+    );
+    // Plain words: no field units, fit numbers or file names.
+    expect(all).not.toMatch(/µT|MAGCAL\.CSV|magnetometer|firmware/i);
     expect(MAG_CAL_STEPS.join(' ')).toMatch(/[Aa]way from metal and electronics/);
     expect(MAG_CAL_LED_LINE).toMatch(/pulses cyan while it collects/);
     expect(MAG_CAL_LED_LINE).toMatch(/two green flashes, then blue/);

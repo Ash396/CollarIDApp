@@ -258,7 +258,8 @@ describe('loadServerRadioCredentials', () => {
     fetchMock.mockResolvedValueOnce(resp(500));
     const r = await srv.loadServerRadioCredentials('0x0006001B');
     expect(r.kind).toBe('error');
-    expect(r.message).toContain('HTTP 500');
+    // Plain words, no status code (the app is for non-technical users).
+    expect(r.message).toBe('The CollarID server could not answer. Try again later. Nothing was changed.');
   });
 
   it('configured but no keys at all: nothing to fill', async () => {

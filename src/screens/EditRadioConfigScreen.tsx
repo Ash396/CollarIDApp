@@ -261,7 +261,7 @@ export default function EditRadioConfigScreen() {
     if (value.length !== hexLen || !isHex(value)) {
       Alert.alert(
         'Invalid field',
-        `${label} must be exactly ${hexLen} hex characters.`,
+        `${label} must be exactly ${hexLen} hex characters (0–9 and A–F).`,
       );
       return false;
     }
@@ -334,7 +334,7 @@ export default function EditRadioConfigScreen() {
     if (swClean && (swClean.length !== 2 || !isHex(swClean))) {
       Alert.alert(
         'Invalid value',
-        'syncWord must be exactly 2 hex characters (00–FF).',
+        'Sync word must be exactly 2 hex characters (00–FF).',
       );
       throw new Error('Invalid syncWord');
     }
@@ -350,7 +350,7 @@ export default function EditRadioConfigScreen() {
     ) {
       Alert.alert(
         'Invalid value',
-        'LoRa frequency must be an integer from 400 to 999 (MHz).',
+        'LoRa frequency must be a whole number from 400 to 999 (MHz).',
       );
       throw new Error('Invalid frequency');
     }
@@ -380,7 +380,7 @@ export default function EditRadioConfigScreen() {
       if (epoch === undefined) {
         Alert.alert(
           'Invalid value',
-          'Activation date/time must be valid (YYYY-MM-DD and HH:MM).',
+          'Enter the lost mode start as a date (YYYY-MM-DD) and a time (HH:MM).',
         );
         throw new Error('Invalid lost mode activation time');
       }
@@ -388,7 +388,7 @@ export default function EditRadioConfigScreen() {
       if (activationEpoch < Math.floor(Date.now() / 1000)) {
         Alert.alert(
           'Heads up',
-          'Lost Mode activation time is in the past — it will trigger immediately once the config reaches the collar.',
+          'The lost mode start time is in the past: lost mode starts as soon as the collar gets these settings.',
         );
       }
     }
@@ -445,9 +445,8 @@ export default function EditRadioConfigScreen() {
         ok: false,
         text: isMockDevice(device)
           ? 'The mock collar has no CollarID identity, so there is nothing to load.'
-          : "Could not tell this collar's ID: it has not sent its status yet " +
-            'and its Bluetooth name is not "CollarID-" + 8 hex digits. ' +
-            'Reconnect from Home and try again.',
+          : "Could not tell this collar's ID yet. Reconnect from the Home tab, " +
+            'wait a few seconds, and try again.',
       });
       return;
     }
@@ -486,11 +485,16 @@ export default function EditRadioConfigScreen() {
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Edit Radio Config</Text>
+      <Text style={styles.title}>Edit Radio Settings</Text>
 
       {renderCard(
         '📡 LoRaWAN',
         <>
+          <Text style={styles.helper}>
+            The network keys the collar uses to send its reports. On the
+            CollarID network, load them from the server; otherwise enter the
+            keys your own network gives you.
+          </Text>
           {/* CollarID server keys — only with a collar connected. */}
           {device ? (
             session.signedIn ? (
@@ -541,7 +545,7 @@ export default function EditRadioConfigScreen() {
             placeholder="Select region"
           />
 
-          <Text style={styles.label}>Auth</Text>
+          <Text style={styles.label}>Auth (how the collar joins the network)</Text>
           <StyledPicker
             selectedValue={lorawanAuth}
             onValueChange={value => setLorawanAuth(value as RadioAuth)}
@@ -659,15 +663,19 @@ export default function EditRadioConfigScreen() {
           )}
 
           <Text style={styles.helper}>
-            Per-schedule transmit behavior (send interval, transmit on GPS
-            fix) is configured on each schedule, not here.
+            How often the collar sends is set on each schedule (Schedules
+            tab), not here.
           </Text>
         </>,
       )}
 
       {renderCard(
-        '📻 LoRa (P2P)',
+        '📻 LoRa (direct radio)',
         <>
+          <Text style={styles.helper}>
+            Direct radio to a nearby handheld receiver. Leave these as they are
+            unless your receiver needs different settings.
+          </Text>
           <Text style={styles.label}>Radio Spreading Factor</Text>
           <StyledPicker
             selectedValue={loraSF}
@@ -698,7 +706,7 @@ export default function EditRadioConfigScreen() {
             placeholder="Select coding rate"
           />
 
-          <Text style={styles.label}>syncWord (2 hex chars)</Text>
+          <Text style={styles.label}>Sync word (2 hex characters)</Text>
           <TextInput
             style={styles.input}
             value={syncWordHex}
@@ -747,7 +755,7 @@ export default function EditRadioConfigScreen() {
 
           {lostModeEnabled && (
             <>
-              <Text style={styles.label}>Tx Interval (minutes)</Text>
+              <Text style={styles.label}>Beacon Interval (minutes)</Text>
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -780,7 +788,7 @@ export default function EditRadioConfigScreen() {
                   Activates{' '}
                   {new Date(activationEpochPreview * 1000).toLocaleString()}
                   {activationEpochPreview < Math.floor(Date.now() / 1000)
-                    ? ' — in the past, triggers immediately'
+                    ? ' — in the past, starts immediately'
                     : ''}
                 </Text>
               )}
@@ -806,11 +814,11 @@ export default function EditRadioConfigScreen() {
           {mortalityEnabled && (
             <>
               <Text style={styles.noteMuted}>
-                Keeps the accelerometer running continuously so movement is
+                Keeps the movement sensor running all the time so movement is
                 always being watched. Nothing extra is written to the SD card,
-                and any accelerometer schedule you have set still records
-                exactly as before. Budget a small, constant power draw — the
-                same one dynamic GPS sampling already uses.
+                and any movement recording you have set in a schedule still
+                records exactly as before. Expect a small, constant power draw,
+                the same one that faster GPS when moving already uses.
               </Text>
 
               <Text style={styles.label}>Trigger After (hours motionless)</Text>

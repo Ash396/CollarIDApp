@@ -49,14 +49,14 @@ describe('dynamicGpsIntervalError', () => {
 
   it('refuses walking slower than still, naming the two', () => {
     const e = dynamicGpsIntervalError(gps({ sampleIntervalMin: 5, mediumMotionGpsIntervalMin: 10, highMotionGpsIntervalMin: 5 }));
-    expect(e).toMatch(/^Medium-motion interval must be no longer than the base interval/);
-    expect(e).toMatch(/10 min when walking against 5 min when still/);
+    expect(e).toMatch(/^The walking interval must not be longer than the still interval/);
+    expect(e).toMatch(/10 min when walking, 5 min when still/);
   });
 
   it('refuses running slower than walking, naming the two', () => {
     const e = dynamicGpsIntervalError(gps({ sampleIntervalMin: 20, mediumMotionGpsIntervalMin: 5, highMotionGpsIntervalMin: 10 }));
-    expect(e).toMatch(/^High-motion interval must be no longer than the medium-motion interval/);
-    expect(e).toMatch(/10 min when running against 5 min when walking/);
+    expect(e).toMatch(/^The running interval must not be longer than the walking interval/);
+    expect(e).toMatch(/10 min when running, 5 min when walking/);
   });
 
   it('0 means the same as the base interval, so it is never too long', () => {
@@ -64,7 +64,7 @@ describe('dynamicGpsIntervalError', () => {
     expect(dynamicGpsIntervalError(gps({ sampleIntervalMin: 5, mediumMotionGpsIntervalMin: 0, highMotionGpsIntervalMin: 3 }))).toBeNull();
     // walking 0 reads as the base (5): running 6 is slower than that
     expect(dynamicGpsIntervalError(gps({ sampleIntervalMin: 5, mediumMotionGpsIntervalMin: 0, highMotionGpsIntervalMin: 6 })))
-      .toMatch(/6 min when running against 5 min when walking/);
+      .toMatch(/6 min when running, 5 min when walking/);
     expect(dynamicGpsIntervalError(gps({ sampleIntervalMin: 5, mediumMotionGpsIntervalMin: 3, highMotionGpsIntervalMin: 0 }))).toBeNull();
   });
 

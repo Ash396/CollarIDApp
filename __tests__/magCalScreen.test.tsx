@@ -205,7 +205,7 @@ describe('the calibration card on Home', () => {
     const modal = byId(r, 'magcal-modal')!;
     const words = textOf(modal);
     expect(words).toMatch(/Away from metal and electronics/);
-    expect(words).toMatch(/a few slow figure-8s, then a full roll about each axis/);
+    expect(words).toMatch(/a few slow figure-8s, then roll it all the way over in each direction/);
     expect(words).toMatch(/pulses cyan while it collects/);
     expect(words).toMatch(/two green flashes, then blue/);
     expect(words).toMatch(/two red flashes/);
@@ -223,14 +223,14 @@ describe('the calibration card on Home', () => {
     mockDeviceState.fwBuild = 380;
     const r = await render(<HomeScreen />);
     expect(textOf(byId(r, 'magcal-gate-note')!)).toBe(
-      'Needs firmware 398+ — this collar reports 380.',
+      'This needs a newer collar software version. Update the collar first.',
     );
     await press(r, 'magcal-open');
     expect(alertSpy).toHaveBeenCalledTimes(1);
     const [title, message] = alertSpy.mock.calls[0];
-    expect(title).toBe('Magnetometer calibration');
-    expect(message).toMatch(/needs firmware build 398\+/);
-    expect(message).toMatch(/this collar reports 380/);
+    expect(title).toBe('Compass calibration');
+    expect(message).toBe('This needs a newer collar software version. Update the collar first.');
+    // old: toMatch(/needs firmware build 398\+/), toMatch(/this collar reports 380/) (no build numbers now)
     expect(byId(r, 'magcal-modal')).toBeUndefined();
     expect(ioLog).toEqual([]);
   });
@@ -238,7 +238,7 @@ describe('the calibration card on Home', () => {
   it('a collar that has not reported its build is gated too, in those words', async () => {
     mockDeviceState.fwBuild = 0;
     const r = await render(<HomeScreen />);
-    expect(textOf(byId(r, 'magcal-gate-note')!)).toMatch(/has not reported its firmware/);
+    expect(textOf(byId(r, 'magcal-gate-note')!)).toMatch(/has not reported its version yet/);
     await press(r, 'magcal-open');
     expect(alertSpy).toHaveBeenCalledTimes(1);
     expect(byId(r, 'magcal-modal')).toBeUndefined();
@@ -267,11 +267,12 @@ describe('a calibration run from the modal', () => {
 
     await answer(rep(S.FITTING, 1, 100));
     expect(textOf(byId(r, 'magcal-pct')!)).toBe('100%');
-    expect(textOf(byId(r, 'magcal-status')!)).toBe('Enough directions covered. Fitting…');
+    expect(textOf(byId(r, 'magcal-status')!)).toBe('Enough directions covered. Finishing…');
 
     await answer(rep(S.DONE, 1, 100, { verdict: V.GOOD, fieldUtX10: 512, residualPermille: 18 }));
     expect(textOf(byId(r, 'magcal-result-title')!)).toBe('Calibrated — good');
-    expect(textOf(byId(r, 'magcal-result-detail')!)).toMatch(/51\.2 µT, fit error 1\.8 %/);
+    expect(textOf(byId(r, 'magcal-result-detail')!)).toMatch(/^Saved on the collar’s SD card/);
+    // old: toMatch(/51\.2 µT, fit error 1\.8 %/) (the numbers are no longer shown)
     expect(byId(r, 'magcal-abort')).toBeUndefined();
     expect(byId(r, 'magcal-again')).toBeTruthy();
     expect(textOf(byId(r, 'magcal-last')!)).toBe('Last run: Calibrated — good');
@@ -302,7 +303,7 @@ describe('a calibration run from the modal', () => {
     await answer(rep(S.COLLECTING, 1, 35)); // the collar acts on it a moment later
     await answer(rep(S.ABORTED, 1, 35));
     expect(textOf(byId(r, 'magcal-result-title')!)).toBe('Calibration stopped');
-    expect(textOf(byId(r, 'magcal-result-detail')!)).toMatch(/stays in force/);
+    expect(textOf(byId(r, 'magcal-result-detail')!)).toMatch(/Any earlier calibration is still used\./);
     expect(ioLog.filter(k => k === 21)).toHaveLength(1);
     expect(textOf(byId(r, 'magcal-last')!)).toBe('Last run: Calibration stopped');
   });
@@ -351,11 +352,11 @@ describe('a calibration run from the modal', () => {
     // modal stops the collar before saying so
     await answer(null);
     expect(ioLog[ioLog.length - 1]).toBe(21);
-    expect(textOf(byId(r, 'magcal-status')!)).toBe('Stopping the run on the collar…');
+    expect(textOf(byId(r, 'magcal-status')!)).toBe('Stopping the calibration on the collar…');
     await answer(null);
     expect(textOf(byId(r, 'magcal-result-title')!)).toBe('Calibration did not finish');
     expect(textOf(byId(r, 'magcal-result-detail')!)).toMatch(
-      /its firmware does not support it yet\. Update the collar’s firmware and try again\./,
+      /its software does not support it yet\. Update the collar’s software and try again\./,
     );
     expect(byId(r, 'magcal-again')).toBeTruthy();
   });
@@ -367,7 +368,7 @@ describe('a calibration run from the modal', () => {
     await answer(rep(S.COLLECTING, 1, 20));
     await answer(rep(S.FAILED, 1, 20, { verdict: V.RETRY, reason: R.NOT_ENOUGH_ROTATION }));
     expect(textOf(byId(r, 'magcal-result-title')!)).toBe('Not enough rotation — try again');
-    expect(textOf(byId(r, 'magcal-result-detail')!)).toMatch(/previous calibration, if any, stays in force/);
+    expect(textOf(byId(r, 'magcal-result-detail')!)).toMatch(/Any earlier calibration is still used\./);
     // Calibrate again returns to the instructions with nothing written
     const n = ioLog.length;
     await press(r, 'magcal-again');

@@ -82,10 +82,10 @@ describe('quick setups are complete slots', () => {
       'Battery saver',
     ]);
     expect(SCHEDULE_PRESETS.map(p => p.description)).toEqual([
-      'GPS fix every 30 min, accelerometer at 25 Hz, light and environment on, no audio, uplink every 5 min.',
+      'GPS position every 30 min, movement sensor at 25 Hz, light and weather on, no audio, network report every 5 min.',
       'Standard deployment plus continuous 16 kHz audio, stored compressed (lossless), default gain.',
-      'GPS every 15 min, faster while the animal moves (dynamic sampling), accelerometer at 25 Hz, no audio, uplink every 10 min.',
-      'GPS every 2 h, accelerometer on, no audio, light and environment off, uplink every 30 min.',
+      'GPS every 15 min, faster while the animal moves, movement sensor at 25 Hz, no audio, network report every 10 min.',
+      'GPS every 2 h, movement sensor on, no audio, light and weather off, network report every 30 min.',
     ]);
   });
 
@@ -247,25 +247,26 @@ describe('one firmware line', () => {
   it('says everything is available, or what needs an update', () => {
     // The magnetometer rate mode (MAG_RATE_MIN_FW_BUILD) is the newest gate,
     // so it is named first; magRate.test.ts pins its build.
+    // Plain words, no build numbers (the app is for non-technical users).
     expect(fwOptionsLine(MAG_RATE_MIN_FW_BUILD, bleFeatureGates(MAG_RATE_MIN_FW_BUILD, 0))).toBe(
-      `Connected collar: firmware ${MAG_RATE_MIN_FW_BUILD}, all options available`,
+      'Connected collar: all options available',
     );
     expect(fwOptionsLine(380, bleFeatureGates(380, 0))).toBe(
-      'Connected collar: firmware 380: heading at 1 to 16 Hz needs a firmware update',
+      'Connected collar: heading at 1 to 16 Hz needs a newer collar software version. Update the collar first.',
     );
     // old: 'Connected collar: firmware 380, all options available'
     expect(fwOptionsLine(375, bleFeatureGates(375, 0))).toBe(
-      'Connected collar: firmware 375: heading at 1 to 16 Hz and compressed audio need a firmware update',
+      'Connected collar: heading at 1 to 16 Hz and compressed audio need a newer collar software version. Update the collar first.',
     );
     // old: 'Connected collar: firmware 375: compressed audio needs a firmware update'
     expect(fwOptionsLine(340, bleFeatureGates(340, 0))).toBe(
-      'Connected collar: firmware 340: heading at 1 to 16 Hz, compressed audio, microphone gain and sample rates above 16 kHz need a firmware update',
+      'Connected collar: heading at 1 to 16 Hz, compressed audio, microphone gain and sample rates above 16 kHz need a newer collar software version. Update the collar first.',
     );
     // old: 'Connected collar: firmware 340: compressed audio, microphone gain and sample rates above 16 kHz need a firmware update'
     // below 338 there is no rate field at all — one clause, not two
     const old = fwOptionsLine(310, bleFeatureGates(310, 0));
-    expect(old).toMatch(/^Connected collar: firmware 310: /);
-    expect(old).toMatch(/the sample rate need a firmware update$/);
+    expect(old).toMatch(/^Connected collar: /);
+    expect(old).toMatch(/the sample rate need a newer collar software version\. Update the collar first\.$/);
     expect(old).not.toMatch(/above 16 kHz/);
   });
 
@@ -274,7 +275,7 @@ describe('one firmware line', () => {
   });
 
   it('uses the same note under every greyed control', () => {
-    expect(fwGateNote(375, 380)).toBe('Needs firmware 380+ — this collar reports 375.');
+    expect(fwGateNote(375, 380)).toBe('This needs a newer collar software version. Update the collar first.');
   });
 });
 
@@ -315,7 +316,7 @@ describe('plain-words summary', () => {
       '📍 Position every 30 min, medium accuracy',
       '🏃 Movement at 25 Hz, ±2 g',
       '🌡️ Light every 10 min, weather every 5 min',
-      '📡 Uplink every 5 min',
+      '📡 Network report every 5 min',
     ]);
     expect(scheduleSummaryLines(asSchedule(byKey('audio')))).toContain(
       '🎙️ Audio: Record continuously, compressed',
@@ -326,7 +327,7 @@ describe('plain-words summary', () => {
     expect(scheduleSummaryLines(asSchedule(byKey('battery')))).toEqual([
       '📍 Position every 2 h, medium accuracy',
       '🏃 Movement at 25 Hz, ±2 g',
-      '📡 Uplink every 30 min',
+      '📡 Network report every 30 min',
     ]);
     expect(scheduleSummaryLines({ id: 'y', name: 'n', ...defaultScheduleSlot() })).toEqual([]);
   });
@@ -334,7 +335,7 @@ describe('plain-words summary', () => {
   it('names uplink-on-fix and the direct radio', () => {
     const s = asSchedule(byKey('standard'));
     s.gps!.lorawanTxOnGpsFix = true;
-    expect(scheduleSummaryLines(s)).toContain('📡 Uplink on every new position');
+    expect(scheduleSummaryLines(s)).toContain('📡 Network report on every new position');
     s.lorawan!.enabled = false;
     s.lora = { enabled: true, sendIntervalMin: 15 };
     expect(scheduleSummaryLines(s)).toContain('📻 Direct radio every 15 min');

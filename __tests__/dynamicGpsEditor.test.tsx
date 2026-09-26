@@ -128,15 +128,15 @@ describe('the schedule editor and the dynamic-GPS rule', () => {
   it('Save refuses walking slower than still, in plain words, and rewrites nothing', async () => {
     const r = await openEditor(withIntervals(5, 10, 5));
     // said live under the GPS card
-    expect(texts(r)).toContain('Faster means faster');
-    expect(texts(r).join('\n')).toMatch(/Medium-motion interval must be no longer than the base interval/);
+    expect(texts(r)).toContain('Check the movement intervals');
+    expect(texts(r).join('\n')).toMatch(/The walking interval must not be longer than the still interval/);
 
     await press(r, 'SAVE');
     expect(alertSpy).toHaveBeenCalledTimes(1);
     const [title, message] = alertSpy.mock.calls[0];
-    expect(title).toBe('GPS intervals');
-    expect(message).toMatch(/^Medium-motion interval must be no longer than the base interval/);
-    expect(message).toMatch(/10 min when walking against 5 min when still/);
+    expect(title).toBe('Check the GPS intervals');
+    expect(message).toMatch(/^The walking interval must not be longer than the still interval/);
+    expect(message).toMatch(/10 min when walking, 5 min when still/);
     expect(mockNavigation.goBack).not.toHaveBeenCalled();
     // the draft still holds what the operator typed — nothing silently moved
     expect(ctx.draftSchedules[0].gps).toMatchObject({
@@ -151,14 +151,14 @@ describe('the schedule editor and the dynamic-GPS rule', () => {
     await press(r, 'SAVE');
     expect(alertSpy).toHaveBeenCalledTimes(1);
     expect(alertSpy.mock.calls[0][1]).toMatch(
-      /^High-motion interval must be no longer than the medium-motion interval/,
+      /^The running interval must not be longer than the walking interval/,
     );
     expect(mockNavigation.goBack).not.toHaveBeenCalled();
   });
 
   it('a consistent trio saves; 0 (same as the base interval) is kept, not clamped to 1', async () => {
     const r = await openEditor(withIntervals(5, 0, 0));
-    expect(texts(r)).not.toContain('Faster means faster');
+    expect(texts(r)).not.toContain('Check the movement intervals');
     await press(r, 'SAVE');
     expect(alertSpy).not.toHaveBeenCalled();
     expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
@@ -173,7 +173,7 @@ describe('the schedule editor and the dynamic-GPS rule', () => {
     const s = withIntervals(5, 10, 20);
     s.gps!.dynamicSamplingMode = false;
     const r = await openEditor(s);
-    expect(texts(r)).not.toContain('Faster means faster');
+    expect(texts(r)).not.toContain('Check the movement intervals');
     await press(r, 'SAVE');
     expect(alertSpy).not.toHaveBeenCalled();
     expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);

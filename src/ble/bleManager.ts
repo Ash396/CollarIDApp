@@ -760,7 +760,8 @@ async function waitEcho(
     const e = await readCfgEcho(device);
     if (e && e.echoSeq !== lastSeq) return e;
     if (Date.now() - t0 >= timeoutMs) {
-      throw new Error('collar did not answer over BLE (echo timeout)');
+      throw new Error('The collar did not answer over Bluetooth. Keep the phone next to the collar and try again.');
+      // old: throw new Error('collar did not answer over BLE (echo timeout)');
     }
     await new Promise<void>(r => setTimeout(r, ECHO_POLL_MS));
   }

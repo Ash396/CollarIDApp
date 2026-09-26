@@ -22,7 +22,7 @@
 import { Buffer } from 'buffer';
 import * as PB from '../src/proto/collar_pb.js';
 import { RADIO_KEYS_MIN_FW_BUILD, bleFeatureGates } from '../src/utils/fw';
-import { ApiError } from '../src/utils/api';
+import { ApiError, serverStatusText } from '../src/utils/api';
 import { aes128EncryptBlock, kcvHex } from '../src/utils/aes128';
 import {
   BEACON_KEY,
@@ -214,47 +214,69 @@ describe('the report and the words', () => {
     expect(beaconKeyReport(echoOf({ state: 2, gen: 3, kcv: 'aabbcc', result: 0, tx_counter: 0x03ffffff }))).toEqual(camel(FX.reports.fallback));
   });
 
-  it('the state and result texts are the website’s, word for word', () => {
-    expect([0, 1, 2].map(st => BEACON_KEY_STATE_TEXT[st])).toEqual(FX.STATE_TEXT);
-    expect(BEACON_KEY_UNSUPPORTED_TEXT).toBe(FX.UNSUPPORTED_TEXT);
+  // The app says these in plain words for non-technical users (no
+  // generation, no KCV, no "plaintext"); the website's card (FX) keeps its
+  // older wording until it is aligned. What stays pinned to the website is
+  // the shape: the same states and results have words, the same report
+  // picks the unsupported text, and the same results say nothing.
+  // old: it('the state and result texts are the website’s, word for word', ...)
+  //      expect([0, 1, 2].map(st => BEACON_KEY_STATE_TEXT[st])).toEqual(FX.STATE_TEXT);
+  //      expect(BEACON_KEY_UNSUPPORTED_TEXT).toBe(FX.UNSUPPORTED_TEXT);
+  //      beaconKeyResultText({ result }) === FX.texts[`result:${result}`] for 0..5, 9
+  it('the state and result texts: the website’s states and results, in plain words', () => {
+    expect(FX.STATE_TEXT).toHaveLength(3);
+    expect([0, 1, 2].map(st => BEACON_KEY_STATE_TEXT[st])).toEqual([
+      'Off: the collar sends its lost-mode beacon unencrypted, as collars always have.',
+      'On: the collar’s lost-mode beacon is encrypted.',
+      'Needs updating: the collar has a key it can no longer use, so its lost-mode beacon is not encrypted ' +
+        'for now. Install keys again to fix this.',
+    ]);
+    expect(BEACON_KEY_UNSUPPORTED_TEXT).toBe('This collar’s software cannot encrypt its beacon. Update the collar first.');
     for (const result of [0, 1, 2, 3, 4, 5, 9]) {
-      expect(beaconKeyResultText({ result })).toBe(FX.texts[`result:${result}`]);
+      // '' exactly where the website says nothing
+      expect(beaconKeyResultText({ result }) === '').toBe(FX.texts[`result:${result}`] === '');
     }
-    expect(BEACON_KEY_RESULT_TEXT[3]).toMatch(/rotate on the server, then provision again/);
+    expect(beaconKeyResultText({ result: 9 })).toBe('unexpected answer from the collar (9)');
+    expect(BEACON_KEY_RESULT_TEXT[3]).toMatch(/rotate keys on the website, then install again/);
     for (const r of Object.values(FX.reports) as any[]) {
       const t = FX.texts[JSON.stringify(r)];
-      expect(beaconKeyStateText(camel(r))).toBe(t.state);
-      if (r.supported) expect(beaconKeyResultText(camel(r))).toBe(t.result);
+      expect(t.state === FX.UNSUPPORTED_TEXT).toBe(!r.supported);
+      expect(beaconKeyStateText(camel(r))).toBe(r.supported ? BEACON_KEY_STATE_TEXT[r.state] : BEACON_KEY_UNSUPPORTED_TEXT);
+      if (r.supported) expect(beaconKeyResultText(camel(r))).toBe(BEACON_KEY_RESULT_TEXT[r.result]);
     }
-    expect(beaconKeyStateText(null)).toBe(FX.texts.null.state);
+    expect(beaconKeyStateText(null)).toBe(BEACON_KEY_UNSUPPORTED_TEXT);
   });
 
   it('the badge and the status line (renderBeaconKeyCard)', () => {
     expect(beaconKeyBadge(null)).toBe('Not read yet');
     expect(beaconKeyBadge(camel(FX.reports.absent))).toBe('Not supported');
-    expect(beaconKeyBadge(camel(FX.reports.empty))).toBe('Plaintext (no key)');
-    expect(beaconKeyBadge(camel(FX.reports.keyed))).toBe('Encrypted · generation 7 · KCV 2b1a1e');
-    expect(beaconKeyBadge(camel(FX.reports.fallback))).toBe('Fallback to plaintext · generation 3');
-    expect(beaconKeyStatusLine(null)).toBe('Waiting for the collar to report its key status.');
+    expect(beaconKeyBadge(camel(FX.reports.empty))).toBe('Encryption: off');
+    expect(beaconKeyBadge(camel(FX.reports.keyed))).toBe('Encryption: on');
+    expect(beaconKeyBadge(camel(FX.reports.fallback))).toBe('Encryption: needs updating');
+    expect(beaconKeyStatusLine(null)).toBe('Waiting for the collar to report its encryption status.');
     expect(beaconKeyStatusLine(camel(FX.reports.keyed))).toBe(
-      `${FX.STATE_TEXT[1]} Beacons sent under this generation: 3. Last command: key stored; in force from the next beacon.`,
+      `${BEACON_KEY_STATE_TEXT[1]} Beacons sent with this key: 3. Last change: key installed; used from the next beacon.`,
     );
-    expect(beaconKeyStatusLine(camel(FX.reports.empty))).toBe(FX.STATE_TEXT[0]);
-    expect(beaconKeyStatusLine(camel(FX.reports.absent))).toBe(FX.UNSUPPORTED_TEXT);
+    expect(beaconKeyStatusLine(camel(FX.reports.empty))).toBe(BEACON_KEY_STATE_TEXT[0]);
+    expect(beaconKeyStatusLine(camel(FX.reports.absent))).toBe(BEACON_KEY_UNSUPPORTED_TEXT);
+    // No generation, KCV or plaintext in anything the card shows.
+    for (const r of Object.values(FX.reports) as any[]) {
+      expect(`${beaconKeyBadge(camel(r))} ${beaconKeyStatusLine(camel(r))}`).not.toMatch(/generation|KCV|plaintext/i);
+    }
   });
 
   it('the server line: provisioned / issued / cleared / none, stale, no key store', () => {
     const base = { uid: '0x00000001', state: 'none', keyed: false, gen: 0, kcv: null, stale: false, kek_configured: true };
     expect(serverKeyLine({ ...base })).toBe('Server record: no key issued for this collar.');
     expect(serverKeyLine({ ...base, state: 'provisioned', keyed: true, gen: 7, kcv: '2b1a1e' })).toBe(
-      'Server record: provisioned at generation 7 (KCV 2b1a1e).',
+      'Server record: key installed on this collar.',
     );
     expect(serverKeyLine({ ...base, state: 'issued', keyed: true, gen: 2, kcv: 'abcdef' })).toMatch(/issued but the collar never confirmed it/);
-    expect(serverKeyLine({ ...base, state: 'cleared' })).toMatch(/cleared \(plaintext\)/);
+    expect(serverKeyLine({ ...base, state: 'cleared' })).toBe('Server record: no key (encryption off).');
     expect(serverKeyLine({ ...base, state: 'provisioned', keyed: true, gen: 1, kcv: 'abcdef', stale: true })).toMatch(
-      /This collar’s key is older than the organisation’s current generation — provision again\.$/,
+      /This collar’s key is out of date: install keys again\.$/,
     );
-    expect(serverKeyLine({ ...base, kek_configured: false })).toMatch(/^The server has no key store configured/);
+    expect(serverKeyLine({ ...base, kek_configured: false })).toMatch(/^The CollarID server is not set up to issue keys yet/);
     expect(serverKeyLine(null)).toBe('');
   });
 });
@@ -373,10 +395,10 @@ describe('provisionBeaconKey', () => {
     expect(res.report).toMatchObject({ state: 1, gen: 1, result: 1 });
     expect(res.server!.state).toBe('provisioned');
     expect(progress).toEqual([
-      'reading the collar’s key status…',
+      'checking the collar…',
       'asking the server for a key…',
-      `writing generation 1 (KCV ${res.kcv}) to the collar…`,
-      'generation 1 confirmed by the collar; telling the server…',
+      'installing the key on the collar…',
+      'key confirmed by the collar; telling the server…',
     ]);
     // no key bytes anywhere in what the flow returned
     expect(JSON.stringify(res)).not.toMatch(new RegExp(s.keyFor(1)));
@@ -413,10 +435,10 @@ describe('provisionBeaconKey', () => {
   });
 
   it.each([
-    [new ApiError(503, 'HTTP 503', 'RADIO_MASTER_KEK not configured on the server — beacon keys cannot be issued or rotated'), /^the server has no key store configured, so it cannot issue keys \(RADIO_MASTER_KEK/],
-    [new ApiError(409, 'HTTP 409', 'the generations under this master are used up'), /^the server refused: the generations under this master are used up$/],
-    [new ApiError(422, 'HTTP 422', 'collar_gen must be 0..255'), /^the server refused the collar’s echo: collar_gen must be 0\.\.255$/],
-    [new ApiError(403, 'HTTP 403'), /this collar is not yours to provision/],
+    [new ApiError(503, 'HTTP 503', 'RADIO_MASTER_KEK not configured on the server — beacon keys cannot be issued or rotated'), /^the CollarID server is not set up to issue keys yet\. Ask your administrator$/],
+    [new ApiError(409, 'HTTP 409', 'the generations under this master are used up'), /^the server has no new key for this collar\. Ask your administrator to rotate keys \(details: the generations under this master are used up\)$/],
+    [new ApiError(422, 'HTTP 422', 'collar_gen must be 0..255'), /^the server did not accept the collar’s answer \(details: collar_gen must be 0\.\.255\)$/],
+    [new ApiError(403, 'HTTP 403'), /this collar is not on your CollarID account, so you cannot install its keys/],
     [new ApiError(0, 'Cannot reach server. Check your connection.'), /Cannot reach server/],
   ])('the server’s refusal, in the operator’s words: %s', async (err, words) => {
     const c = fakeCollar();
@@ -433,7 +455,7 @@ describe('provisionBeaconKey', () => {
       issue: async () => ({ uid: 'x', gen: 2, kcv: '000000', keys: [{ slot: 'beacon', gen: 2, key: s.keyFor(2), kcv: '000000' }], action: 'new' }),
     };
     await expect(provisionBeaconKey(c.io, api, '0x0025001C')).rejects.toThrow(
-      `the server’s key check value (000000) does not match its key (${kcvHex(fromHex(s.keyFor(2)))}); nothing was written`,
+      'the key from the server failed its check; nothing was written to the collar',
     );
     expect(c.log).toEqual(['status']);
   });
@@ -445,12 +467,16 @@ describe('provisionBeaconKey', () => {
       ...s.api,
       issue: async () => ({ uid: 'x', gen: 2, kcv: '', keys: [{ slot: 'beacon', gen: 2, key: 'abcd', kcv: '' }], action: 'new' }),
     };
-    await expect(provisionBeaconKey(c.io, api, '0x0025001C')).rejects.toThrow('the server returned an unusable key set');
+    await expect(provisionBeaconKey(c.io, api, '0x0025001C')).rejects.toThrow(
+      'the server sent a key the app cannot use; nothing was written to the collar',
+    );
     const api2: BeaconKeyApi = {
       ...s.api,
       issue: async () => ({ uid: 'x', gen: 0, kcv: '', keys: [{ slot: 'beacon', gen: 0, key: s.keyFor(1), kcv: '' }], action: 'new' }),
     };
-    await expect(provisionBeaconKey(c.io, api2, '0x0025001C')).rejects.toThrow('the server returned an unusable key set');
+    await expect(provisionBeaconKey(c.io, api2, '0x0025001C')).rejects.toThrow(
+      'the server sent a key the app cannot use; nothing was written to the collar',
+    );
     expect(c.log).toEqual(['status', 'status']);
   });
 
@@ -461,9 +487,8 @@ describe('provisionBeaconKey', () => {
       ...c.io,
       set: async (key, gen) => ({ beaconKey: { state: 1, gen: gen + 1, kcv: fromHex(kcvHex(key)), result: 1 } }),
     };
-    const kcv = kcvHex(fromHex(s.keyFor(1)));
     await expect(provisionBeaconKey(io, s.api, '0x0025001C')).rejects.toThrow(
-      `the collar echoed generation 2, KCV ${kcv}; the server issued generation 1, KCV ${kcv}`,
+      'the key on the collar does not match the one the server issued. Try again',
     );
     expect(s.calls.map(x => x[0])).toEqual(['issue']);
   });
@@ -481,7 +506,7 @@ describe('provisionBeaconKey', () => {
     const c = fakeCollar();
     const s = fakeServer({ provisionedError: new ApiError(409, 'HTTP 409', 'collar echoes gen 1 kcv 111111; the server issued gen 2 kcv 222222. Issue again and re-write.') });
     await expect(provisionBeaconKey(c.io, s.api, '0x0025001C')).rejects.toThrow(
-      /^the collar holds generation 1 \(KCV [0-9a-f]{6}\), but the server would not record it: collar echoes gen 1 kcv 111111; the server issued gen 2 kcv 222222/,
+      /^the collar has the new key, but the server would not record it: collar echoes gen 1 kcv 111111; the server issued gen 2 kcv 222222/,
     );
     expect(c.k.state).toBe(1);
   });
@@ -497,22 +522,23 @@ describe('clearBeaconKey', () => {
     expect(s.calls).toEqual([['clear', '0x0025001C']]);
     expect(res.serverCleared).toBe(true);
     expect(res.report).toMatchObject({ state: 0, gen: 3, kcv: '', result: 2 });
-    expect(progress).toEqual(['erasing the key on the collar…', 'key removed ✓ telling the server…', 'key removed ✓ server record cleared ✓']);
+    expect(progress).toEqual(['removing the key from the collar…', 'key removed ✓ telling the server…', 'key removed ✓ server record cleared ✓']);
   });
 
-  it('signed out (no server): the collar is cleared and the words say plaintext', async () => {
+  it('signed out (no server): the collar is cleared and the words say it is no longer encrypted', async () => {
     const c = fakeCollar({ state: 1, gen: 3, kcv: 'aabbcc' });
     const progress: string[] = [];
     const res = await clearBeaconKey(c.io, null, null, { onProgress: t => progress.push(t) });
     expect(res.serverCleared).toBe(false);
-    expect(progress[progress.length - 1]).toBe('key removed ✓ plaintext beacons');
+    expect(progress[progress.length - 1]).toBe('key removed ✓ beacon no longer encrypted');
   });
 
   it('a server that still records a key is named; a 404 is fine', async () => {
     const c = fakeCollar({ state: 1, gen: 3, kcv: 'aabbcc' });
-    const s = fakeServer({ clearError: new ApiError(500, 'HTTP 500') });
+    const s = fakeServer({ clearError: new ApiError(500, serverStatusText(500)) });
     await expect(clearBeaconKey(c.io, s.api, '0x0025001C')).rejects.toThrow(
-      'the collar is back to plaintext, but the server still records a key (HTTP 500) and may alert on its plaintext beacons',
+      'the collar’s beacon is no longer encrypted, but the server still lists a key for it and may raise alerts ' +
+        'about unencrypted beacons. The CollarID server can’t do this right now. Try again later.',
     );
     const s2 = fakeServer({ clearError: new ApiError(404, 'HTTP 404') });
     expect((await clearBeaconKey(fakeCollar({ state: 1, gen: 1, kcv: 'aa' }).io, s2.api, '0x0025001C')).serverCleared).toBe(false);

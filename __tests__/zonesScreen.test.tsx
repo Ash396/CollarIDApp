@@ -198,13 +198,14 @@ describe('the Zones screen', () => {
     expect(BLE.tunnelQueryAllFences).not.toHaveBeenCalled();
   });
 
-  it('below build 305: the website’s gate words, no tunnel frame', async () => {
+  it('below build 305: plain gate words, no tunnel frame', async () => {
     mockDeviceState.fwBuild = 300;
     const r = await render(<ZonesScreen />);
     const gate = textOf(byId(r, 'zones-gate')!);
-    expect(gate).toMatch(/firmware \(build 300\) predates Bluetooth zone delivery/);
-    expect(gate).toMatch(/firmware v1\.15\+ \(build 305\)/);
+    expect(gate).toMatch(/^This collar’s software is too old to manage zones over Bluetooth\. Update the collar/);
     expect(gate).toMatch(/Remote Schedule page/);
+    expect(gate).not.toMatch(/firmware|build|LoRaWAN/i);
+    // old: toMatch(/firmware \(build 300\) predates Bluetooth zone delivery/), toMatch(/firmware v1\.15\+ \(build 305\)/)
     expect(byId(r, 'zones-add')).toBeUndefined();
     expect(BLE.tunnelQueryAllFences).not.toHaveBeenCalled();
   });
@@ -212,7 +213,7 @@ describe('the Zones screen', () => {
   it('a collar that has not reported its build waits for it', async () => {
     mockDeviceState.fwBuild = 0;
     const r = await render(<ZonesScreen />);
-    expect(textOf(byId(r, 'zones-gate')!)).toMatch(/has not reported its firmware yet/);
+    expect(textOf(byId(r, 'zones-gate')!)).toMatch(/has not reported its software version yet/);
     expect(BLE.tunnelQueryAllFences).not.toHaveBeenCalled();
   });
 
@@ -230,7 +231,7 @@ describe('the Zones screen', () => {
     expect(row1).toMatch(/Zone 1/);
     expect(row1).toMatch(/Test only/);
     expect(row1).toMatch(/3 corners · expires never/);
-    expect(textOf(byId(r, 'zone-row-3')!)).toMatch(/Switch schedule → slot 2/);
+    expect(textOf(byId(r, 'zone-row-3')!)).toMatch(/Switch schedule → Schedule 3/);
     expect(byId(r, 'zone-inside-3')).toBeTruthy();
     expect(byId(r, 'zone-inside-1')).toBeUndefined();
     const row4 = textOf(byId(r, 'zone-row-4')!);
@@ -305,17 +306,21 @@ describe('the zone editor', () => {
   it('validates with the website’s words before writing anything', async () => {
     const r = await render(<EditZoneScreen />);
     await press(r, 'editzone-send');
-    expect(textOf(byId(r, 'editzone-error')!)).toBe('bad corner line: ""');
+    expect(textOf(byId(r, 'editzone-error')!)).toBe(
+      'Could not read this corner line: "". Use "latitude, longitude", one corner per line.',
+    );
     await type(r, 'editzone-verts', '1,2\n3,4');
     await press(r, 'editzone-send');
-    expect(textOf(byId(r, 'editzone-error')!)).toBe('a zone needs 3–8 corners');
+    expect(textOf(byId(r, 'editzone-error')!)).toBe('A zone needs 3 to 8 corners.');
     await type(r, 'editzone-verts', '1,2\n3,4\nnope');
     await press(r, 'editzone-send');
-    expect(textOf(byId(r, 'editzone-error')!)).toBe('bad corner line: "nope"');
+    expect(textOf(byId(r, 'editzone-error')!)).toBe(
+      'Could not read this corner line: "nope". Use "latitude, longitude", one corner per line.',
+    );
     await type(r, 'editzone-verts', CORNERS);
     await type(r, 'editzone-start-date', '2026-10-01');
     await press(r, 'editzone-send');
-    expect(textOf(byId(r, 'editzone-error')!)).toMatch(/^start needs a date/);
+    expect(textOf(byId(r, 'editzone-error')!)).toMatch(/^The start needs both a date/);
     expect(txnLog).toHaveLength(0);
   });
 
@@ -338,7 +343,7 @@ describe('the zone editor', () => {
       startEpoch: 0, expiryEpoch: 0, vertexCount: 4,
     });
     expect(frags[1].cfgGeofence.vertex).toEqual({ latitudeE7: 442645000, longitudeE7: -725755000 });
-    expect(alertSpy).toHaveBeenCalledWith('Zone delivered', 'Zone delivered and applied.');
+    expect(alertSpy).toHaveBeenCalledWith('Zone sent', 'The collar has the zone and is using it.');
     expect(mockNavigation.goBack).toHaveBeenCalled();
     expect(await AsyncStorage.getItem(`${ZONE_DRAFT_KEY_PREFIX}CollarID_TEST`)).toBeNull();
   });
@@ -352,9 +357,11 @@ describe('the zone editor', () => {
       'The collar refused: the zone shape was invalid (needs 3–8 corners, every corner delivered).',
     );
     expect(mockNavigation.goBack).not.toHaveBeenCalled();
-    mockTxnError = new Error('collar did not answer over BLE (echo timeout)');
+    mockTxnError = new Error('The collar did not answer over Bluetooth. Keep the phone next to the collar and try again.');
     await press(r, 'editzone-send');
-    expect(textOf(byId(r, 'editzone-error')!)).toBe('Delivery failed: collar did not answer over BLE (echo timeout)');
+    expect(textOf(byId(r, 'editzone-error')!)).toBe(
+      'Couldn’t send the zone. The collar did not answer over Bluetooth. Keep the phone next to the collar and try again.',
+    );
   });
 
   it('a detach zone needs an expiry: prefilled a week out when the action is picked, refused when cleared', async () => {
@@ -377,7 +384,7 @@ describe('the zone editor', () => {
     await type(r, 'editzone-expiry-date', '');
     await type(r, 'editzone-expiry-time', '');
     await press(r, 'editzone-send');
-    expect(textOf(byId(r, 'editzone-error')!)).toBe('a detach zone requires an expiry (max 30 days)');
+    expect(textOf(byId(r, 'editzone-error')!)).toBe('A detach zone needs an expiry date, at most 30 days away.');
   });
 
   it('editing a fence the collar holds starts from its form; the schedule slot shows for a switch zone', async () => {
@@ -386,7 +393,7 @@ describe('the zone editor', () => {
     };
     const r = await render(<EditZoneScreen />);
     expect(textOf(r)).toMatch(/EDIT ZONE 3/);
-    expect(r.root.findAll(n => n.props.placeholder === 'Schedule slot').length).toBeGreaterThan(0);
+    expect(r.root.findAll(n => n.props.placeholder === 'Schedule').length).toBeGreaterThan(0);
     await press(r, 'editzone-send');
     expect(txnLog[0][0].cfgGeofence).toMatchObject({ fenceId: 3, action: 0, zoneSlot: 2, confirmFixes: 4, maxHaccM: 10 });
   });
@@ -396,7 +403,10 @@ describe('the zone editor', () => {
     const r = await render(<EditZoneScreen />);
     await type(r, 'editzone-verts', CORNERS);
     await press(r, 'editzone-send');
-    expect(alertSpy).toHaveBeenCalledWith('Zones over Bluetooth', 'Bluetooth zone delivery needs firmware v1.15+ (build 305).');
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Zones over Bluetooth',
+      'This needs a newer collar software version. Update the collar first.',
+    );
     expect(txnLog).toHaveLength(0);
   });
 

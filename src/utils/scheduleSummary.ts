@@ -127,7 +127,7 @@ export function scheduleSummaryLines(s: Schedule): string[] {
   }
   if (s.lorawan?.enabled) {
     out.push(
-      `📡 Uplink ${
+      `📡 Network report ${
         s.gps?.enabled && s.gps.lorawanTxOnGpsFix
           ? 'on every new position'
           : everyText(s.lorawan.sendIntervalMin ?? 60)

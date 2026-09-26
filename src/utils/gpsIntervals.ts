@@ -33,17 +33,17 @@ export function dynamicGpsIntervalError(
   const high = g.highMotionGpsIntervalMin ?? 0;
   if (med && med > base) {
     return (
-      `Medium-motion interval must be no longer than the base interval ` +
-      `(${med} min when walking against ${base} min when still). ` +
-      'The collar takes fixes faster while the animal moves, never slower; 0 means the same as the base interval.'
+      `The walking interval must not be longer than the still interval ` +
+      `(${med} min when walking, ${base} min when still). ` +
+      'The collar takes positions more often while the animal moves, never less often; 0 means the same as when still.'
     );
   }
   const medEff = med || base;
   if (high && high > medEff) {
     return (
-      `High-motion interval must be no longer than the medium-motion interval ` +
-      `(${high} min when running against ${medEff} min when walking). ` +
-      'The collar takes fixes faster while the animal moves, never slower; 0 means the same as the base interval.'
+      `The running interval must not be longer than the walking interval ` +
+      `(${high} min when running, ${medEff} min when walking). ` +
+      'The collar takes positions more often while the animal moves, never less often; 0 means the same as when still.'
     );
   }
   return null;

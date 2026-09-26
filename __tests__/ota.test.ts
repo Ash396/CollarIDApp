@@ -41,6 +41,7 @@ import {
   payloadForMtu,
   radioCapsFrom,
   resetSendMemory,
+  U5_BLE_GATE_REASON,
   sendU5Image,
   updatePolicy,
 } from '../src/ble/ota';
@@ -165,13 +166,13 @@ describe('framing (js/u5-ota.js)', () => {
   });
 
   it('checkU5Image refuses a small image and a radio image, with the website’s words', () => {
-    expect(() => checkU5Image(new Uint8Array(1000))).toThrow('Too small to be a main-processor image');
+    expect(() => checkU5Image(new Uint8Array(1000))).toThrow('This file is too small to be collar software.');
     const wb = new Uint8Array(200 * 1024);
     wb.set([0x00, 0x20, 0x02, 0x20, 0x01, 0x00, 0x01, 0x08], 0); // SP in the radio's 192 KB RAM
-    expect(() => checkU5Image(wb)).toThrow('Not a main-processor (U5) image — check the selected file');
+    expect(() => checkU5Image(wb)).toThrow('This file is not collar software. Check that the right file was picked.');
     const badPc = new Uint8Array(200 * 1024);
     badPc.set([0x00, 0x00, 0x12, 0x20, 0x01, 0x00, 0x01, 0x20], 0);
-    expect(() => checkU5Image(badPc)).toThrow('Not a main-processor');
+    expect(() => checkU5Image(badPc)).toThrow('This file is not collar software');
     expect(checkU5Image(IMG)).toEqual({ sp: 0x20120000, pc: 0x08010001 });
   });
 
@@ -328,7 +329,7 @@ describe('the end of the stream', () => {
   it('a restart after END with the link alive rewinds (the tail never landed)', async () => {
     const { link, log } = fakeRadio({ notify: true, noResp: true, mtu: 185, after: 'restart-alive' });
     await expect(sendU5Image(link, IMG, 'h', quick)).rejects.toThrow(
-      'Transfer kept failing (the relay asked to restart three times)',
+      'The update kept failing (the collar asked to start over three times). Keep the phone next to the collar and try again.',
     );
     expect(log.filter(l => l === 'end')).toHaveLength(3);
   });
@@ -340,7 +341,7 @@ describe('failures the operator must be told apart', () => {
   it('a collar that never stores a batch: too old, update over USB-C', async () => {
     const { link } = fakeRadio({ notify: true, noResp: true, mtu: 185, deaf: true });
     await expect(sendU5Image(link, IMG, 'h', quick)).rejects.toThrow(
-      /The collar stored nothing — its main-processor firmware is too old to update over Bluetooth/,
+      /^The collar did not accept the update: its software is too old to update over Bluetooth\. Update it once with a USB-C cable/,
     );
   });
 
@@ -349,14 +350,14 @@ describe('failures the operator must be told apart', () => {
     await sendU5Image(first.link, IMG, 'h', quick);
     const { link } = fakeRadio({ notify: true, noResp: true, mtu: 185, deaf: true });
     await expect(sendU5Image(link, IMG, 'h', quick)).rejects.toThrow(
-      /accepted data earlier but stopped acknowledging this time/,
+      /took the update earlier but stopped answering this time/,
     );
   });
 
   it('three restarts and never an ack: older than Bluetooth updating', async () => {
     const { link, log } = fakeRadio({ notify: true, noResp: true, mtu: 185, restartEvery: 3 });
     await expect(sendU5Image(link, IMG, 'h', quick)).rejects.toThrow(
-      /The collar stored nothing across three attempts — its main-processor firmware is older than Bluetooth updating/,
+      /^The collar did not accept the update in three attempts: its software is too old to update over Bluetooth/,
     );
     expect(log.filter(l => l.startsWith('restart@'))).toHaveLength(3);
     expect(log.filter(l => l === 'enter')).toHaveLength(3);
@@ -382,7 +383,7 @@ describe('failures the operator must be told apart', () => {
 
   it('a refused image never touches the radio', async () => {
     const { link, writes } = fakeRadio({ notify: true, noResp: true, mtu: 185 });
-    await expect(sendU5Image(link, new Uint8Array(10), 'h', quick)).rejects.toThrow('Too small');
+    await expect(sendU5Image(link, new Uint8Array(10), 'h', quick)).rejects.toThrow('too small to be collar software');
     expect(writes).toEqual([]);
   });
 });
@@ -399,7 +400,7 @@ describe('radioCapsFrom / updatePolicy (the website’s probeRadio / updatePolic
     const p = updatePolicy(caps);
     expect(p.wb.allow).toBe(false);
     expect(p.u5.allow).toBe(true);
-    expect(p.headline).toBe('This radio module cannot be updated over Bluetooth');
+    expect(p.headline).toBe('The collar’s Bluetooth radio software cannot be updated wirelessly');
   });
 
   it('fmt 1 caps: OTA unknown, U5 allowed, radio "safe to try"', () => {
@@ -408,23 +409,25 @@ describe('radioCapsFrom / updatePolicy (the website’s probeRadio / updatePolic
     expect(caps.otaCapable).toBeNull();
     const p = updatePolicy(caps);
     expect(p.wb.allow).toBe(true);
-    expect(p.wb.reason).toMatch(/Radio age unconfirmed/);
+    expect(p.wb.reason).toMatch(/^Could not confirm the Bluetooth radio’s version\. It is safe to try/);
     expect(p.u5.allow).toBe(true);
-    expect(p.headline).toBe('Radio firmware may be out of date');
+    expect(p.headline).toBe('Bluetooth radio software may be out of date');
   });
 
   it('fmt 2, dual-slot but not fast: update the radio first', () => {
     const p = updatePolicy(radioCapsFrom(new Uint8Array([0x43, 0x50, 2, 0x03]), props(false)));
     expect(p.u5.allow).toBe(false);
-    expect(p.u5.reason).toBe('Update the radio first — this then runs several times faster.');
-    expect(p.headline).toBe('Radio firmware is out of date');
+    expect(p.u5.reason).toBe(
+      'Update the Bluetooth radio software first (on the website’s Update Device page); this update then runs several times faster.',
+    );
+    expect(p.headline).toBe('Bluetooth radio software is out of date');
   });
 
   it('fmt 2 without the copier: radio blocked, U5 allowed', () => {
     const p = updatePolicy(radioCapsFrom(new Uint8Array([0x43, 0x50, 2, 0x01]), props(false)));
     expect(p.wb.allow).toBe(false);
     expect(p.u5.allow).toBe(true);
-    expect(p.headline).toBe('This radio module cannot be updated over Bluetooth yet');
+    expect(p.headline).toBe('The collar’s Bluetooth radio software cannot be updated wirelessly yet');
   });
 
   it('a notifying radio is positively current whatever its caps say', () => {
@@ -433,7 +436,7 @@ describe('radioCapsFrom / updatePolicy (the website’s probeRadio / updatePolic
     expect(caps.otaCapable).toBe(true);
     const p = updatePolicy(caps);
     expect(p.u5.allow).toBe(true);
-    expect(p.headline).toBe('Radio firmware is up to date');
+    expect(p.headline).toBe('Bluetooth radio software is up to date');
     const legacyButNotifies = radioCapsFrom(null, props(true));
     expect(updatePolicy(legacyButNotifies).u5.allow).toBe(true);
   });
@@ -449,7 +452,10 @@ describe('radioCapsFrom / updatePolicy (the website’s probeRadio / updatePolic
     for (const c of all) {
       const p = updatePolicy(c);
       expect(`${p.headline} ${p.u5.reason} ${p.wb.reason}`).not.toMatch(/WB5M|WB15/);
+      // plain words for non-technical users
+      expect(`${p.headline} ${p.u5.reason} ${p.wb.reason}`).not.toMatch(/firmware|module|main.processor|\bU5\b/i);
     }
+    expect(U5_BLE_GATE_REASON).not.toMatch(/firmware|main.processor|\bU5\b/i);
   });
 });
 

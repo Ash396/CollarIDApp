@@ -20,17 +20,20 @@ interface CollarCardProps {
 // bit 7 = diagnostics ran). Same order as firmware hw_diag.h. Index = fault
 // bit; bit 7 is the validity flag, so index 7 is a hole and the microphone
 // (fw 306+) reports on bit 8.
+// Plain names (what the schedule editor calls each sensor), not part numbers.
 const DIAG_NAMES = [
-  "accelerometer",
-  "magnetometer",
+  "movement sensor",
+  "compass",
   "light sensor",
-  "environmental (BME688)",
+  "weather sensor",
   "GPS",
-  "particulate",
-  "LoRa radio",
+  "particulate sensor",
+  "long-range radio",
   "",
   "microphone",
 ];
+// old: "accelerometer", "magnetometer", "light sensor", "environmental (BME688)",
+//      "GPS", "particulate", "LoRa radio", "", "microphone"
 
 function hwDiagFaultNames(diag?: number): string | null {
   const faults =
@@ -85,7 +88,7 @@ export default function CollarCard({
       <View style={styles.headerRow}>
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.statusText}>
-          {connected ? "🟢 Connected" : "⚪ Discovered"}
+          {connected ? "🟢 Connected" : "⚪ Nearby"}
         </Text>
       </View>
 
@@ -94,7 +97,7 @@ export default function CollarCard({
         {formatSD(sdTotal)}
       </Text>
       {connected && firmwareVersion ? (
-        <Text style={styles.meta}>Firmware: {fwLabel}</Text>
+        <Text style={styles.meta}>Software version: {fwLabel}</Text>
       ) : null}
       {lastUpdate && (
         <Text style={styles.meta}>Last seen: {lastUpdate}</Text>
@@ -104,8 +107,8 @@ export default function CollarCard({
         <View style={styles.diagBox}>
           <Text style={styles.diagTitle}>Hardware issue detected</Text>
           <Text style={styles.diagText}>
-            The collar's boot self-test failed for: {faultNames}. It keeps
-            working, but the affected subsystem(s) won't record until
+            The collar's start-up check found a problem with: {faultNames}.
+            The collar keeps working, but these parts won't record until it is
             serviced.
           </Text>
         </View>
@@ -124,7 +127,7 @@ export default function CollarCard({
             style={[styles.button, styles.dfuButton]}
             onPress={onEnterDfu}
           >
-            <Text style={styles.buttonText}>DFU</Text>
+            <Text style={styles.buttonText}>USB update mode</Text>
           </TouchableOpacity>
         </View>
       ) : (

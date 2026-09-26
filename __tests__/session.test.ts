@@ -87,9 +87,9 @@ describe('sign in', () => {
     expect(Keychain.setGenericPassword).not.toHaveBeenCalled();
   });
 
-  it('says "Invalid credentials" for a bare 401', async () => {
+  it('says "Wrong username or password." for a bare 401', async () => {
     fetchMock.mockResolvedValueOnce(resp(401));
-    await expect(api.login('u', 'p')).rejects.toThrow('Invalid credentials');
+    await expect(api.login('u', 'p')).rejects.toThrow('Wrong username or password.');
   });
 
   it('says the server cannot be reached when the request never lands', async () => {
@@ -100,10 +100,15 @@ describe('sign in', () => {
   });
 
   it('does not blame the password for a server error', async () => {
+    // Plain words, no status codes (the app is for non-technical users).
     fetchMock.mockResolvedValueOnce(resp(502));
-    await expect(api.login('u', 'p')).rejects.toThrow('HTTP 502');
+    await expect(api.login('u', 'p')).rejects.toThrow(
+      'The CollarID server can’t sign you in right now. Try again later.',
+    );
     fetchMock.mockResolvedValueOnce(resp(422, { detail: [{ msg: 'field required' }] }));
-    await expect(api.login('u', 'p')).rejects.toThrow('HTTP 422');
+    await expect(api.login('u', 'p')).rejects.toThrow(
+      'The CollarID server can’t sign you in right now. Try again later.',
+    );
   });
 
   it('stays signed in for this run if the Keychain refuses the token', async () => {
@@ -293,7 +298,10 @@ describe('sign out and expiry', () => {
   it('keeps the old error messages for existing callers', async () => {
     await signIn();
     fetchMock.mockResolvedValueOnce(resp(500));
-    await expect(api.listPresets()).rejects.toThrow('HTTP 500');
+    // The message is plain words now (serverStatusText); the status stays on the error.
+    await expect(api.listPresets()).rejects.toThrow('The CollarID server can’t do this right now. Try again later.');
+    fetchMock.mockResolvedValueOnce(resp(500));
+    expect(((await api.listPresets().catch(e => e)) as any).status).toBe(500);
     fetchMock.mockRejectedValueOnce(new TypeError('Network request failed'));
     const err: any = await api.listPresets().catch(e => e);
     expect(err).toBeInstanceOf(api.ApiError);

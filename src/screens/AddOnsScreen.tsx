@@ -60,16 +60,16 @@ function AddonCard({
     const epoch = toUnixEpochSecondsFromLocal(armDate, armTime);
     if (epoch === undefined) {
       Alert.alert(
-        'Invalid value',
-        'Detach date/time must be valid (YYYY-MM-DD and HH:MM).',
+        'Check the detach time',
+        'Enter the detach time as a date (YYYY-MM-DD) and a time (HH:MM).',
       );
       return;
     }
     if (epoch * 1000 < Date.now()) {
-      Alert.alert('Invalid value', 'Detach time is in the past.');
+      Alert.alert('Check the detach time', 'The detach time is in the past. Pick a time in the future.');
       return;
     }
-    onCommand(addon.uid, DT_CMD.ARM, epoch, 'Detach time armed.');
+    onCommand(addon.uid, DT_CMD.ARM, epoch, 'Detach time set.');
   };
 
   return (
@@ -84,7 +84,7 @@ function AddonCard({
         {addon.paired ? '🔗 paired' : '⚪ unpaired'}
         {addon.fired ? '  ·  🔴 detached' : ''}
         {'  ·  '}
-        {addon.battMv ? `${(addon.battMv / 1000).toFixed(2)} V` : 'batt n/a'}
+        {addon.battMv ? `${(addon.battMv / 1000).toFixed(2)} V` : 'battery unknown'}
         {'  ·  '}
         {MOTOR_STATE_LABELS[addon.motorState] ?? '?'}
       </Text>
@@ -101,13 +101,13 @@ function AddonCard({
           <TouchableOpacity
             style={styles.primaryBtn}
             onPress={() =>
-              onCommand(addon.uid, DT_CMD.PAIR, 0, 'Pairing commanded.')
+              onCommand(addon.uid, DT_CMD.PAIR, 0, 'Pairing request sent.')
             }
           >
             <Text style={styles.primaryBtnText}>🔗 Pair with this collar</Text>
           </TouchableOpacity>
           <Text style={styles.helper}>
-            Pair to enable configuration and detach control.
+            Pair it to set it up and control the detach.
           </Text>
         </View>
       ) : addon.type === 1 ? (
@@ -136,7 +136,7 @@ function AddonCard({
             <TouchableOpacity
               style={styles.smallBtn}
               onPress={() =>
-                onCommand(addon.uid, DT_CMD.DISARM, 0, 'Disarmed.')
+                onCommand(addon.uid, DT_CMD.DISARM, 0, 'Detach time cleared.')
               }
             >
               <Text style={styles.smallBtnText}>Disarm</Text>
@@ -148,7 +148,7 @@ function AddonCard({
                   addon.uid,
                   DT_CMD.ATTACH,
                   0,
-                  'Attach commanded (gentle, 50% duty).',
+                  'Attach request sent (motor at half power).',
                 )
               }
             >
@@ -170,7 +170,7 @@ function AddonCard({
                           addon.uid,
                           DT_CMD.DETACH,
                           0,
-                          'Detach commanded.',
+                          'Detach request sent.',
                         ),
                     },
                   ],
@@ -182,21 +182,21 @@ function AddonCard({
             <TouchableOpacity
               style={styles.smallBtn}
               onPress={() =>
-                onCommand(addon.uid, DT_CMD.STOP, 0, 'Stop commanded.')
+                onCommand(addon.uid, DT_CMD.STOP, 0, 'Stop request sent.')
               }
             >
               <Text style={styles.smallBtnText}>Stop</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.label}>Check-in cadence</Text>
+          <Text style={styles.label}>Check-in every</Text>
           <View style={styles.rowGap}>
             <View style={{ flex: 1 }}>
               <StyledPicker
                 selectedValue={checkin}
                 onValueChange={v => setCheckin(Number(v))}
                 items={checkinOptions}
-                placeholder="Check-in cadence"
+                placeholder="Check-in interval"
               />
             </View>
             <TouchableOpacity
@@ -206,7 +206,7 @@ function AddonCard({
                   addon.uid,
                   DT_CMD.SET_CHECKIN,
                   checkin,
-                  `Check-in cadence set to ${checkinLabel(checkin)}.`,
+                  `Check-in set to every ${checkinLabel(checkin)}.`,
                 )
               }
             >
@@ -214,8 +214,8 @@ function AddonCard({
             </TouchableOpacity>
           </View>
           <Text style={styles.helper}>
-            The collar tracks its fastest paired add-on and re-provisions this
-            node to match.
+            The collar follows its fastest-checking add-on and sets this
+            add-on to match.
           </Text>
 
           <TouchableOpacity
@@ -230,7 +230,7 @@ function AddonCard({
                     text: 'Unpair',
                     style: 'destructive',
                     onPress: () =>
-                      onCommand(addon.uid, DT_CMD.UNPAIR, 0, 'Unpair commanded.'),
+                      onCommand(addon.uid, DT_CMD.UNPAIR, 0, 'Unpair request sent.'),
                   },
                 ],
               )
@@ -272,7 +272,7 @@ function DtDirectPanel({
     setError(null);
     const inf = await readDtInfo(device);
     if (!inf) {
-      setError('Unexpected state payload — is this a detach node?');
+      setError('This device did not answer like a release unit. Is it a CollarDT?');
       return;
     }
     setInfo(inf);
@@ -298,7 +298,7 @@ function DtDirectPanel({
       // firmware republishes state after handling; give it a beat
       setTimeout(refresh, isMockDt(device) ? 50 : 600);
     } catch (e: any) {
-      setError(`Command failed: ${e?.message ?? e}`);
+      setError(`The release unit did not get the command. ${e?.message ?? e}`);
     }
   };
 
@@ -306,16 +306,16 @@ function DtDirectPanel({
     const epoch = toUnixEpochSecondsFromLocal(armDate, armTime);
     if (epoch === undefined) {
       Alert.alert(
-        'Invalid value',
-        'Detach date/time must be valid (YYYY-MM-DD and HH:MM).',
+        'Check the detach time',
+        'Enter the detach time as a date (YYYY-MM-DD) and a time (HH:MM).',
       );
       return;
     }
     if (epoch * 1000 < Date.now()) {
-      Alert.alert('Invalid value', 'Detach time is in the past.');
+      Alert.alert('Check the detach time', 'The detach time is in the past. Pick a time in the future.');
       return;
     }
-    cmd(DT_CMD.ARM, epoch, 'Detach time armed.');
+    cmd(DT_CMD.ARM, epoch, 'Detach time set.');
   };
 
   const fmtIv = (s: number) =>
@@ -357,14 +357,14 @@ function DtDirectPanel({
       {info && (
         <>
           <View style={styles.statGrid}>
-            <DtStat label="Firmware" value={`v${info.fw}`} />
-            <DtStat label="Git hash" value={info.gitHash} />
-            <DtStat label="Uptime" value={formatAge(info.uptimeS)} />
+            <DtStat label="Software version" value={`v${info.fw}`} />
+            <DtStat label="Software ID" value={info.gitHash} />
+            <DtStat label="On for" value={formatAge(info.uptimeS)} />
             <DtStat
-              label="Armed detach"
+              label="Detach time"
               value={
                 info.fired
-                  ? 'fired'
+                  ? 'released'
                   : info.detachEpoch
                   ? new Date(info.detachEpoch * 1000).toLocaleString()
                   : 'not armed'
@@ -379,10 +379,10 @@ function DtDirectPanel({
               value={MOTOR_STATE_LABELS[info.motorState] ?? `? (${info.motorState})`}
             />
             <DtStat
-              label="Node clock (UTC)"
+              label="Clock (UTC)"
               value={
                 info.rtcEpoch === null
-                  ? 'n/a (old fw)'
+                  ? 'n/a (older software)'
                   : info.rtcEpoch
                   ? new Date(info.rtcEpoch * 1000)
                       .toISOString()
@@ -395,11 +395,11 @@ function DtDirectPanel({
               label="Check-in"
               value={
                 info.mode === 0
-                  ? 'standalone'
+                  ? 'standalone (no collar)'
                   : info.checkinIntervalS === null
-                  ? 'n/a (old fw)'
+                  ? 'n/a (older software)'
                   : inVigil
-                  ? 'every 5 min · detach watch'
+                  ? 'every 5 min (detach time is near)'
                   : fmtIv(info.checkinIntervalS)
               }
             />
@@ -407,7 +407,7 @@ function DtDirectPanel({
               label="Paired to"
               value={
                 info.pairedUid === null
-                  ? 'n/a (old fw)'
+                  ? 'n/a (older software)'
                   : info.pairedUid
                   ? '0x' +
                     info.pairedUid.toString(16).toUpperCase().padStart(8, '0')
@@ -415,17 +415,17 @@ function DtDirectPanel({
               }
             />
             <DtStat
-              label="Loaded (under motor)"
+              label="Battery under load"
               value={
                 info.loadedMv === null
-                  ? 'n/a (old fw)'
+                  ? 'n/a (older software)'
                   : info.loadedMv
                   ? `${(info.loadedMv / 1000).toFixed(3)} V`
-                  : 'no sample'
+                  : 'not measured yet'
               }
             />
             <DtStat
-              label="Sag (rest − load)"
+              label="Battery drop under load"
               value={
                 info.loadedMv && info.battMv
                   ? `${info.battMv - info.loadedMv} mV`
@@ -433,15 +433,16 @@ function DtDirectPanel({
               }
             />
             <DtStat
-              label="Die temp"
+              label="Chip temperature"
               value={info.dieTempC === null ? 'n/a' : `${info.dieTempC} °C`}
             />
           </View>
 
           <Text style={styles.label}>Motor control</Text>
           <Text style={styles.helper}>
-            Runs until stopped or 30 s timeout. No stall feedback — the
-            mechanism holds at its end-stop until the timer ends the run.
+            Runs until you press Stop, or for 30 seconds at most. The motor
+            cannot tell when it reaches the end, so it keeps pushing until the
+            30 seconds are up.
           </Text>
           <View style={styles.rowGap}>
             <TouchableOpacity
@@ -453,7 +454,7 @@ function DtDirectPanel({
                     text: 'Run Detach',
                     style: 'destructive',
                     onPress: () =>
-                      cmd(DT_CMD.DETACH, 0, 'Detach run commanded (max 30 s).'),
+                      cmd(DT_CMD.DETACH, 0, 'Detach motor running (30 seconds at most).'),
                   },
                 ])
               }
@@ -463,14 +464,14 @@ function DtDirectPanel({
             <TouchableOpacity
               style={styles.smallBtn}
               onPress={() =>
-                cmd(DT_CMD.ATTACH, 0, 'Attach run commanded (max 30 s).')
+                cmd(DT_CMD.ATTACH, 0, 'Attach motor running (30 seconds at most).')
               }
             >
               <Text style={styles.smallBtnText}>◂ Run Attach</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.smallBtn}
-              onPress={() => cmd(DT_CMD.STOP, 0, 'Stop commanded.')}
+              onPress={() => cmd(DT_CMD.STOP, 0, 'Stop sent.')}
             >
               <Text style={styles.smallBtnText}>■ Stop</Text>
             </TouchableOpacity>
@@ -478,8 +479,8 @@ function DtDirectPanel({
 
           <Text style={styles.label}>Scheduled detach</Text>
           <Text style={styles.helper}>
-            Local time below is converted to UTC. The node fires on its own
-            RTC — no phone needed.
+            Enter your local time. The release unit keeps its own clock and
+            releases on time without the phone.
           </Text>
           <View style={styles.rowGap}>
             <TextInput
@@ -501,7 +502,7 @@ function DtDirectPanel({
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.smallBtn}
-              onPress={() => cmd(DT_CMD.DISARM, 0, 'Disarmed.')}
+              onPress={() => cmd(DT_CMD.DISARM, 0, 'Detach time cleared.')}
             >
               <Text style={styles.smallBtnText}>Disarm</Text>
             </TouchableOpacity>
@@ -511,9 +512,9 @@ function DtDirectPanel({
             <View style={{ flex: 1, paddingRight: 10 }}>
               <Text style={styles.label}>Low-battery auto-detach</Text>
               <Text style={styles.helper}>
-                If the cell nears end-of-life the mechanism releases the collar
-                on its own. Fires only above 0 °C, after hours of thaw — never
-                in freezing conditions.
+                If the battery is nearly worn out, the release unit drops the
+                collar on its own. It only does this above 0 °C, after several
+                hours of thaw, never in freezing conditions.
               </Text>
             </View>
             <Switch
@@ -531,14 +532,14 @@ function DtDirectPanel({
 
           <View style={[styles.rowBetween, { marginTop: 12 }]}>
             <Text style={styles.helper}>
-              Load test: brief stall pulse into the seated end-stop; samples
-              the cell under motor load.
+              Battery test: runs the motor briefly against its stop to measure
+              the battery under load.
             </Text>
             <TouchableOpacity
               style={styles.smallBtn}
-              onPress={() => cmd(DT_CMD.LOAD_TEST, 0, 'Load sample taken.')}
+              onPress={() => cmd(DT_CMD.LOAD_TEST, 0, 'Battery measured under load.')}
             >
-              <Text style={styles.smallBtnText}>◎ Load test</Text>
+              <Text style={styles.smallBtnText}>◎ Battery test</Text>
             </TouchableOpacity>
           </View>
 
@@ -569,7 +570,7 @@ function DtDirectPanel({
               onPress={() =>
                 Alert.alert(
                   'Factory reset?',
-                  'Clears pairing and any armed detach time — the device reboots.',
+                  'Clears pairing and any detach time, then the release unit restarts.',
                   [
                     { text: 'Cancel', style: 'cancel' },
                     {
@@ -579,7 +580,7 @@ function DtDirectPanel({
                         cmd(
                           DT_CMD.FACTORY_RESET,
                           0,
-                          'Factory reset — device is rebooting (reconnect via magnet swipe).',
+                          'Factory reset: the release unit is restarting. Swipe the magnet over it to reconnect.',
                         ),
                     },
                   ],
@@ -634,11 +635,14 @@ export default function AddOnsScreen() {
     try {
       await sendDtFwdCommand(device, uid, c, param);
       setRelayNote(
-        `${okMsg} Delivered if the add-on is checked in — refreshing…`,
+        `${okMsg} The add-on gets it at its next check-in. Refreshing…`,
       );
       setTimeout(refreshAddons, 2500);
     } catch (e: any) {
-      Alert.alert('Command failed', e?.message ?? String(e));
+      Alert.alert(
+        'Command failed',
+        `The collar could not pass the command on.\nDetails: ${e?.message ?? String(e)}`,
+      );
     }
   };
 
@@ -688,7 +692,12 @@ export default function AddOnsScreen() {
       await connected.discoverAllServicesAndCharacteristics();
       setDtDevice(connected);
     } catch (e: any) {
-      Alert.alert('Connect failed', e?.message ?? String(e));
+      Alert.alert(
+        'Connect failed',
+        `Could not connect to the release unit. Swipe the magnet over it and try again.\nDetails: ${
+          e?.message ?? String(e)
+        }`,
+      );
     }
   };
 
@@ -706,28 +715,27 @@ export default function AddOnsScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.header}>ADD-ONS</Text>
       <Text style={styles.sub}>
-        Detachment nodes and other Thread add-ons — via the connected collar,
-        or connected directly over Bluetooth.
+        Release units and other add-ons, through the connected collar or
+        directly over Bluetooth.
       </Text>
 
       {/* ── Via the collar ── */}
-      <Text style={styles.sectionHead}>Via connected collar</Text>
+      <Text style={styles.sectionHead}>Through the connected collar</Text>
       {!device ? (
         <Text style={styles.hint}>
           Connect to a collar on the Home tab to see the add-ons it has heard.
         </Text>
       ) : !gates.threadAddons ? (
         <Text style={styles.hint}>
-          This collar's firmware doesn't relay add-ons over Bluetooth
-          {fwBuild ? ` (build ${fwBuild})` : ''}. Add-ons can still be managed
-          with a direct connection below.
+          This collar's software can't pass add-on commands over Bluetooth.
+          You can still manage add-ons with a direct connection below.
         </Text>
       ) : (
         <>
           <View style={styles.rowBetween}>
             <Text style={styles.hint}>
-              Add-ons announce themselves when they check in with the collar.
-              Magnet-wake an unpaired one nearby, then Refresh.
+              Add-ons show up when they check in with the collar. Swipe the
+              magnet over an unpaired one nearby to wake it, then tap Refresh.
             </Text>
             <TouchableOpacity style={styles.smallBtn} onPress={refreshAddons}>
               <Text style={styles.smallBtnText}>↻ Refresh</Text>
@@ -735,7 +743,7 @@ export default function AddOnsScreen() {
           </View>
           {relayNote && <Text style={styles.noteText}>{relayNote}</Text>}
           {addons === null ? (
-            <Text style={styles.hint}>Reading local device list…</Text>
+            <Text style={styles.hint}>Reading the collar’s add-on list…</Text>
           ) : addons.length === 0 ? (
             <Text style={styles.hint}>No add-ons heard yet.</Text>
           ) : (
@@ -753,15 +761,15 @@ export default function AddOnsScreen() {
       ) : (
         <>
           <Text style={styles.hint}>
-            Swipe the magnet on the node to wake it — it advertises for 2
-            minutes as CollarDT-…
+            Swipe the magnet over the release unit to wake it. It can be found
+            for 2 minutes, named CollarDT-…
           </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
             onPress={scanning ? stopDtScan : startDtScan}
           >
             <Text style={styles.primaryBtnText}>
-              {scanning ? 'Stop scan' : 'Scan for CollarDT'}
+              {scanning ? 'Stop looking' : 'Look for CollarDT'}
             </Text>
           </TouchableOpacity>
           {found.map(f => (
@@ -777,7 +785,7 @@ export default function AddOnsScreen() {
             </TouchableOpacity>
           ))}
           {scanning && (
-            <Text style={styles.hint}>Scanning… ({found.length} found)</Text>
+            <Text style={styles.hint}>Looking… ({found.length} found)</Text>
           )}
           {__DEV__ && (
             <TouchableOpacity

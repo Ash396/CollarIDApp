@@ -194,9 +194,11 @@ describe('the card on Home', () => {
     const r = await render(<HomeScreen />);
     expect(byId(r, 'beaconkey-card')).toBeTruthy();
     expect(collarLog).toEqual(['status']);
-    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Plaintext (no key)');
+    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Encryption: off');
     expect(textOf(byId(r, 'beaconkey-server')!)).toBe('Server record: no key issued for this collar.');
     expect(textOf(byId(r, 'beaconkey-card')!)).not.toMatch(/WB5M|WB15/);
+    // Plain words for non-technical users: no generation, KCV or plaintext.
+    expect(textOf(byId(r, 'beaconkey-card')!)).not.toMatch(/generation|KCV|plaintext|provision/i);
   });
 
   it('is hidden below the gate, and hidden when the collar’s echo carries no report', async () => {
@@ -223,14 +225,14 @@ describe('the card on Home', () => {
 const Card = () => <BeaconKeyCard device={FAKE_DEVICE as any} uid="0x0025001C" />;
 
 describe('the card', () => {
-  it('a keyed collar: the badge names the generation and KCV, the status line the state; stale is called out', async () => {
+  it('a keyed collar: the badge says encryption is on, the status line the state; stale is called out', async () => {
     Object.assign(mockCollar, { state: 1, gen: 7, kcv: '2b1a1e', result: 1 });
     mockServerStatus = { ...mockServerStatus, state: 'provisioned', keyed: true, gen: 7, kcv: '2b1a1e', stale: true };
     const r = await render(<Card />);
-    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Encrypted · generation 7 · KCV 2b1a1e');
-    expect(textOf(byId(r, 'beaconkey-status')!)).toMatch(/^Encrypted: the collar sends its lost-mode beacon encrypted under this key\./);
+    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Encryption: on');
+    expect(textOf(byId(r, 'beaconkey-status')!)).toMatch(/^On: the collar’s lost-mode beacon is encrypted\./);
     expect(textOf(byId(r, 'beaconkey-server')!)).toBe(
-      'Server record: provisioned at generation 7 (KCV 2b1a1e). This collar’s key is older than the organisation’s current generation — provision again.',
+      'Server record: key installed on this collar. This collar’s key is out of date: install keys again.',
     );
     expect(byId(r, 'beaconkey-clear')!.props.disabled).toBe(false);
     expect(byId(r, 'beaconkey-provision')!.props.disabled).toBe(false);
@@ -240,7 +242,7 @@ describe('the card', () => {
     mockServerStatus = { ...mockServerStatus, kek_configured: false };
     const r = await render(<Card />);
     expect(byId(r, 'beaconkey-provision')!.props.disabled).toBe(true);
-    expect(textOf(byId(r, 'beaconkey-server')!)).toMatch(/^The server has no key store configured/);
+    expect(textOf(byId(r, 'beaconkey-server')!)).toMatch(/^The CollarID server is not set up to issue keys yet/);
     expect(byId(r, 'beaconkey-clear')!.props.disabled).toBe(true); // nothing to remove
   });
 
@@ -249,29 +251,31 @@ describe('the card', () => {
     await press(r, 'beaconkey-provision');
     expect(alertSpy).toHaveBeenCalledTimes(1);
     const [title, msg] = alertSpy.mock.calls[0];
-    expect(title).toBe('Provision beacon encryption keys');
-    expect(msg).toMatch(/^Provision beacon encryption keys for 0x0025001C from the CollarID server\?/);
+    expect(title).toBe('Turn on beacon encryption');
+    expect(msg).toMatch(/^Install beacon encryption keys for 0x0025001C from the CollarID server\?/);
     expect(msg).toMatch(/need the key \(the website’s Handheld Relay page, signed in\)\.$/);
     expect(serverLog).toEqual([]);
     await confirmAlert(alertSpy);
     expect(serverLog[0]).toEqual(['issue', '0x0025001C', { collar_gen: 0, collar_kcv: '' }]);
     expect(collarLog).toEqual(['status', 'status', 'set 7']);
     expect(serverLog[1]).toEqual(['provisioned', '0x0025001C', { gen: 7, kcv: '2b1a1e' }]);
-    expect(textOf(byId(r, 'beaconkey-progress')!)).toBe('provisioned ✓ generation 7, KCV 2b1a1e, confirmed by the collar');
+    expect(textOf(byId(r, 'beaconkey-progress')!)).toBe('key installed ✓ confirmed by the collar (key fingerprint 2b1a1e)');
     expect(textOf(byId(r, 'beaconkey-message')!)).toBe(
-      'Beacon encryption provisioned: the lost-mode beacon is encrypted from the next beacon on.',
+      'Beacon encryption is on: the lost-mode beacon is encrypted from the next beacon on.',
     );
-    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Encrypted · generation 7 · KCV 2b1a1e');
-    expect(textOf(byId(r, 'beaconkey-server')!)).toBe('Server record: provisioned at generation 7 (KCV 2b1a1e).');
+    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Encryption: on');
+    expect(textOf(byId(r, 'beaconkey-server')!)).toBe('Server record: key installed on this collar.');
     expect(textOf(r)).not.toMatch(new RegExp(KEY_HEX)); // the key is never shown
   });
 
-  it('a refused provision shows the reason after "Provisioning:" and re-reads both sides', async () => {
+  it('a refused provision shows the reason after "Could not install keys:" and re-reads both sides', async () => {
     mockIssueError = new ApiError(409, 'HTTP 409', 'gen 255 reached');
     const r = await render(<Card />);
     await press(r, 'beaconkey-provision');
     await confirmAlert(alertSpy);
-    expect(textOf(byId(r, 'beaconkey-message')!)).toBe('Provisioning: the server refused: gen 255 reached');
+    expect(textOf(byId(r, 'beaconkey-message')!)).toBe(
+      'Could not install keys: the server has no new key for this collar. Ask your administrator to rotate keys (details: gen 255 reached)',
+    );
     expect(collarLog).toEqual(['status', 'status', 'status']);
     expect(byId(r, 'beaconkey-progress')).toBeUndefined();
   });
@@ -284,7 +288,8 @@ describe('the card', () => {
     // the fake server issues max(9, 6) + 1 = 10; make the collar refuse
     // by pretending it already moved on
     expect(collarLog).toContain('set 10');
-    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Encrypted · generation 10 · KCV 2b1a1e');
+    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Encryption: on');
+    // old: 'Encrypted · generation 10 · KCV 2b1a1e' (the badge no longer names the generation; 'set 10' above does)
   });
 
   it('Remove keys: the website’s confirmation, CLEAR, the server told, the outcome', async () => {
@@ -293,17 +298,17 @@ describe('the card', () => {
     const r = await render(<Card />);
     await press(r, 'beaconkey-clear');
     const [title, msg] = alertSpy.mock.calls[0];
-    expect(title).toBe('Remove beacon encryption keys');
+    expect(title).toBe('Turn off beacon encryption');
     expect(msg).toMatch(/^Remove the beacon encryption keys from 0x0025001C\?/);
-    expect(msg).toMatch(/The counter is kept, so a later key starts at a fresh generation\.$/);
+    expect(msg).toMatch(/You can install keys again later\.$/);
     await confirmAlert(alertSpy);
     expect(collarLog).toEqual(['status', 'clear']);
     expect(serverLog).toEqual([['clear', '0x0025001C']]);
-    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Plaintext (no key)');
+    expect(textOf(byId(r, 'beaconkey-badge')!)).toBe('Encryption: off');
     expect(textOf(byId(r, 'beaconkey-message')!)).toBe(
-      'Beacon encryption removed: the lost-mode beacon is plaintext from the next beacon on.',
+      'Beacon encryption is off: the lost-mode beacon is not encrypted from the next beacon on.',
     );
-    expect(textOf(byId(r, 'beaconkey-server')!)).toMatch(/cleared \(plaintext\)/);
+    expect(textOf(byId(r, 'beaconkey-server')!)).toBe('Server record: no key (encryption off).');
   });
 
   it('signed out: Provision is off and says why; Remove keys clears the collar without the server', async () => {
@@ -317,6 +322,6 @@ describe('the card', () => {
     await confirmAlert(alertSpy);
     expect(collarLog).toEqual(['status', 'clear']);
     expect(serverLog).toEqual([]);
-    expect(textOf(byId(r, 'beaconkey-progress')!)).toBe('key removed ✓ plaintext beacons');
+    expect(textOf(byId(r, 'beaconkey-progress')!)).toBe('key removed ✓ beacon no longer encrypted');
   });
 });

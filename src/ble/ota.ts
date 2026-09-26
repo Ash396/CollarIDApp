@@ -100,9 +100,9 @@ export function isU5BleSafe(build: number): boolean {
 
 /** The website's words for a blocked collar. */
 export const U5_BLE_GATE_REASON =
-  'This collar runs firmware older than v1.14.0, which cannot be updated safely over ' +
-  'Bluetooth. Update it once over USB-C (the website’s Update Device page) — after that, ' +
-  'every future update can be wireless.';
+  'This collar’s software is too old to update safely over Bluetooth. Update it once with ' +
+  'a USB-C cable (on the website’s Update Device page); after that, every update can be ' +
+  'wireless.';
 
 /* ── CRC-32 (poly 0xEDB88320 reflected, init 0xFFFFFFFF, final inversion) ── */
 
@@ -253,11 +253,11 @@ export function buildDataFrame(seq: number, chunk: Uint8Array): Uint8Array {
  *  reach — refuse anything that isn't clearly a U5 image. Throws the
  *  website's message. */
 export function checkU5Image(bytes: Uint8Array): { sp: number; pc: number } {
-  if (bytes.length < 100 * 1024) throw new Error('Too small to be a main-processor image');
+  if (bytes.length < 100 * 1024) throw new Error('This file is too small to be collar software.');
   const sp = rd32le(bytes, 0);
   const pc = rd32le(bytes, 4);
   if (sp < 0x20100000 || sp > 0x20280000 || (pc & 0xff000000) !== 0x08000000) {
-    throw new Error('Not a main-processor (U5) image — check the selected file');
+    throw new Error('This file is not collar software. Check that the right file was picked.');
   }
   return { sp, pc };
 }
@@ -392,33 +392,38 @@ export function updatePolicy(caps: RadioCaps): UpdatePolicy {
   let wb: { allow: boolean; reason: string };
   let headline: string | undefined;
   if (legacy) {
-    headline = 'This radio module cannot be updated over Bluetooth';
-    wb = { allow: false, reason: 'This module cannot be upgraded over the air.' };
+    headline = 'The collar’s Bluetooth radio software cannot be updated wirelessly';
+    wb = { allow: false, reason: 'This Bluetooth radio cannot be updated wirelessly.' };
   } else if (noCopier) {
-    headline = 'This radio module cannot be updated over Bluetooth yet';
+    headline = 'The collar’s Bluetooth radio software cannot be updated wirelessly yet';
     wb = {
       allow: false,
-      reason: 'This module cannot be upgraded over the air yet — one wired service visit enables it.',
+      reason: 'This Bluetooth radio cannot be updated wirelessly yet; one wired service visit enables it.',
     };
   } else {
     wb = {
       allow: true,
       reason:
         caps.otaCapable === null
-          ? 'Radio age unconfirmed. Safe to try — an incapable module refuses it within seconds, having changed nothing.'
+          ? 'Could not confirm the Bluetooth radio’s version. It is safe to try: if it cannot be updated, it says so within seconds and nothing changes.'
           : '',
     };
   }
 
   let u5: { allow: boolean; reason: string };
   if (caps.fastDfu) {
-    headline = headline || 'Radio firmware is up to date';
+    headline = headline || 'Bluetooth radio software is up to date';
     u5 = { allow: true, reason: '' };
   } else if (wb.allow && caps.otaCapable === true) {
-    headline = headline || 'Radio firmware is out of date';
-    u5 = { allow: false, reason: 'Update the radio first — this then runs several times faster.' };
+    headline = headline || 'Bluetooth radio software is out of date';
+    u5 = {
+      allow: false,
+      reason: 'Update the Bluetooth radio software first (on the website’s Update Device page); this update then runs several times faster.',
+    };
   } else {
-    headline = headline || (wb.allow ? 'Radio firmware may be out of date' : 'Radio firmware is out of date');
+    headline =
+      headline ||
+      (wb.allow ? 'Bluetooth radio software may be out of date' : 'Bluetooth radio software is out of date');
     u5 = { allow: true, reason: '' };
   }
   return { u5, wb, headline };
@@ -576,7 +581,12 @@ export async function sendU5Image(
         link.write(b, withResponse),
         new Promise<void>((_, rej) => {
           timer = setTimeout(
-            () => rej(new Error(`BLE write stalled (${b.length} B) — link or MTU problem`)),
+            () =>
+              rej(
+                new Error(
+                  'The Bluetooth connection stalled while sending. Keep the phone next to the collar and try again.',
+                ),
+              ),
             WRITE_TIMEOUT_MS,
           );
         }),
@@ -655,7 +665,7 @@ export async function sendU5Image(
         tr('ack.other', { via: 'notify', bytes: v.bytes, code: '0x' + v.code.toString(16) });
       }
       tr('ack.timeout', { via: 'notify' });
-      throw new Error(`Timed out waiting for the collar to store a batch (${Math.round(budget / 1000)} s)`);
+      throw new Error('The collar stopped answering while saving the update. Keep the phone next to the collar and try again.');
     }
 
     let polls = 0;
@@ -667,7 +677,9 @@ export async function sendU5Image(
         b = await link.read();
       } catch (e: any) {
         tr('ack.readFail', { err: e?.message, afterMs: now() - t0 });
-        throw new Error('BLE read failed while waiting for the collar: ' + e?.message);
+        throw new Error(
+          'Lost touch with the collar over Bluetooth while it was saving the update. Keep the phone next to the collar and try again.',
+        );
       }
       polls++;
       const h = hex(b, 8);
@@ -687,7 +699,7 @@ export async function sendU5Image(
       }
     }
     tr('ack.timeout', { polls, lastSeen });
-    throw new Error(`Timed out waiting for the collar to store a batch (${Math.round(budget / 1000)} s)`);
+    throw new Error('The collar stopped answering while saving the update. Keep the phone next to the collar and try again.');
   }
 
   /* One full pass of the stream (a RESTART rewinds to here, seq 0). */
@@ -718,11 +730,12 @@ export async function sendU5Image(
           if (batchNo === 0 && !anyBatchAcked && !e?.isRestart) {
             throw new Error(
               everAcked
-                ? 'The collar accepted data earlier but stopped acknowledging this time. ' +
-                  'It is most likely still finishing the interrupted transfer — leave it ' +
-                  'for a minute, then try again.'
-                : 'The collar stored nothing — its main-processor firmware is too old to ' +
-                  'update over Bluetooth. Update it once over USB-C, then this flow works.',
+                ? 'The collar took the update earlier but stopped answering this time. ' +
+                  'It is probably still finishing the last attempt: leave it for a minute, ' +
+                  'then try again.'
+                : 'The collar did not accept the update: its software is too old to update ' +
+                  'over Bluetooth. Update it once with a USB-C cable (on the website’s Update ' +
+                  'Device page); after that, Bluetooth updates work.',
             );
           }
           throw e;
@@ -921,10 +934,11 @@ export async function sendU5Image(
            * with no BLE-update consumer looks like from here. */
           throw new Error(
             anyBatchAcked
-              ? 'Transfer kept failing (the relay asked to restart three times)'
-              : 'The collar stored nothing across three attempts — its main-processor ' +
-                'firmware is older than Bluetooth updating. Update it once over USB-C; ' +
-                'after that this flow works.',
+              ? 'The update kept failing (the collar asked to start over three times). ' +
+                'Keep the phone next to the collar and try again.'
+              : 'The collar did not accept the update in three attempts: its software is too ' +
+                'old to update over Bluetooth. Update it once with a USB-C cable (on the ' +
+                'website’s Update Device page); after that, Bluetooth updates work.',
           );
         }
         throw e;

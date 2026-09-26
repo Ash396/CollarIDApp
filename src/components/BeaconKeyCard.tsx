@@ -48,17 +48,17 @@ const serverApi: BeaconKeyApi = {
   clear: clearRadioKey,
 };
 
-/** The words above the buttons (the website's card). */
+/** The words above the buttons (the website's card, in plain words). */
 export const BEACON_KEY_INTRO =
-  'Optional. With a key, the collar’s lost-mode beacon carries its position encrypted: anyone can still hear ' +
-  'which collar it is and home in on its signal, but only a receiver holding the key (the website’s Handheld Relay ' +
-  'page with your sign-in, or your own receiver with the exported key) reads where it is. Without a key the beacon is ' +
-  'plaintext, as it has always been. Regular LoRaWAN uplinks are encrypted either way.';
+  'Optional. With encryption on, the collar’s lost-mode beacon hides its position: anyone can still tell ' +
+  'which collar it is and follow its signal, but only a receiver with the key (the website’s Handheld Relay ' +
+  'page with your sign-in, or your own receiver with the exported key) can read where it is. With encryption off, ' +
+  'anyone can read the position, as has always been the case. The collar’s regular network reports are encrypted ' +
+  'either way.';
 export const BEACON_KEY_FOOT =
-  'Provisioning asks the server for this collar’s key (a new generation, derived from your organisation’s master), ' +
-  'writes it over this Bluetooth connection and checks the collar’s echo against the server’s record. Rotating the ' +
-  'master is done on the website by an administrator: every collar in the organisation must then be re-provisioned ' +
-  'over Bluetooth, and each keeps its old key until it is.';
+  'Installing keys gets this collar’s key from the CollarID server, sends it to the collar over Bluetooth and ' +
+  'checks that the collar saved it. If an administrator rotates your organisation’s keys on the website, install ' +
+  'keys again on every collar; each collar keeps its old key until you do.';
 
 export default function BeaconKeyCard({ device, uid }: Props) {
   const session = useSession();
@@ -112,7 +112,7 @@ export default function BeaconKeyCard({ device, uid }: Props) {
     } catch (e: any) {
       if (aliveRef.current) {
         setServer(null);
-        setServerError(e?.status === 404 ? null : `Could not read the server’s record: ${e?.message ?? e}`);
+        setServerError(e?.status === 404 ? null : `Could not check the CollarID server. ${e?.message ?? e}`);
       }
     }
   }, [session.signedIn, session.generation, uid]);
@@ -135,18 +135,21 @@ export default function BeaconKeyCard({ device, uid }: Props) {
       return;
     }
     if (!uid) {
-      Alert.alert('Collar UID unknown', 'Cannot determine the collar UID for the server yet. Wait for its status packet.');
+      Alert.alert(
+        'Collar ID not known yet',
+        'The app does not know this collar’s ID yet. Wait a few seconds for the collar to report it, then try again.',
+      );
       return;
     }
     Alert.alert(
-      'Provision beacon encryption keys',
-      `Provision beacon encryption keys for ${uid} from the CollarID server?\n\n` +
-        'The collar sends its lost-mode beacon encrypted from its next beacon on. Anyone searching for it will ' +
+      'Turn on beacon encryption',
+      `Install beacon encryption keys for ${uid} from the CollarID server?\n\n` +
+        'The collar encrypts its lost-mode beacon from its next beacon on. Anyone searching for it will ' +
         'need the key (the website’s Handheld Relay page, signed in).',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Provision',
+          text: 'Install keys',
           onPress: async () => {
             setBusy(true);
             setMessage(null);
@@ -157,15 +160,15 @@ export default function BeaconKeyCard({ device, uid }: Props) {
               if (!aliveRef.current) return;
               setReport(res.report);
               if (res.server) setServer(res.server);
-              setProgress(`provisioned ✓ generation ${res.gen}, KCV ${res.kcv}, confirmed by the collar`);
+              setProgress(`key installed ✓ confirmed by the collar (key fingerprint ${res.kcv})`);
               setMessage({
                 tone: 'ok',
-                text: 'Beacon encryption provisioned: the lost-mode beacon is encrypted from the next beacon on.',
+                text: 'Beacon encryption is on: the lost-mode beacon is encrypted from the next beacon on.',
               });
             } catch (e: any) {
               if (!aliveRef.current) return;
               setProgress('');
-              setMessage({ tone: 'error', text: `Provisioning: ${e?.message ?? e}` });
+              setMessage({ tone: 'error', text: `Could not install keys: ${e?.message ?? e}` });
               readCollar();
               readServer();
             } finally {
@@ -180,10 +183,9 @@ export default function BeaconKeyCard({ device, uid }: Props) {
   const remove = () => {
     if (!device || !report?.supported) return;
     Alert.alert(
-      'Remove beacon encryption keys',
+      'Turn off beacon encryption',
       `Remove the beacon encryption keys from ${uid || 'this collar'}?\n\n` +
-        'Its lost-mode beacon goes back to plaintext from the next beacon on. The counter is kept, so a later key ' +
-        'starts at a fresh generation.',
+        'Its lost-mode beacon is no longer encrypted from the next beacon on. You can install keys again later.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -200,13 +202,13 @@ export default function BeaconKeyCard({ device, uid }: Props) {
               setReport(res.report);
               setMessage({
                 tone: 'ok',
-                text: 'Beacon encryption removed: the lost-mode beacon is plaintext from the next beacon on.',
+                text: 'Beacon encryption is off: the lost-mode beacon is not encrypted from the next beacon on.',
               });
               readServer();
             } catch (e: any) {
               if (!aliveRef.current) return;
               setProgress('');
-              setMessage({ tone: 'error', text: `Remove keys: ${e?.message ?? e}` });
+              setMessage({ tone: 'error', text: `Could not remove keys: ${e?.message ?? e}` });
               readCollar();
               readServer();
             } finally {
@@ -244,7 +246,7 @@ export default function BeaconKeyCard({ device, uid }: Props) {
       )}
       {!session.signedIn && (
         <Text style={styles.status} testID="beaconkey-signin">
-          Sign in on the Account card to provision keys: they come from the CollarID server.
+          Sign in on the Account card to install keys: they come from the CollarID server.
         </Text>
       )}
       <View style={styles.buttonRow}>
@@ -254,7 +256,7 @@ export default function BeaconKeyCard({ device, uid }: Props) {
           disabled={!canProvision}
           testID="beaconkey-provision"
         >
-          <Text style={styles.primaryBtnText}>Provision keys from CollarID server…</Text>
+          <Text style={styles.primaryBtnText}>Install keys from CollarID server…</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.btn, styles.ghostBtn, !canClear && styles.btnOff]}
@@ -262,7 +264,7 @@ export default function BeaconKeyCard({ device, uid }: Props) {
           disabled={!canClear}
           testID="beaconkey-clear"
         >
-          <Text style={styles.ghostBtnText}>Remove keys (back to plaintext)…</Text>
+          <Text style={styles.ghostBtnText}>Remove keys (turn encryption off)…</Text>
         </TouchableOpacity>
       </View>
       {!!progress && (

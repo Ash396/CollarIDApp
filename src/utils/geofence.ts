@@ -31,7 +31,7 @@ export const GF_ACTIONS: Record<number, string> = {
 /** The action picker, in the website's order (test-only first: the dry run
  *  a researcher should try before trusting a zone with a detach). */
 export const GF_ACTION_OPTIONS: { value: number; label: string }[] = [
-  { value: GF_ACTION.REPORT_ONLY, label: 'Test only (report entries/exits)' },
+  { value: GF_ACTION.REPORT_ONLY, label: 'Test only (report when it enters or leaves)' },
   { value: GF_ACTION.SCHEDULE_OVERRIDE, label: 'Switch to schedule…' },
   { value: GF_ACTION.DETACH, label: 'Detach when inside' },
 ];
@@ -106,7 +106,11 @@ export function parseVertsText(text: string): LatLon[] {
     .split('\n')
     .map(l => {
       const m = l.split(',').map(s => parseFloat(s.trim()));
-      if (m.length !== 2 || m.some(isNaN)) throw new Error(`bad corner line: "${l.trim()}"`);
+      if (m.length !== 2 || m.some(isNaN)) {
+        throw new Error(
+          `Could not read this corner line: "${l.trim()}". Use "latitude, longitude", one corner per line.`,
+        );
+      }
       return [m[0], m[1]] as LatLon;
     });
 }
@@ -137,13 +141,13 @@ export function vertsToText(verts: LatLon[]): string {
 export function buildFenceFragments(v: FenceForm, now: number = unixNow()): FenceFragment[] {
   const verts = parseVertsText(v.vertsText);
   if (verts.length < FENCE_MIN_VERTS || verts.length > FENCE_MAX_VERTS) {
-    throw new Error('a zone needs 3–8 corners');
+    throw new Error('A zone needs 3 to 8 corners.');
   }
   if (v.action === GF_ACTION.DETACH) {
-    if (!v.expiry) throw new Error('a detach zone requires an expiry (max 30 days)');
+    if (!v.expiry) throw new Error('A detach zone needs an expiry date, at most 30 days away.');
     const base = v.start || now;
     if (v.expiry <= base || v.expiry > base + DETACH_MAX_DAYS * 86400) {
-      throw new Error('expiry must be after the start and within 30 days');
+      throw new Error('The expiry must be after the start and within 30 days of it.');
     }
   }
   const frags: FenceFragment[] = [
@@ -252,12 +256,12 @@ export function fenceToForm(f: Fence): FenceForm {
 export const CFG_ACK = { NONE: 0, APPLIED: 1, MISSING: 2, RAIL: 3, NO_TXN: 4, EXPIRED: 5 } as const;
 
 export const ACK_TEXT: Record<number, string> = {
-  0: 'no verdict',
+  0: 'gave no answer',
   1: 'applied',
-  2: 'refused — some parts never arrived',
-  3: 'refused by the collar’s safety rules',
-  4: 'refused — the collar saw no open transaction',
-  5: 'refused — the transaction expired before it completed',
+  2: 'refused: part of the change did not arrive. Try again',
+  3: 'refused the change under its safety rules',
+  4: 'refused: it was not expecting this change. Try again',
+  5: 'refused: the change took too long to arrive. Try again',
 };
 
 /** Mirrors SCHED_RAIL_* in firmware sched_sync.h (the reason rides
@@ -266,11 +270,11 @@ export const RAIL_TEXT: Record<number, string> = {
   1: 'the schedule count was outside 1–5',
   2: 'a newly added schedule was missing its time window',
   3: 'it would have turned every radio off',
-  4: 'the fastest check-in would have been sparser than daily',
-  5: 'one schedule had both LoRaWAN and raw LoRa enabled',
+  4: 'it would have checked in less than once a day',
+  5: 'one schedule had both network reports and direct radio on',
   6: 'two schedules claimed the same hour of the day',
   7: 'the zone shape was invalid (needs 3–8 corners, every corner delivered)',
-  8: 'the zone pointed at a schedule slot that doesn’t exist or has GPS off',
+  8: 'the zone pointed at a schedule that doesn’t exist or has GPS off',
   9: 'zones need at least one schedule with GPS enabled',
   10: 'a detach zone needs a paired release add-on and an expiry within 30 days',
   11: 'one schedule could never run — the schedules above it cover all of its hours on every day it applies',
@@ -283,13 +287,14 @@ export type VerdictEcho = { ackStatus?: number; missingMask?: number } | null | 
 
 /** Human verdict for a transaction's final echo — the website's verdictText. */
 export function verdictText(echo: VerdictEcho): string {
-  if (!echo) return 'no response';
+  if (!echo) return 'did not answer';
   const ack = echo.ackStatus ?? 0;
   const mask = echo.missingMask ?? 0;
   if (ack === CFG_ACK.APPLIED) return 'applied';
   if (ack === CFG_ACK.RAIL && RAIL_TEXT[mask]) return `refused: ${RAIL_TEXT[mask]}`;
-  if (ack === CFG_ACK.MISSING) return `refused: parts 0x${(mask >>> 0).toString(16)} never arrived`;
-  return ACK_TEXT[ack] || `unknown verdict ${ack}`;
+  if (ack === CFG_ACK.MISSING) return ACK_TEXT[CFG_ACK.MISSING];
+  // old: if (ack === CFG_ACK.MISSING) return `refused: parts 0x${(mask >>> 0).toString(16)} never arrived`;
+  return ACK_TEXT[ack] || `gave an unexpected answer (${ack})`;
 }
 
 /* ── Rows ────────────────────────────────────────────────────────────── */
@@ -308,7 +313,7 @@ export function fenceRow(
   const exp = f.expiryEpoch ? new Date(f.expiryEpoch * 1000).toLocaleString() : 'never';
   const action =
     (GF_ACTIONS[f.action] || '?') +
-    (f.action === GF_ACTION.SCHEDULE_OVERRIDE ? ` → slot ${f.zoneSlot || 0}` : '');
+    (f.action === GF_ACTION.SCHEDULE_OVERRIDE ? ` → Schedule ${(f.zoneSlot || 0) + 1}` : '');
   return {
     title: `Zone ${f.fenceId}`,
     action,

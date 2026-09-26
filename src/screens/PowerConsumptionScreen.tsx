@@ -70,14 +70,14 @@ export default function PowerConsumptionScreen() {
 
   const compItems: { label: string; value: number; color: string }[] = [
     {
-      label: 'Baseline (MCU + sensors)',
+      label: 'Baseline (collar electronics + sensors)',
       value: components.baseline,
       color: '#4A90D9',
     },
-    { label: 'GPS acquisition', value: components.gps, color: '#3CB371' },
+    { label: 'GPS positions', value: components.gps, color: '#3CB371' },
     { label: 'Microphone', value: components.microphone, color: '#E0478A' },
-    { label: 'Radio (LoRaWAN / LoRa)', value: components.lora, color: '#9B6DD6' },
-    { label: 'Heading (magnetometer at 1-16 Hz)', value: components.magnetometer, color: '#E8A33D' },
+    { label: 'Radio (network reports / direct radio)', value: components.lora, color: '#9B6DD6' },
+    { label: 'Heading (compass at 1–16 Hz)', value: components.magnetometer, color: '#E8A33D' },
   ];
 
   return (
@@ -89,8 +89,8 @@ export default function PowerConsumptionScreen() {
       {/* HEADER */}
       <Text style={styles.header}>POWER & SOLAR BUDGET</Text>
       <Text style={styles.sub}>
-        Estimated solar exposure required per day based on your draft
-        configuration.
+        Estimated hours of sun needed each day for the schedules you are
+        editing.
       </Text>
 
       {/* TOTAL */}
@@ -148,15 +148,16 @@ export default function PowerConsumptionScreen() {
           );
         })}
         <Text style={styles.cardNote}>
-          Hours of that condition needed per day for net-zero energy. A full
-          bar means more than a typical day of that light — not viable there.
+          Hours of that light needed each day to keep the battery topped up. A
+          full bar means more than a typical day of that light: the collar
+          would run down there.
         </Text>
         {schedules.some(
           s => s.gps?.enabled && s.gps?.dynamicSamplingMode,
         ) && (
           <Text style={styles.cardNote}>
-            Dynamic GPS assumes a 70% resting / 20% medium / 10% high activity
-            split — size with headroom for a more active animal.
+            Faster GPS when moving assumes the animal rests 70% of the time,
+            walks 20% and runs 10%. Leave headroom for a more active animal.
           </Text>
         )}
       </View>
@@ -168,18 +169,19 @@ export default function PowerConsumptionScreen() {
           {perSchedule.map(s => (
             <View key={s.id} style={styles.row}>
               <Text style={styles.rowLabel}>{s.name}</Text>
-              <Text style={styles.rowValue}>{s.solarHours.toFixed(2)} sh</Text>
+              <Text style={styles.rowValue}>{s.solarHours.toFixed(2)} h sun/day</Text>
             </View>
           ))}
           <Text style={styles.cardNote}>
-            Incremental only — baseline is shared across all schedules.
+            Each schedule's own share only; the baseline is shared by all
+            schedules.
           </Text>
         </View>
       )}
 
       {/* COMPONENT BREAKDOWN */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Component Breakdown</Text>
+        <Text style={styles.cardTitle}>Where the Power Goes</Text>
         {compItems.map(c => {
           const pct =
             totalSolarHours > 0 ? (c.value / totalSolarHours) * 100 : 0;
@@ -188,7 +190,7 @@ export default function PowerConsumptionScreen() {
               <View style={styles.componentLabelRow}>
                 <Text style={styles.rowLabel}>{c.label}</Text>
                 <Text style={styles.rowValue}>
-                  {c.value.toFixed(2)} sh ({pct.toFixed(0)}%)
+                  {c.value.toFixed(2)} h sun ({pct.toFixed(0)}%)
                 </Text>
               </View>
               <View style={styles.barTrack}>
@@ -209,14 +211,14 @@ export default function PowerConsumptionScreen() {
         <Text style={styles.cardTitle}>SD Card Capacity</Text>
         {micBytesPerDay <= 0 ? (
           <Text style={styles.cardExplanation}>
-            Microphone is disabled in all schedules — even a 32 GB card lasts
-            effectively indefinitely on sensor and accelerometer data alone.
+            The microphone is off in all schedules, so even a 32 GB card lasts
+            practically forever with sensor and movement data alone.
           </Text>
         ) : (
           <>
             <Text style={styles.cardExplanation}>
-              Audio writes {(micBytesPerDay / 1e9).toFixed(2)} GB/day with your
-              current configuration.
+              Audio uses {(micBytesPerDay / 1e9).toFixed(2)} GB of card space a
+              day with these schedules.
             </Text>
             <View style={{ marginTop: 8 }}>
               {SD_CARD_SIZES.map(c => (
@@ -236,33 +238,34 @@ export default function PowerConsumptionScreen() {
             <Text style={styles.unapprovedTitle}>Unapproved SD card?</Text>
             <Text style={styles.unapprovedBody}>
               The microphone estimate assumes the approved card (Kioxia
-              Exceria Plus). On an unapproved card (e.g. SanDisk Extreme or
-              Extreme Pro), the firmware keeps the card energised between
-              every mic write to protect its flash controller — roughly 2x the
-              microphone power while recording. That pushes the total to{' '}
-              {unapprovedTotalSh.toFixed(2)} solar-hours/day instead of{' '}
+              Exceria Plus). An unapproved card (for example SanDisk Extreme or
+              Extreme Pro) uses roughly twice the microphone power while
+              recording. That raises the total to{' '}
+              {unapprovedTotalSh.toFixed(2)} hours of sun a day instead of{' '}
               {totalSolarHours.toFixed(2)}.
             </Text>
           </View>
         )}
 
         <Text style={styles.cardNote}>
-          Based on 16 kHz / 16-bit mono PCM audio (32 kB/s while recording).
-          Card sizes use marketed capacity; subtract ~7% for exFAT overhead.
+          Based on standard 16 kHz audio (about 32 kB a second while
+          recording). Card sizes are as sold; about 7% less is usable.
         </Text>
       </View>
 
       <Text style={styles.footnote}>
-        Based on empirical measurements at 22 dBm TX, 100-byte payload. GPS
-        acquisition: 10 s (low), 25 s (med), 40 s (high). 215 mW solar panel at
-        80% charge efficiency.
+        Based on measurements of real collars, with the radio at full power
+        and 100-byte messages. A GPS position takes about 10 s (low accuracy),
+        25 s (medium) or 40 s (high). Assumes a 215 mW solar panel charging at
+        80% efficiency.
       </Text>
 
       {/* EMPTY STATE */}
       {schedules.length === 0 && (
         <View style={styles.center}>
           <Text style={styles.empty}>
-            No draft schedules yet. Add a schedule to estimate power usage.
+            No schedules yet. Add one on the Schedules tab to estimate power
+            use.
           </Text>
         </View>
       )}

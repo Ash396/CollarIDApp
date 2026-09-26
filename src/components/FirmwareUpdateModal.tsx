@@ -153,7 +153,7 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
       .catch(e => {
         if (!alive) return;
         setReleases([]);
-        setListError(`Could not load the server’s firmware list: ${e?.message ?? e}`);
+        setListError(`Could not load the list of collar software versions. ${e?.message ?? e}`);
       });
     return () => {
       alive = false;
@@ -198,14 +198,13 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
         note(`Still checking (${waited} s) — it restarts itself when it’s done. Leave it alone: don’t reset it or disconnect the battery.`);
       } else {
         note(
-          `Connected for ${waited} s without restarting. It may still be working, so keep leaving it alone. ` +
-            'If it never restarts, the update was not installed — reconnect later and check the version, ' +
-            'and look in METADATA.CSV for a line starting "FW:".',
+          `Still connected after ${waited} s without restarting. It may still be working, so keep leaving it alone. ` +
+            'If it never restarts, the update was not installed: reconnect later and check the software version.',
         );
       }
       if (Date.now() - t0 > GIVE_UP_MS) {
         setStepBoth('failed');
-        setFailure('The collar never restarted. The update may not be installed — check the version after reconnecting.');
+        setFailure('The collar never restarted. The update may not be installed: check the software version after reconnecting.');
         return;
       }
     }
@@ -215,7 +214,7 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
     if (!device || step !== 'pick') return;
     const fw = releases?.find(r => r.id === picked);
     if (!fw) {
-      setFailure('Pick a server firmware version first');
+      setFailure('Pick a software version first.');
       return;
     }
     setFailure(null);
@@ -223,12 +222,12 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
     rebootHandledRef.current = false;
     setStepBoth('sending');
     setPct(0);
-    setStatus('Downloading the image…');
+    setStatus('Downloading the update…');
     const t0 = Date.now();
     try {
       const bytes = await downloadFirmware(fw.id);
       if (!aliveRef.current) return;
-      setStatus('Uploading…');
+      setStatus('Sending to the collar…');
       const link = await otaLinkForDevice(device);
       await sendU5Image(link, bytes, fw.version, {
         caps,
@@ -236,7 +235,7 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
         onProgress: (sent, total) => {
           if (!aliveRef.current) return;
           setPct((sent / total) * 100);
-          setStatus(`Uploading… ${kb(sent)}/${kb(total)} KB`);
+          setStatus(`Sending to the collar… ${kb(sent)}/${kb(total)} KB`);
         },
       });
       if (!aliveRef.current) return;
@@ -264,8 +263,8 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
       setStepBoth('failed');
       setFailure(
         e instanceof OtaAborted || e?.isAbort
-          ? 'Update cancelled. The collar keeps its current firmware; the radio idles by itself in about 30 s — try again after that.'
-          : `Failed: ${e?.message ?? e}`,
+          ? 'Update cancelled. The collar keeps its current software. Wait about 30 seconds before trying again.'
+          : `The update did not finish. ${e?.message ?? e}`,
       );
     }
   };
@@ -295,7 +294,7 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
       <Pressable style={styles.overlay} onPress={close}>
         <Pressable style={styles.card} onPress={() => {}} testID="fwupdate-modal">
           <View style={styles.headerRow}>
-            <Text style={styles.title}>Update the collar’s firmware</Text>
+            <Text style={styles.title}>Update the collar’s software</Text>
             <TouchableOpacity onPress={close} accessibilityLabel="Close" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={styles.closeX}>✕</Text>
             </TouchableOpacity>
@@ -303,7 +302,7 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
 
           <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
             <Text style={styles.meta} testID="fwupdate-installed">
-              Installed: {firmwareVersion ? fwDisplayLabel(firmwareVersion, fwIndex) : 'not reported yet'}
+              Installed version: {firmwareVersion ? fwDisplayLabel(firmwareVersion, fwIndex) : 'not reported yet'}
             </Text>
 
             {policy && (
@@ -321,28 +320,28 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
 
             {step === 'pick' && (
               <>
-                <Text style={styles.label}>Firmware image (from the CollarID server)</Text>
+                <Text style={styles.label}>Software version (from the CollarID server)</Text>
                 {!session.signedIn ? (
                   <Text style={styles.note} testID="fwupdate-signin">
-                    Sign in on the Home tab’s Account card to see the server’s firmware images.
+                    Sign in on the Home tab’s Account card to see the available software versions.
                   </Text>
                 ) : releases === null ? (
                   <ActivityIndicator size="small" color="#f8b26a" />
                 ) : listError ? (
                   <Text style={styles.errorText}>{listError}</Text>
                 ) : releases.length === 0 ? (
-                  <Text style={styles.note}>No main-processor firmware on the server yet.</Text>
+                  <Text style={styles.note}>No collar software is available on the server yet.</Text>
                 ) : (
                   <StyledPicker
                     selectedValue={picked}
                     onValueChange={v => setPicked(Number(v))}
                     items={pickerItems}
-                    placeholder="Firmware image"
+                    placeholder="Software version"
                   />
                 )}
                 <Text style={styles.steps}>
                   1. Keep the phone next to the collar for the whole transfer (a few minutes).{'\n'}
-                  2. Send it — wait for the bar to reach 100 %.{'\n'}
+                  2. Tap Send update and wait for the bar to reach 100 %.{'\n'}
                   3. Wait — the collar checks the update and restarts itself. It will disconnect; that’s
                   normal and usually takes under a minute.
                 </Text>
@@ -377,12 +376,12 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
             )}
             {step === 'failed' && (
               <TouchableOpacity onPress={() => setShowTrace(s => !s)} testID="fwupdate-trace-toggle">
-                <Text style={styles.link}>{showTrace ? 'Hide diagnostic trace' : 'Show diagnostic trace'}</Text>
+                <Text style={styles.link}>{showTrace ? 'Hide technical details' : 'Show technical details'}</Text>
               </TouchableOpacity>
             )}
             {step === 'failed' && showTrace && (
               <Text style={styles.trace} selectable testID="fwupdate-trace">
-                {traceText().split('\n').slice(-40).join('\n') || 'Trace empty.'}
+                {traceText().split('\n').slice(-40).join('\n') || 'No details recorded.'}
               </Text>
             )}
           </ScrollView>
@@ -399,7 +398,7 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
                   disabled={!canStart}
                   testID="fwupdate-start"
                 >
-                  <Text style={styles.primaryBtnText}>Upload & Apply</Text>
+                  <Text style={styles.primaryBtnText}>Send update</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -409,7 +408,7 @@ export default function FirmwareUpdateModal({ visible, device, fwBuild, firmware
                 onPress={cancelTransfer}
                 testID="fwupdate-abort"
               >
-                <Text style={styles.dangerBtnText}>Cancel transfer</Text>
+                <Text style={styles.dangerBtnText}>Cancel update</Text>
               </TouchableOpacity>
             )}
             {step === 'checking' && (

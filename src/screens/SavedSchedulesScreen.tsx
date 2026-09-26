@@ -60,7 +60,7 @@ export default function SavedSchedulesScreen() {
       setPresets(await listPresets());
     } catch (e: any) {
       setPresets([]);
-      setListError(`Failed to load: ${e?.message ?? e}`);
+      setListError(`Couldn’t load your saved schedules. ${e?.message ?? e}`);
     }
   }, []);
 
@@ -132,7 +132,7 @@ export default function SavedSchedulesScreen() {
         const full = await getPreset(p.id);
         const schedules = Array.isArray(full.schedules) ? full.schedules : [];
         if (!schedules.length) {
-          Alert.alert('Empty preset', 'This preset has no schedules.');
+          Alert.alert('Empty schedule set', 'This saved set has no schedules.');
           return;
         }
         replaceDraft(schedules.map(presetToAppSchedule));
@@ -198,9 +198,9 @@ export default function SavedSchedulesScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Sign in</Text>
           <Text style={styles.helper}>
-            Presets are stored in your CollarID account and shared with the
-            website configurator. Signing in here also signs in the rest of
-            the app (Home, Map).
+            Saved schedules are kept in your CollarID account and also appear
+            on the website. Signing in here also signs you in on the Home and
+            Map tabs.
           </Text>
           <Text style={styles.label}>Username</Text>
           <TextInput
@@ -271,8 +271,8 @@ export default function SavedSchedulesScreen() {
               </TouchableOpacity>
             </View>
             <Text style={styles.helper}>
-              Saves the {draftSchedules.length} draft schedule
-              {draftSchedules.length === 1 ? '' : 's'} currently on the
+              Saves the {draftSchedules.length} schedule
+              {draftSchedules.length === 1 ? '' : 's'} you are editing on the
               Schedules tab.
             </Text>
           </View>
