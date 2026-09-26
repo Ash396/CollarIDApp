@@ -1,0 +1,412 @@
+{
+  "NOW": 1700000000,
+  "TXN": 12345,
+  "GF_ACTIONS": {
+    "0": "Switch schedule",
+    "1": "DETACH",
+    "2": "Test only"
+  },
+  "frags": {
+    "testOnly4": [
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 1,
+          "action": 2,
+          "zone_slot": 0,
+          "confirm_fixes": 2,
+          "min_dwell_min": 15,
+          "max_hacc_m": 25,
+          "start_epoch": 0,
+          "expiry_epoch": 0,
+          "vertex_count": 4
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 1,
+          "vertex_index": 0,
+          "vertex": {
+            "latitude_e7": 442645000,
+            "longitude_e7": -725755000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 1,
+          "vertex_index": 1,
+          "vertex": {
+            "latitude_e7": 442645000,
+            "longitude_e7": -725710000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 1,
+          "vertex_index": 2,
+          "vertex": {
+            "latitude_e7": 442690000,
+            "longitude_e7": -725710000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 1,
+          "vertex_index": 3,
+          "vertex": {
+            "latitude_e7": 442690000,
+            "longitude_e7": -725755000
+          }
+        }
+      }
+    ],
+    "switchSlot3": [
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 2,
+          "action": 0,
+          "zone_slot": 3,
+          "confirm_fixes": 3,
+          "min_dwell_min": 15,
+          "max_hacc_m": 0,
+          "start_epoch": 1700003600,
+          "expiry_epoch": 0,
+          "vertex_count": 3
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 2,
+          "vertex_index": 0,
+          "vertex": {
+            "latitude_e7": 105000000,
+            "longitude_e7": 202500000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 2,
+          "vertex_index": 1,
+          "vertex": {
+            "latitude_e7": -101234568,
+            "longitude_e7": 1799999999
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 2,
+          "vertex_index": 2,
+          "vertex": {
+            "latitude_e7": 0,
+            "longitude_e7": 0
+          }
+        }
+      }
+    ],
+    "detach": [
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "action": 1,
+          "zone_slot": 0,
+          "confirm_fixes": 2,
+          "min_dwell_min": 15,
+          "max_hacc_m": 0,
+          "start_epoch": 1700000000,
+          "expiry_epoch": 1700604800,
+          "vertex_count": 8
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "vertex_index": 0,
+          "vertex": {
+            "latitude_e7": 10000000,
+            "longitude_e7": 20000000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "vertex_index": 1,
+          "vertex": {
+            "latitude_e7": 30000000,
+            "longitude_e7": 40000000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "vertex_index": 2,
+          "vertex": {
+            "latitude_e7": 50000000,
+            "longitude_e7": 60000000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "vertex_index": 3,
+          "vertex": {
+            "latitude_e7": 70000000,
+            "longitude_e7": 80000000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "vertex_index": 4,
+          "vertex": {
+            "latitude_e7": 90000000,
+            "longitude_e7": 100000000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "vertex_index": 5,
+          "vertex": {
+            "latitude_e7": 110000000,
+            "longitude_e7": 120000000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "vertex_index": 6,
+          "vertex": {
+            "latitude_e7": 130000000,
+            "longitude_e7": 140000000
+          }
+        }
+      },
+      {
+        "schedule_index": 0,
+        "cfg_geofence": {
+          "fence_id": 4,
+          "vertex_index": 7,
+          "vertex": {
+            "latitude_e7": 150000000,
+            "longitude_e7": 160000000
+          }
+        }
+      }
+    ]
+  },
+  "errors": {
+    "twoCorners": "a zone needs 3–8 corners",
+    "nineCorners": "a zone needs 3–8 corners",
+    "badLine": "bad corner line: \"3\"",
+    "badLine2": "bad corner line: \"foo, bar\"",
+    "detachNoExpiry": "a detach zone requires an expiry (max 30 days)",
+    "detachExpiryBeforeStart": "expiry must be after the start and within 30 days",
+    "detachExpiryTooFar": "expiry must be after the start and within 30 days"
+  },
+  "txnFrames": {
+    "testOnly4": [
+      "0880e2cfaa06100948b960",
+      "0880e2cfaa0610002a1a0800100018057a120801100218002002280f301938004000480448b960",
+      "0880e2cfaa0610002a1f0800100118057a17080150005a110888f488d3011088b7f7a5fdffffffff0148b960",
+      "0880e2cfaa0610002a1f0800100218057a17080150015a110888f488d30110d096faa5fdffffffff0148b960",
+      "0880e2cfaa0610002a1f0800100318057a17080150025a1108d0d38bd30110d096faa5fdffffffff0148b960",
+      "0880e2cfaa0610002a1f0800100418057a17080150035a1108d0d38bd3011088b7f7a5fdffffffff0148b960",
+      "0880e2cfaa06100a48b960"
+    ],
+    "switchSlot3": [
+      "0880e2cfaa06100948b960",
+      "0880e2cfaa0610002a1e0800100018047a160802100018032003280f30003890fecfaa064000480348b960",
+      "0880e2cfaa0610002a180800100118047a10080250005a0a08c0d8883210a0cfc76048b960",
+      "0880e2cfaa0610002a1f0800100218047a17080250015a1108f890ddcfffffffffff0110ffa3a7da0648b960",
+      "0880e2cfaa0610002a120800100318047a0a080250025a040800100048b960",
+      "0880e2cfaa06100a48b960"
+    ],
+    "detach": [
+      "0880e2cfaa06100948b960",
+      "0880e2cfaa0610002a220800100018097a1a0804100118002002280f30003880e2cfaa064080d7f4aa06480848b960",
+      "0880e2cfaa0610002a180800100118097a10080450005a0a0880ade2041080dac40948b960",
+      "0880e2cfaa0610002a180800100218097a10080450015a0a088087a70e1080b4891348b960",
+      "0880e2cfaa0610002a180800100318097a10080450025a0a0880e1eb1710808ece1c48b960",
+      "0880e2cfaa0610002a180800100418097a10080450035a0a0880bbb0211080e8922648b960",
+      "0880e2cfaa0610002a180800100518097a10080450045a0a088095f52a1080c2d72f48b960",
+      "0880e2cfaa0610002a180800100618097a10080450055a0a0880efb93410809c9c3948b960",
+      "0880e2cfaa0610002a180800100718097a10080450065a0a0880c9fe3d1080f6e04248b960",
+      "0880e2cfaa0610002a180800100818097a10080450075a0a0880a3c3471080d0a54c48b960",
+      "0880e2cfaa06100a48b960"
+    ],
+    "delete3": [
+      "0880e2cfaa06100948b960",
+      "0880e2cfaa0610002a0c0800100018017a040803480048b960",
+      "0880e2cfaa06100a48b960"
+    ]
+  },
+  "bleFrames": {
+    "beginWrapped": "0a0808001880e2cfaa06120d220b0880e2cfaa06100948b960",
+    "queryStatus": "0a0808001880e2cfaa0612022801",
+    "queryFence0": "0a0808001880e2cfaa0612022802",
+    "queryFence3": "0a0808001880e2cfaa061203288206"
+  },
+  "slotRecords": {
+    "rec1": {
+      "hex": "01020100020f19030100f15365802b5d65083a621a88dbbdd4083a621a508bbed4d0e9621a508bbed4",
+      "parsed": {
+        "fence_id": 2,
+        "action": 1,
+        "zone_slot": 0,
+        "confirm_fixes": 2,
+        "min_dwell_min": 15,
+        "max_hacc_m": 25,
+        "consumed": true,
+        "start_epoch": 1700000000,
+        "expiry_epoch": 1700604800,
+        "verts": [
+          {
+            "latitude_e7": 442645000,
+            "longitude_e7": -725755000
+          },
+          {
+            "latitude_e7": 442645000,
+            "longitude_e7": -725710000
+          },
+          {
+            "latitude_e7": 442690000,
+            "longitude_e7": -725710000
+          }
+        ],
+        "vertex_count": 3
+      }
+    },
+    "rec2": {
+      "hex": "01040003030f0004000000000000000000402c4206a0e7110c7848f7f9ffd1496b000000000000000080969800002d3101",
+      "parsed": {
+        "fence_id": 4,
+        "action": 0,
+        "zone_slot": 3,
+        "confirm_fixes": 3,
+        "min_dwell_min": 15,
+        "max_hacc_m": 0,
+        "consumed": false,
+        "start_epoch": 0,
+        "expiry_epoch": 0,
+        "verts": [
+          {
+            "latitude_e7": 105000000,
+            "longitude_e7": 202500000
+          },
+          {
+            "latitude_e7": -101234568,
+            "longitude_e7": 1799999999
+          },
+          {
+            "latitude_e7": 0,
+            "longitude_e7": 0
+          },
+          {
+            "latitude_e7": 10000000,
+            "longitude_e7": 20000000
+          }
+        ],
+        "vertex_count": 4
+      }
+    },
+    "empty": {
+      "hex": "",
+      "parsed": null
+    },
+    "short": {
+      "hex": "01020100020f19030100f15365802b5d",
+      "parsed": null
+    },
+    "badVersion": {
+      "hex": "02020100020f19030100f15365802b5d65083a621a88dbbdd4083a621a508bbed4d0e9621a508bbed4",
+      "parsed": null
+    },
+    "truncatedVerts": {
+      "hex": "01040003030f0004000000000000000000402c4206a0e7110c7848f7f9ffd1496b00000000",
+      "parsed": {
+        "fence_id": 4,
+        "action": 0,
+        "zone_slot": 3,
+        "confirm_fixes": 3,
+        "min_dwell_min": 15,
+        "max_hacc_m": 0,
+        "consumed": false,
+        "start_epoch": 0,
+        "expiry_epoch": 0,
+        "verts": [
+          {
+            "latitude_e7": 105000000,
+            "longitude_e7": 202500000
+          },
+          {
+            "latitude_e7": -101234568,
+            "longitude_e7": 1799999999
+          }
+        ],
+        "vertex_count": 2
+      }
+    }
+  },
+  "verdicts": {
+    "null": "no response",
+    "{\"ack_status\":1}": "applied",
+    "{\"ack_status\":2,\"missing_mask\":26}": "refused: parts 0x1a never arrived",
+    "{\"ack_status\":3,\"missing_mask\":7}": "refused: the zone shape was invalid (needs 3–8 corners, every corner delivered)",
+    "{\"ack_status\":3,\"missing_mask\":10}": "refused: a detach zone needs a paired release add-on and an expiry within 30 days",
+    "{\"ack_status\":3,\"missing_mask\":99}": "refused by the collar’s safety rules",
+    "{\"ack_status\":4}": "refused — the collar saw no open transaction",
+    "{\"ack_status\":5}": "refused — the transaction expired before it completed",
+    "{\"ack_status\":0}": "no verdict",
+    "{\"ack_status\":9}": "unknown verdict 9"
+  },
+  "ACK_TEXT": {
+    "0": "no verdict",
+    "1": "applied",
+    "2": "refused — some parts never arrived",
+    "3": "refused by the collar’s safety rules",
+    "4": "refused — the collar saw no open transaction",
+    "5": "refused — the transaction expired before it completed"
+  },
+  "RAIL_TEXT": {
+    "1": "the schedule count was outside 1–5",
+    "2": "a newly added schedule was missing its time window",
+    "3": "it would have turned every radio off",
+    "4": "the fastest check-in would have been sparser than daily",
+    "5": "one schedule had both LoRaWAN and raw LoRa enabled",
+    "6": "two schedules claimed the same hour of the day",
+    "7": "the zone shape was invalid (needs 3–8 corners, every corner delivered)",
+    "8": "the zone pointed at a schedule slot that doesn’t exist or has GPS off",
+    "9": "zones need at least one schedule with GPS enabled",
+    "10": "a detach zone needs a paired release add-on and an expiry within 30 days",
+    "11": "one schedule could never run — the schedules above it cover all of its hours on every day it applies",
+    "12": "a schedule’s date range ended before it started"
+  },
+  "MAX_FRAGS_PER_TXN": 32
+}

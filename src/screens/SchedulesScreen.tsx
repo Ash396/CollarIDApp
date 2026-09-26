@@ -233,11 +233,21 @@ export default function SchedulesScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.header}>SCHEDULES</Text>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('SavedSchedules' as any)}
-        >
-          <Text style={styles.savedLink}>💾 Saved</Text>
-        </TouchableOpacity>
+        <View style={styles.headerLinks}>
+          {/* Geofence zones live with the schedules they switch (fw 305+
+              over the Bluetooth tunnel; ZonesScreen says so below that). */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Zones' as any)}
+            testID="zones-link"
+          >
+            <Text style={styles.savedLink}>🗺 Zones</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('SavedSchedules' as any)}
+          >
+            <Text style={styles.savedLink}>💾 Saved</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <Text style={styles.sub}>
         Configure sampling and time windows for {device?.name ?? 'Collar'}
@@ -410,6 +420,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 0.5,
   },
+  headerLinks: { flexDirection: 'row', gap: 16 },
   savedLink: { fontSize: 15, color: '#4A90D9', fontWeight: '600' },
 
   draftBox: {

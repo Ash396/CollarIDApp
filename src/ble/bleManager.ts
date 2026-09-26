@@ -9,6 +9,14 @@ import {
 import { MAG_CAL, MAG_CMD } from '../utils/magCal';
 import type { MagCalIo, MagCalReport } from '../utils/magCal';
 import {
+  CFG_ACK,
+  FENCE_MAX_VERTS,
+  FENCE_MIN_VERTS,
+  MAX_FRAGS_PER_TXN,
+  parseSlotRecord,
+} from '../utils/geofence';
+import type { Fence, FenceFragment } from '../utils/geofence';
+import {
   hexToBytes,
   hexByteToInt,
   clampInt,
@@ -681,15 +689,18 @@ export const BLE_QUERY_STATUS = 1;
 
 /** One tunnel frame: a serialized DownlinkPacket, or a read-back query.
  *  Exported for the tests that pin the wire shape. */
-export function encodeTunnelFrame(fields: {
-  cfgDownlink?: Uint8Array;
-  bleQuery?: number;
-}): Uint8Array {
+export function encodeTunnelFrame(
+  fields: {
+    cfgDownlink?: Uint8Array;
+    bleQuery?: number;
+  },
+  epoch: number = unixNow(),
+): Uint8Array {
   const pkt = PB.BlePacket.create({
     header: PB.PacketHeader.create({
       systemUid: 0,
       msFromStart: 0,
-      epoch: unixNow(),
+      epoch,
       packetIndex: 0,
     }),
     scheduleConfigPacket: PB.ScheduleConfigPacket.create(fields),
@@ -856,6 +867,201 @@ export function magCalIo(device: Device): MagCalIo {
     status: () => tunnelQueryStatus(device),
     command: cmd => tunnelSendCommand(device, cmd),
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/*          Config transactions + geofence read-back over the tunnel          */
+/* -------------------------------------------------------------------------- */
+// Port of runTxn / queryFence / queryAllFences in the website's
+// js/ble-cfg-tunnel.js. A transaction is BEGIN, one fragment per frame, then
+// COMMIT, each frame written only after the previous frame's echo; the final
+// echo carries the verdict (ack_status + missing_mask, utils/geofence.ts
+// verdictText). Fragments are the same DownlinkPacket vocabulary the server
+// radios down, so the collar applies the same rails.
+
+/** downlink.proto CommandType, the ones the tunnel uses. 19 is held for the
+ *  planned lost-mode beacon key. */
+export const TUNNEL_CMD = {
+  NONE: 0,
+  ENGAGE: 7,
+  DISENGAGE: 8,
+  CONFIG_BEGIN: 9,
+  CONFIG_COMMIT: 10,
+  CONFIG_ABORT: 11,
+  CONFIG_REPORT: 16,
+  TEST_FIX: 17,
+  FACTORY_RESET: 18,
+  MAG_CALIBRATE: 20,
+  MAG_CALIBRATE_ABORT: 21,
+} as const;
+
+/** ble_query = 2 | (slot << 8): one fence slot as a binary record. */
+export const BLE_QUERY_FENCE = 2;
+/** Fence slots on the collar. */
+export const FENCE_SLOT_COUNT = 4;
+
+/** One DownlinkPacket, any fields (camelCase, the generated module's). */
+export function encodeDownlinkPacket(fields: { [k: string]: any }): Uint8Array {
+  const u8 = PB.DownlinkPacket.encode(PB.DownlinkPacket.create(fields)).finish();
+  return u8.slice(); // a plain copy for the bytes field
+}
+
+/** The DownlinkPacket bytes of a whole transaction, in order: BEGIN, every
+ *  fragment (fragment_index / fragment_total filled in), COMMIT. Pure, so
+ *  the wire test can pin the bytes against the website's tunnel for a fixed
+ *  epoch and transaction id. */
+export function encodeTxnDownlinks(
+  frags: FenceFragment[],
+  txn: number,
+  epoch: number = unixNow(),
+): Uint8Array[] {
+  const out: Uint8Array[] = [];
+  out.push(encodeDownlinkPacket({ epoch, command: TUNNEL_CMD.CONFIG_BEGIN, cfgTxnId: txn }));
+  frags.forEach((f, i) =>
+    out.push(
+      encodeDownlinkPacket({
+        epoch,
+        command: TUNNEL_CMD.NONE,
+        cfgTxnId: txn,
+        config: PB.ConfigFragment.create({
+          scheduleIndex: f.scheduleIndex,
+          fragmentIndex: i,
+          fragmentTotal: frags.length,
+          cfgGeofence: PB.ConfigGeofence.create({
+            ...f.cfgGeofence,
+            vertex: f.cfgGeofence.vertex ? PB.GeoPoint.create(f.cfgGeofence.vertex) : undefined,
+          } as any),
+        }),
+      }),
+    ),
+  );
+  out.push(encodeDownlinkPacket({ epoch, command: TUNNEL_CMD.CONFIG_COMMIT, cfgTxnId: txn }));
+  return out;
+}
+
+/* Simulated fence store on the mock collar: four slots, applied by the
+   same fragments a real collar gets, with the shape rail (R7) so the
+   simulator can show a refusal. */
+const mockFenceStore: (Fence | null)[] = [null, null, null, null];
+let mockEchoSeq = 100;
+function mockEcho(fields: { [k: string]: any } = {}): PB.CfgEchoPacket {
+  const used = mockFenceStore.reduce((m, f, i) => (f ? m | (1 << i) : m), 0);
+  const fired = mockFenceStore.reduce((m, f, i) => (f && f.consumed ? m | (1 << i) : m), 0);
+  return PB.CfgEchoPacket.create({
+    echoSeq: ++mockEchoSeq,
+    fenceUsedMask: used,
+    fenceActiveMask: 0,
+    fenceFiredMask: fired,
+    scheduleCount: mockScheduleStore.schedules.length,
+    engaged: mockScheduleStore.engaged,
+    ...fields,
+  });
+}
+function mockApplyTxn(frags: FenceFragment[]): PB.CfgEchoPacket {
+  const byId = new Map<number, { meta?: FenceFragment['cfgGeofence']; verts: any[] }>();
+  for (const f of frags) {
+    const g = f.cfgGeofence;
+    const e = byId.get(g.fenceId) || { verts: [] };
+    if (g.vertexCount !== undefined) e.meta = g;
+    if (g.vertex) e.verts[g.vertexIndex || 0] = g.vertex;
+    byId.set(g.fenceId, e);
+  }
+  for (const [id, e] of byId) {
+    if (id < 1 || id > FENCE_SLOT_COUNT || !e.meta) {
+      return mockEcho({ ackStatus: CFG_ACK.RAIL, missingMask: 7 });
+    }
+    if (e.meta.vertexCount === 0) {
+      mockFenceStore[id - 1] = null;
+      continue;
+    }
+    const verts = e.verts.filter(Boolean);
+    if (verts.length < FENCE_MIN_VERTS || verts.length > FENCE_MAX_VERTS || verts.length !== e.meta.vertexCount) {
+      return mockEcho({ ackStatus: CFG_ACK.RAIL, missingMask: 7 });
+    }
+    mockFenceStore[id - 1] = {
+      fenceId: id,
+      action: e.meta.action ?? 0,
+      zoneSlot: e.meta.zoneSlot ?? 0,
+      confirmFixes: e.meta.confirmFixes ?? 0,
+      minDwellMin: e.meta.minDwellMin ?? 0,
+      maxHaccM: e.meta.maxHaccM ?? 0,
+      consumed: false,
+      startEpoch: e.meta.startEpoch ?? 0,
+      expiryEpoch: e.meta.expiryEpoch ?? 0,
+      verts: verts.map(v => ({ latitudeE7: v.latitudeE7, longitudeE7: v.longitudeE7 })),
+      vertexCount: verts.length,
+    };
+  }
+  return mockEcho({ ackStatus: CFG_ACK.APPLIED, missingMask: 0 });
+}
+
+/** Run a full config transaction over the tunnel. `frags` as built by
+ *  buildFenceFragments / deleteFenceFragments (utils/geofence.ts).
+ *  onProgress(done, total) counts frames (fragments + BEGIN + COMMIT).
+ *  Resolves with the final echo; the caller reads ackStatus / missingMask
+ *  (verdictText). */
+export function tunnelRunTxn(
+  device: Device,
+  frags: FenceFragment[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<PB.CfgEchoPacket> {
+  if (frags.length > MAX_FRAGS_PER_TXN) {
+    return Promise.reject(
+      new Error(`a transaction carries at most ${MAX_FRAGS_PER_TXN} parts (got ${frags.length})`),
+    );
+  }
+  if (isMockDevice(device)) {
+    return (async () => {
+      const total = frags.length + 2;
+      for (let i = 1; i <= total; i++) {
+        await new Promise<void>(r => setTimeout(r, 60));
+        onProgress?.(i, total);
+      }
+      return mockApplyTxn(frags);
+    })();
+  }
+  return tunnelExclusive(async () => {
+    const txn = unixNow() % 0x7fffffff;
+    const downlinks = encodeTxnDownlinks(frags, txn);
+    const total = downlinks.length;
+    let done = 0;
+    let echo: PB.CfgEchoPacket | null = null;
+    for (const dl of downlinks) {
+      echo = await tunnelFrameRoundTrip(device, encodeTunnelFrame({ cfgDownlink: dl }));
+      onProgress?.(++done, total);
+    }
+    return echo!;
+  });
+}
+
+/** One fence slot (0..3) as the collar holds it: null for an empty slot. */
+export async function tunnelQueryFence(
+  device: Device,
+  slot: number,
+): Promise<{ echo: PB.CfgEchoPacket; fence: Fence | null }> {
+  if (isMockDevice(device)) {
+    const f = mockFenceStore[slot] ?? null;
+    return { echo: mockEcho(), fence: f ? { ...f, verts: f.verts.map(v => ({ ...v })) } : null };
+  }
+  const echo = await tunnelExclusive(() =>
+    tunnelFrameRoundTrip(device, encodeTunnelFrame({ bleQuery: BLE_QUERY_FENCE | (slot << 8) })),
+  );
+  const b = echo.fenceReport;
+  return { echo, fence: parseSlotRecord(b && b.length ? new Uint8Array(b) : null) };
+}
+
+/** Every fence slot, in slot order; the last echo carries the active mask. */
+export async function tunnelQueryAllFences(
+  device: Device,
+): Promise<{ fences: Fence[]; echo: PB.CfgEchoPacket | null }> {
+  const out: Fence[] = [];
+  let lastEcho: PB.CfgEchoPacket | null = null;
+  for (let slot = 0; slot < FENCE_SLOT_COUNT; slot++) {
+    const { echo, fence } = await tunnelQueryFence(device, slot);
+    lastEcho = echo;
+    if (fence) out.push(fence);
+  }
+  return { fences: out, echo: lastEcho };
 }
 
 /* -------------------------------------------------------------------------- */

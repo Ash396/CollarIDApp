@@ -13,6 +13,14 @@ import type { Schedule } from '../navigation/ScheduleNavigator';
  *  the server's api/main.py — one number, three repos. */
 export const MIC_CODEC_MIN_FW_BUILD = 380;
 
+/** First build with the BLE config tunnel (ScheduleConfigPacket
+ *  .cfg_downlink / ble_query / cfg_echo): geofence zones read, delivered,
+ *  safety-checked and verified over the Bluetooth link, no LoRaWAN needed.
+ *  Below it a tunnel frame would decode as an empty schedule write, so the
+ *  zones screen hard-gates on the reported build, like the website's
+ *  loadBleFences() (configure.html: `(state.fwBuild || 0) >= 305`). */
+export const BLE_ZONES_MIN_FW_BUILD = 305;
+
 /** First build with magnetometer calibration over the BLE config tunnel
  *  (CMD_MAG_CALIBRATE / CMD_MAG_CALIBRATE_ABORT and CfgEchoPacket.mag_cal).
  *  Firmware main build 398 (merge 74efac9, 2026-09-25) is the first main
@@ -50,8 +58,10 @@ export function parseFwBuild(raw?: string | null): number {
  *  "unknown" and gates everything off — same policy as the website. */
 export function bleFeatureGates(fwBuild: number, caps: number) {
   return {
-    /** BLE config tunnel (zones, config transactions) — fw 305+. */
-    cfgTunnel: fwBuild >= 305,
+    /** BLE config tunnel (zones, config transactions) — fw 305+
+     *  (BLE_ZONES_MIN_FW_BUILD). */
+    cfgTunnel: fwBuild >= BLE_ZONES_MIN_FW_BUILD,
+    // old: cfgTunnel: fwBuild >= 305,
     /** BLE-only factory reset — fw 306+. */
     factoryReset: fwBuild >= 306,
     /** Microphone sample rate / bit depth — fw 338+. Older collars have no

@@ -3,6 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SchedulesScreen from '../screens/SchedulesScreen';
 import EditScheduleScreen from '../screens/EditScheduleScreen';
 import SavedSchedulesScreen from '../screens/SavedSchedulesScreen';
+import ZonesScreen from '../screens/ZonesScreen';
+import EditZoneScreen from '../screens/EditZoneScreen';
+import type { FenceForm } from '../utils/geofence';
 
 /* -----------------------------------------------------
  * Shared Schedule Type
@@ -85,6 +88,10 @@ export type ScheduleStackParamList = {
   Schedules: { device?: any } | undefined;
   EditSchedule: { schedule: Schedule; index: number };
   SavedSchedules: undefined;
+  /** Geofence zones on the connected collar (utils/geofence.ts). */
+  Zones: undefined;
+  /** Add a zone, or edit one the collar holds (re-sent to the same slot). */
+  EditZone: { form?: FenceForm } | undefined;
 };
 
 const Stack = createNativeStackNavigator<ScheduleStackParamList>();
@@ -98,6 +105,8 @@ export default function ScheduleNavigator() {
       <Stack.Screen name="Schedules" component={SchedulesScreen} />
       <Stack.Screen name="EditSchedule" component={EditScheduleScreen} />
       <Stack.Screen name="SavedSchedules" component={SavedSchedulesScreen} />
+      <Stack.Screen name="Zones" component={ZonesScreen} />
+      <Stack.Screen name="EditZone" component={EditZoneScreen} />
     </Stack.Navigator>
   );
 }
