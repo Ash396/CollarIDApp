@@ -478,3 +478,80 @@ export function listFirmware(target: 'u5' | 'wb5m' = 'u5'): Promise<FirmwareRele
 export function downloadFirmware(id: number): Promise<Uint8Array> {
   return apiFetchBytes(`/firmware/${encodeURIComponent(String(id))}/download`);
 }
+
+/* ── Lost-mode beacon encryption keys (collarid-prod api/runbooks.md,
+ * "Beacon encryption keys") ───────────────────────────────────────────── */
+// The server holds the organisation's masters and issues each collar's key
+// set; the key reaches the collar only over the BLE config tunnel
+// (utils/beaconKey.ts provisionBeaconKey). Only issueRadioKey's response
+// carries key bytes: callers wipe them once written and never log them.
+// KCVs (AES(key, 0)[0..2]) identify a key and may be shown.
+
+export type RadioKeyStatus = {
+  uid: string;
+  /** none | issued | provisioned | cleared */
+  state: string;
+  keyed: boolean;
+  slot?: string;
+  gen: number;
+  kcv: string | null;
+  issued_at?: string | null;
+  provisioned_at?: string | null;
+  cleared_at?: string | null;
+  generations_left?: number;
+  /** The collar's key is older than its owner's current generation (a
+   *  rotation), or the collar changed owners: provision again. */
+  stale: boolean;
+  owner?: { kind: string; id: number | null; generation: number; beacon_master_kcv?: string | null };
+  /** false: the server has no RADIO_MASTER_KEK, so it cannot issue keys. */
+  kek_configured: boolean;
+};
+
+export type RadioKeyIssue = {
+  uid: string;
+  gen: number;
+  kcv: string;
+  /** One entry per slot; "beacon" is the only slot today. `key` is hex. */
+  keys: { slot: string; gen: number; key: string; kcv: string }[];
+  /** new | reissue */
+  action: string;
+  generations_left?: number;
+  owner?: { kind: string; id: number | null; generation: number; beacon_master_kcv?: string | null };
+};
+
+/** GET /devices/{uid}/radio-key: what the server holds; never the key. */
+export function getRadioKeyStatus(uid: string): Promise<RadioKeyStatus> {
+  return apiFetch(`/devices/${encodeURIComponent(uid)}/radio-key`);
+}
+
+/** POST /devices/{uid}/radio-key: issue the key set to write over BLE. Pass
+ *  what the collar echoes (gen 0 / kcv '' when unkeyed): the exact last
+ *  issue comes back unchanged, anything else gets a new generation.
+ *  503 no server key store, 409 generations exhausted, 422 bad echo. */
+export function issueRadioKey(
+  uid: string,
+  echo: { collar_gen: number; collar_kcv: string },
+): Promise<RadioKeyIssue> {
+  return apiFetch(`/devices/${encodeURIComponent(uid)}/radio-key`, {
+    method: 'POST',
+    body: JSON.stringify(echo),
+  });
+}
+
+/** POST /devices/{uid}/radio-key/provisioned: the collar's echo after the
+ *  write; 409 on a mismatch (the detail names both sides). */
+export function markRadioKeyProvisioned(
+  uid: string,
+  echo: { gen: number; kcv: string },
+): Promise<RadioKeyStatus> {
+  return apiFetch(`/devices/${encodeURIComponent(uid)}/radio-key/provisioned`, {
+    method: 'POST',
+    body: JSON.stringify(echo),
+  });
+}
+
+/** DELETE /devices/{uid}/radio-key: the collar was taken back to plaintext
+ *  over BLE; the generation is kept. Idempotent. */
+export function clearRadioKey(uid: string): Promise<RadioKeyStatus> {
+  return apiFetch(`/devices/${encodeURIComponent(uid)}/radio-key`, { method: 'DELETE' });
+}

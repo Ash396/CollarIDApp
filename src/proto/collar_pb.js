@@ -5433,6 +5433,7 @@ $root.CfgEchoPacket = (function() {
      * @property {Uint8Array|null} [slotReport] CfgEchoPacket slotReport
      * @property {number|null} [scheduleCount] CfgEchoPacket scheduleCount
      * @property {boolean|null} [engaged] CfgEchoPacket engaged
+     * @property {IBeaconKeyReport|null} [beaconKey] CfgEchoPacket beaconKey
      * @property {IMagCalReport|null} [magCal] CfgEchoPacket magCal
      */
 
@@ -5564,6 +5565,14 @@ $root.CfgEchoPacket = (function() {
     CfgEchoPacket.prototype.engaged = false;
 
     /**
+     * CfgEchoPacket beaconKey.
+     * @member {IBeaconKeyReport|null|undefined} beaconKey
+     * @memberof CfgEchoPacket
+     * @instance
+     */
+    CfgEchoPacket.prototype.beaconKey = null;
+
+    /**
      * CfgEchoPacket magCal.
      * @member {IMagCalReport|null|undefined} magCal
      * @memberof CfgEchoPacket
@@ -5623,6 +5632,8 @@ $root.CfgEchoPacket = (function() {
             writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.scheduleCount);
         if (message.engaged != null && Object.hasOwnProperty.call(message, "engaged"))
             writer.uint32(/* id 14, wireType 0 =*/112).bool(message.engaged);
+        if (message.beaconKey != null && Object.hasOwnProperty.call(message, "beaconKey"))
+            $root.BeaconKeyReport.encode(message.beaconKey, writer.uint32(/* id 15, wireType 2 =*/122).fork()).ldelim();
         if (message.magCal != null && Object.hasOwnProperty.call(message, "magCal"))
             $root.MagCalReport.encode(message.magCal, writer.uint32(/* id 16, wireType 2 =*/130).fork()).ldelim();
         return writer;
@@ -5717,6 +5728,10 @@ $root.CfgEchoPacket = (function() {
                     message.engaged = reader.bool();
                     break;
                 }
+            case 15: {
+                    message.beaconKey = $root.BeaconKeyReport.decode(reader, reader.uint32());
+                    break;
+                }
             case 16: {
                     message.magCal = $root.MagCalReport.decode(reader, reader.uint32());
                     break;
@@ -5798,6 +5813,11 @@ $root.CfgEchoPacket = (function() {
         if (message.engaged != null && message.hasOwnProperty("engaged"))
             if (typeof message.engaged !== "boolean")
                 return "engaged: boolean expected";
+        if (message.beaconKey != null && message.hasOwnProperty("beaconKey")) {
+            var error = $root.BeaconKeyReport.verify(message.beaconKey);
+            if (error)
+                return "beaconKey." + error;
+        }
         if (message.magCal != null && message.hasOwnProperty("magCal")) {
             var error = $root.MagCalReport.verify(message.magCal);
             if (error)
@@ -5852,6 +5872,11 @@ $root.CfgEchoPacket = (function() {
             message.scheduleCount = object.scheduleCount >>> 0;
         if (object.engaged != null)
             message.engaged = Boolean(object.engaged);
+        if (object.beaconKey != null) {
+            if (typeof object.beaconKey !== "object")
+                throw TypeError(".CfgEchoPacket.beaconKey: object expected");
+            message.beaconKey = $root.BeaconKeyReport.fromObject(object.beaconKey);
+        }
         if (object.magCal != null) {
             if (typeof object.magCal !== "object")
                 throw TypeError(".CfgEchoPacket.magCal: object expected");
@@ -5900,6 +5925,7 @@ $root.CfgEchoPacket = (function() {
             }
             object.scheduleCount = 0;
             object.engaged = false;
+            object.beaconKey = null;
             object.magCal = null;
         }
         if (message.txnId != null && message.hasOwnProperty("txnId"))
@@ -5930,6 +5956,8 @@ $root.CfgEchoPacket = (function() {
             object.scheduleCount = message.scheduleCount;
         if (message.engaged != null && message.hasOwnProperty("engaged"))
             object.engaged = message.engaged;
+        if (message.beaconKey != null && message.hasOwnProperty("beaconKey"))
+            object.beaconKey = $root.BeaconKeyReport.toObject(message.beaconKey, options);
         if (message.magCal != null && message.hasOwnProperty("magCal"))
             object.magCal = $root.MagCalReport.toObject(message.magCal, options);
         return object;
@@ -6505,6 +6533,414 @@ $root.MagCalReport = (function() {
     };
 
     return MagCalReport;
+})();
+
+/**
+ * BeaconKeyState enum.
+ * @exports BeaconKeyState
+ * @enum {number}
+ * @property {number} BEACON_KEY_STATE_NONE=0 BEACON_KEY_STATE_NONE value
+ * @property {number} BEACON_KEY_STATE_KEYED=1 BEACON_KEY_STATE_KEYED value
+ * @property {number} BEACON_KEY_STATE_FALLBACK=2 BEACON_KEY_STATE_FALLBACK value
+ */
+$root.BeaconKeyState = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "BEACON_KEY_STATE_NONE"] = 0;
+    values[valuesById[1] = "BEACON_KEY_STATE_KEYED"] = 1;
+    values[valuesById[2] = "BEACON_KEY_STATE_FALLBACK"] = 2;
+    return values;
+})();
+
+/**
+ * BeaconKeyResult enum.
+ * @exports BeaconKeyResult
+ * @enum {number}
+ * @property {number} BEACON_KEY_RESULT_NONE=0 BEACON_KEY_RESULT_NONE value
+ * @property {number} BEACON_KEY_RESULT_APPLIED=1 BEACON_KEY_RESULT_APPLIED value
+ * @property {number} BEACON_KEY_RESULT_CLEARED=2 BEACON_KEY_RESULT_CLEARED value
+ * @property {number} BEACON_KEY_RESULT_REJECTED_GEN=3 BEACON_KEY_RESULT_REJECTED_GEN value
+ * @property {number} BEACON_KEY_RESULT_REJECTED_ARG=4 BEACON_KEY_RESULT_REJECTED_ARG value
+ * @property {number} BEACON_KEY_RESULT_STORE_ERROR=5 BEACON_KEY_RESULT_STORE_ERROR value
+ */
+$root.BeaconKeyResult = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "BEACON_KEY_RESULT_NONE"] = 0;
+    values[valuesById[1] = "BEACON_KEY_RESULT_APPLIED"] = 1;
+    values[valuesById[2] = "BEACON_KEY_RESULT_CLEARED"] = 2;
+    values[valuesById[3] = "BEACON_KEY_RESULT_REJECTED_GEN"] = 3;
+    values[valuesById[4] = "BEACON_KEY_RESULT_REJECTED_ARG"] = 4;
+    values[valuesById[5] = "BEACON_KEY_RESULT_STORE_ERROR"] = 5;
+    return values;
+})();
+
+$root.BeaconKeyReport = (function() {
+
+    /**
+     * Properties of a BeaconKeyReport.
+     * @exports IBeaconKeyReport
+     * @interface IBeaconKeyReport
+     * @property {BeaconKeyState|null} [state] BeaconKeyReport state
+     * @property {number|null} [gen] BeaconKeyReport gen
+     * @property {Uint8Array|null} [kcv] BeaconKeyReport kcv
+     * @property {BeaconKeyResult|null} [result] BeaconKeyReport result
+     * @property {number|null} [txCounter] BeaconKeyReport txCounter
+     */
+
+    /**
+     * Constructs a new BeaconKeyReport.
+     * @exports BeaconKeyReport
+     * @classdesc Represents a BeaconKeyReport.
+     * @implements IBeaconKeyReport
+     * @constructor
+     * @param {IBeaconKeyReport=} [properties] Properties to set
+     */
+    function BeaconKeyReport(properties) {
+        if (properties)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * BeaconKeyReport state.
+     * @member {BeaconKeyState} state
+     * @memberof BeaconKeyReport
+     * @instance
+     */
+    BeaconKeyReport.prototype.state = 0;
+
+    /**
+     * BeaconKeyReport gen.
+     * @member {number} gen
+     * @memberof BeaconKeyReport
+     * @instance
+     */
+    BeaconKeyReport.prototype.gen = 0;
+
+    /**
+     * BeaconKeyReport kcv.
+     * @member {Uint8Array} kcv
+     * @memberof BeaconKeyReport
+     * @instance
+     */
+    BeaconKeyReport.prototype.kcv = $util.newBuffer([]);
+
+    /**
+     * BeaconKeyReport result.
+     * @member {BeaconKeyResult} result
+     * @memberof BeaconKeyReport
+     * @instance
+     */
+    BeaconKeyReport.prototype.result = 0;
+
+    /**
+     * BeaconKeyReport txCounter.
+     * @member {number} txCounter
+     * @memberof BeaconKeyReport
+     * @instance
+     */
+    BeaconKeyReport.prototype.txCounter = 0;
+
+    /**
+     * Creates a new BeaconKeyReport instance using the specified properties.
+     * @function create
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {IBeaconKeyReport=} [properties] Properties to set
+     * @returns {BeaconKeyReport} BeaconKeyReport instance
+     */
+    BeaconKeyReport.create = function create(properties) {
+        return new BeaconKeyReport(properties);
+    };
+
+    /**
+     * Encodes the specified BeaconKeyReport message. Does not implicitly {@link BeaconKeyReport.verify|verify} messages.
+     * @function encode
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {IBeaconKeyReport} message BeaconKeyReport message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    BeaconKeyReport.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+            writer.uint32(/* id 1, wireType 0 =*/8).int32(message.state);
+        if (message.gen != null && Object.hasOwnProperty.call(message, "gen"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.gen);
+        if (message.kcv != null && Object.hasOwnProperty.call(message, "kcv"))
+            writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.kcv);
+        if (message.result != null && Object.hasOwnProperty.call(message, "result"))
+            writer.uint32(/* id 4, wireType 0 =*/32).int32(message.result);
+        if (message.txCounter != null && Object.hasOwnProperty.call(message, "txCounter"))
+            writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.txCounter);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified BeaconKeyReport message, length delimited. Does not implicitly {@link BeaconKeyReport.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {IBeaconKeyReport} message BeaconKeyReport message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    BeaconKeyReport.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a BeaconKeyReport message from the specified reader or buffer.
+     * @function decode
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {BeaconKeyReport} BeaconKeyReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    BeaconKeyReport.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.BeaconKeyReport();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.state = reader.int32();
+                    break;
+                }
+            case 2: {
+                    message.gen = reader.uint32();
+                    break;
+                }
+            case 3: {
+                    message.kcv = reader.bytes();
+                    break;
+                }
+            case 4: {
+                    message.result = reader.int32();
+                    break;
+                }
+            case 5: {
+                    message.txCounter = reader.uint32();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a BeaconKeyReport message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {BeaconKeyReport} BeaconKeyReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    BeaconKeyReport.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a BeaconKeyReport message.
+     * @function verify
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    BeaconKeyReport.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.state != null && message.hasOwnProperty("state"))
+            switch (message.state) {
+            default:
+                return "state: enum value expected";
+            case 0:
+            case 1:
+            case 2:
+                break;
+            }
+        if (message.gen != null && message.hasOwnProperty("gen"))
+            if (!$util.isInteger(message.gen))
+                return "gen: integer expected";
+        if (message.kcv != null && message.hasOwnProperty("kcv"))
+            if (!(message.kcv && typeof message.kcv.length === "number" || $util.isString(message.kcv)))
+                return "kcv: buffer expected";
+        if (message.result != null && message.hasOwnProperty("result"))
+            switch (message.result) {
+            default:
+                return "result: enum value expected";
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+                break;
+            }
+        if (message.txCounter != null && message.hasOwnProperty("txCounter"))
+            if (!$util.isInteger(message.txCounter))
+                return "txCounter: integer expected";
+        return null;
+    };
+
+    /**
+     * Creates a BeaconKeyReport message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {BeaconKeyReport} BeaconKeyReport
+     */
+    BeaconKeyReport.fromObject = function fromObject(object) {
+        if (object instanceof $root.BeaconKeyReport)
+            return object;
+        var message = new $root.BeaconKeyReport();
+        switch (object.state) {
+        default:
+            if (typeof object.state === "number") {
+                message.state = object.state;
+                break;
+            }
+            break;
+        case "BEACON_KEY_STATE_NONE":
+        case 0:
+            message.state = 0;
+            break;
+        case "BEACON_KEY_STATE_KEYED":
+        case 1:
+            message.state = 1;
+            break;
+        case "BEACON_KEY_STATE_FALLBACK":
+        case 2:
+            message.state = 2;
+            break;
+        }
+        if (object.gen != null)
+            message.gen = object.gen >>> 0;
+        if (object.kcv != null)
+            if (typeof object.kcv === "string")
+                $util.base64.decode(object.kcv, message.kcv = $util.newBuffer($util.base64.length(object.kcv)), 0);
+            else if (object.kcv.length >= 0)
+                message.kcv = object.kcv;
+        switch (object.result) {
+        default:
+            if (typeof object.result === "number") {
+                message.result = object.result;
+                break;
+            }
+            break;
+        case "BEACON_KEY_RESULT_NONE":
+        case 0:
+            message.result = 0;
+            break;
+        case "BEACON_KEY_RESULT_APPLIED":
+        case 1:
+            message.result = 1;
+            break;
+        case "BEACON_KEY_RESULT_CLEARED":
+        case 2:
+            message.result = 2;
+            break;
+        case "BEACON_KEY_RESULT_REJECTED_GEN":
+        case 3:
+            message.result = 3;
+            break;
+        case "BEACON_KEY_RESULT_REJECTED_ARG":
+        case 4:
+            message.result = 4;
+            break;
+        case "BEACON_KEY_RESULT_STORE_ERROR":
+        case 5:
+            message.result = 5;
+            break;
+        }
+        if (object.txCounter != null)
+            message.txCounter = object.txCounter >>> 0;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a BeaconKeyReport message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {BeaconKeyReport} message BeaconKeyReport
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    BeaconKeyReport.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        var object = {};
+        if (options.defaults) {
+            object.state = options.enums === String ? "BEACON_KEY_STATE_NONE" : 0;
+            object.gen = 0;
+            if (options.bytes === String)
+                object.kcv = "";
+            else {
+                object.kcv = [];
+                if (options.bytes !== Array)
+                    object.kcv = $util.newBuffer(object.kcv);
+            }
+            object.result = options.enums === String ? "BEACON_KEY_RESULT_NONE" : 0;
+            object.txCounter = 0;
+        }
+        if (message.state != null && message.hasOwnProperty("state"))
+            object.state = options.enums === String ? $root.BeaconKeyState[message.state] === undefined ? message.state : $root.BeaconKeyState[message.state] : message.state;
+        if (message.gen != null && message.hasOwnProperty("gen"))
+            object.gen = message.gen;
+        if (message.kcv != null && message.hasOwnProperty("kcv"))
+            object.kcv = options.bytes === String ? $util.base64.encode(message.kcv, 0, message.kcv.length) : options.bytes === Array ? Array.prototype.slice.call(message.kcv) : message.kcv;
+        if (message.result != null && message.hasOwnProperty("result"))
+            object.result = options.enums === String ? $root.BeaconKeyResult[message.result] === undefined ? message.result : $root.BeaconKeyResult[message.result] : message.result;
+        if (message.txCounter != null && message.hasOwnProperty("txCounter"))
+            object.txCounter = message.txCounter;
+        return object;
+    };
+
+    /**
+     * Converts this BeaconKeyReport to JSON.
+     * @function toJSON
+     * @memberof BeaconKeyReport
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    BeaconKeyReport.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for BeaconKeyReport
+     * @function getTypeUrl
+     * @memberof BeaconKeyReport
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    BeaconKeyReport.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/BeaconKeyReport";
+    };
+
+    return BeaconKeyReport;
 })();
 
 $root.SimpleSensorReading = (function() {
@@ -15751,8 +16187,10 @@ $root.MessagePacket = (function() {
  * @property {number} CMD_CONFIG_REPORT=16 CMD_CONFIG_REPORT value
  * @property {number} CMD_TEST_FIX=17 CMD_TEST_FIX value
  * @property {number} CMD_FACTORY_RESET=18 CMD_FACTORY_RESET value
+ * @property {number} CMD_BEACON_KEY_SET=19 CMD_BEACON_KEY_SET value
  * @property {number} CMD_MAG_CALIBRATE=20 CMD_MAG_CALIBRATE value
  * @property {number} CMD_MAG_CALIBRATE_ABORT=21 CMD_MAG_CALIBRATE_ABORT value
+ * @property {number} CMD_BEACON_KEY_CLEAR=22 CMD_BEACON_KEY_CLEAR value
  */
 $root.CommandType = (function() {
     var valuesById = {}, values = Object.create(valuesById);
@@ -15774,8 +16212,10 @@ $root.CommandType = (function() {
     values[valuesById[16] = "CMD_CONFIG_REPORT"] = 16;
     values[valuesById[17] = "CMD_TEST_FIX"] = 17;
     values[valuesById[18] = "CMD_FACTORY_RESET"] = 18;
+    values[valuesById[19] = "CMD_BEACON_KEY_SET"] = 19;
     values[valuesById[20] = "CMD_MAG_CALIBRATE"] = 20;
     values[valuesById[21] = "CMD_MAG_CALIBRATE_ABORT"] = 21;
+    values[valuesById[22] = "CMD_BEACON_KEY_CLEAR"] = 22;
     return values;
 })();
 
@@ -16509,6 +16949,300 @@ $root.HighFixParams = (function() {
     };
 
     return HighFixParams;
+})();
+
+/**
+ * BeaconKeySlot enum.
+ * @exports BeaconKeySlot
+ * @enum {number}
+ * @property {number} BEACON_KEY_SLOT_BEACON=0 BEACON_KEY_SLOT_BEACON value
+ * @property {number} BEACON_KEY_SLOT_COMMAND=1 BEACON_KEY_SLOT_COMMAND value
+ */
+$root.BeaconKeySlot = (function() {
+    var valuesById = {}, values = Object.create(valuesById);
+    values[valuesById[0] = "BEACON_KEY_SLOT_BEACON"] = 0;
+    values[valuesById[1] = "BEACON_KEY_SLOT_COMMAND"] = 1;
+    return values;
+})();
+
+$root.BeaconKeySet = (function() {
+
+    /**
+     * Properties of a BeaconKeySet.
+     * @exports IBeaconKeySet
+     * @interface IBeaconKeySet
+     * @property {BeaconKeySlot|null} [slot] BeaconKeySet slot
+     * @property {number|null} [gen] BeaconKeySet gen
+     * @property {Uint8Array|null} [key] BeaconKeySet key
+     */
+
+    /**
+     * Constructs a new BeaconKeySet.
+     * @exports BeaconKeySet
+     * @classdesc Represents a BeaconKeySet.
+     * @implements IBeaconKeySet
+     * @constructor
+     * @param {IBeaconKeySet=} [properties] Properties to set
+     */
+    function BeaconKeySet(properties) {
+        if (properties)
+            for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                if (properties[keys[i]] != null)
+                    this[keys[i]] = properties[keys[i]];
+    }
+
+    /**
+     * BeaconKeySet slot.
+     * @member {BeaconKeySlot} slot
+     * @memberof BeaconKeySet
+     * @instance
+     */
+    BeaconKeySet.prototype.slot = 0;
+
+    /**
+     * BeaconKeySet gen.
+     * @member {number} gen
+     * @memberof BeaconKeySet
+     * @instance
+     */
+    BeaconKeySet.prototype.gen = 0;
+
+    /**
+     * BeaconKeySet key.
+     * @member {Uint8Array} key
+     * @memberof BeaconKeySet
+     * @instance
+     */
+    BeaconKeySet.prototype.key = $util.newBuffer([]);
+
+    /**
+     * Creates a new BeaconKeySet instance using the specified properties.
+     * @function create
+     * @memberof BeaconKeySet
+     * @static
+     * @param {IBeaconKeySet=} [properties] Properties to set
+     * @returns {BeaconKeySet} BeaconKeySet instance
+     */
+    BeaconKeySet.create = function create(properties) {
+        return new BeaconKeySet(properties);
+    };
+
+    /**
+     * Encodes the specified BeaconKeySet message. Does not implicitly {@link BeaconKeySet.verify|verify} messages.
+     * @function encode
+     * @memberof BeaconKeySet
+     * @static
+     * @param {IBeaconKeySet} message BeaconKeySet message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    BeaconKeySet.encode = function encode(message, writer) {
+        if (!writer)
+            writer = $Writer.create();
+        if (message.slot != null && Object.hasOwnProperty.call(message, "slot"))
+            writer.uint32(/* id 1, wireType 0 =*/8).int32(message.slot);
+        if (message.gen != null && Object.hasOwnProperty.call(message, "gen"))
+            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.gen);
+        if (message.key != null && Object.hasOwnProperty.call(message, "key"))
+            writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.key);
+        return writer;
+    };
+
+    /**
+     * Encodes the specified BeaconKeySet message, length delimited. Does not implicitly {@link BeaconKeySet.verify|verify} messages.
+     * @function encodeDelimited
+     * @memberof BeaconKeySet
+     * @static
+     * @param {IBeaconKeySet} message BeaconKeySet message or plain object to encode
+     * @param {$protobuf.Writer} [writer] Writer to encode to
+     * @returns {$protobuf.Writer} Writer
+     */
+    BeaconKeySet.encodeDelimited = function encodeDelimited(message, writer) {
+        return this.encode(message, writer).ldelim();
+    };
+
+    /**
+     * Decodes a BeaconKeySet message from the specified reader or buffer.
+     * @function decode
+     * @memberof BeaconKeySet
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @param {number} [length] Message length if known beforehand
+     * @returns {BeaconKeySet} BeaconKeySet
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    BeaconKeySet.decode = function decode(reader, length, error) {
+        if (!(reader instanceof $Reader))
+            reader = $Reader.create(reader);
+        var end = length === undefined ? reader.len : reader.pos + length, message = new $root.BeaconKeySet();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            if (tag === error)
+                break;
+            switch (tag >>> 3) {
+            case 1: {
+                    message.slot = reader.int32();
+                    break;
+                }
+            case 2: {
+                    message.gen = reader.uint32();
+                    break;
+                }
+            case 3: {
+                    message.key = reader.bytes();
+                    break;
+                }
+            default:
+                reader.skipType(tag & 7);
+                break;
+            }
+        }
+        return message;
+    };
+
+    /**
+     * Decodes a BeaconKeySet message from the specified reader or buffer, length delimited.
+     * @function decodeDelimited
+     * @memberof BeaconKeySet
+     * @static
+     * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+     * @returns {BeaconKeySet} BeaconKeySet
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    BeaconKeySet.decodeDelimited = function decodeDelimited(reader) {
+        if (!(reader instanceof $Reader))
+            reader = new $Reader(reader);
+        return this.decode(reader, reader.uint32());
+    };
+
+    /**
+     * Verifies a BeaconKeySet message.
+     * @function verify
+     * @memberof BeaconKeySet
+     * @static
+     * @param {Object.<string,*>} message Plain object to verify
+     * @returns {string|null} `null` if valid, otherwise the reason why it is not
+     */
+    BeaconKeySet.verify = function verify(message) {
+        if (typeof message !== "object" || message === null)
+            return "object expected";
+        if (message.slot != null && message.hasOwnProperty("slot"))
+            switch (message.slot) {
+            default:
+                return "slot: enum value expected";
+            case 0:
+            case 1:
+                break;
+            }
+        if (message.gen != null && message.hasOwnProperty("gen"))
+            if (!$util.isInteger(message.gen))
+                return "gen: integer expected";
+        if (message.key != null && message.hasOwnProperty("key"))
+            if (!(message.key && typeof message.key.length === "number" || $util.isString(message.key)))
+                return "key: buffer expected";
+        return null;
+    };
+
+    /**
+     * Creates a BeaconKeySet message from a plain object. Also converts values to their respective internal types.
+     * @function fromObject
+     * @memberof BeaconKeySet
+     * @static
+     * @param {Object.<string,*>} object Plain object
+     * @returns {BeaconKeySet} BeaconKeySet
+     */
+    BeaconKeySet.fromObject = function fromObject(object) {
+        if (object instanceof $root.BeaconKeySet)
+            return object;
+        var message = new $root.BeaconKeySet();
+        switch (object.slot) {
+        default:
+            if (typeof object.slot === "number") {
+                message.slot = object.slot;
+                break;
+            }
+            break;
+        case "BEACON_KEY_SLOT_BEACON":
+        case 0:
+            message.slot = 0;
+            break;
+        case "BEACON_KEY_SLOT_COMMAND":
+        case 1:
+            message.slot = 1;
+            break;
+        }
+        if (object.gen != null)
+            message.gen = object.gen >>> 0;
+        if (object.key != null)
+            if (typeof object.key === "string")
+                $util.base64.decode(object.key, message.key = $util.newBuffer($util.base64.length(object.key)), 0);
+            else if (object.key.length >= 0)
+                message.key = object.key;
+        return message;
+    };
+
+    /**
+     * Creates a plain object from a BeaconKeySet message. Also converts values to other types if specified.
+     * @function toObject
+     * @memberof BeaconKeySet
+     * @static
+     * @param {BeaconKeySet} message BeaconKeySet
+     * @param {$protobuf.IConversionOptions} [options] Conversion options
+     * @returns {Object.<string,*>} Plain object
+     */
+    BeaconKeySet.toObject = function toObject(message, options) {
+        if (!options)
+            options = {};
+        var object = {};
+        if (options.defaults) {
+            object.slot = options.enums === String ? "BEACON_KEY_SLOT_BEACON" : 0;
+            object.gen = 0;
+            if (options.bytes === String)
+                object.key = "";
+            else {
+                object.key = [];
+                if (options.bytes !== Array)
+                    object.key = $util.newBuffer(object.key);
+            }
+        }
+        if (message.slot != null && message.hasOwnProperty("slot"))
+            object.slot = options.enums === String ? $root.BeaconKeySlot[message.slot] === undefined ? message.slot : $root.BeaconKeySlot[message.slot] : message.slot;
+        if (message.gen != null && message.hasOwnProperty("gen"))
+            object.gen = message.gen;
+        if (message.key != null && message.hasOwnProperty("key"))
+            object.key = options.bytes === String ? $util.base64.encode(message.key, 0, message.key.length) : options.bytes === Array ? Array.prototype.slice.call(message.key) : message.key;
+        return object;
+    };
+
+    /**
+     * Converts this BeaconKeySet to JSON.
+     * @function toJSON
+     * @memberof BeaconKeySet
+     * @instance
+     * @returns {Object.<string,*>} JSON object
+     */
+    BeaconKeySet.prototype.toJSON = function toJSON() {
+        return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for BeaconKeySet
+     * @function getTypeUrl
+     * @memberof BeaconKeySet
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    BeaconKeySet.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        if (typeUrlPrefix === undefined) {
+            typeUrlPrefix = "type.googleapis.com";
+        }
+        return typeUrlPrefix + "/BeaconKeySet";
+    };
+
+    return BeaconKeySet;
 })();
 
 $root.ConfigTimeWindow = (function() {
@@ -21281,6 +22015,7 @@ $root.DownlinkPacket = (function() {
      * @property {number|null} [resendMask] DownlinkPacket resendMask
      * @property {number|null} [cfgTxnId] DownlinkPacket cfgTxnId
      * @property {number|null} [reportMask] DownlinkPacket reportMask
+     * @property {IBeaconKeySet|null} [beaconKey] DownlinkPacket beaconKey
      */
 
     /**
@@ -21378,6 +22113,14 @@ $root.DownlinkPacket = (function() {
      */
     DownlinkPacket.prototype.reportMask = null;
 
+    /**
+     * DownlinkPacket beaconKey.
+     * @member {IBeaconKeySet|null|undefined} beaconKey
+     * @memberof DownlinkPacket
+     * @instance
+     */
+    DownlinkPacket.prototype.beaconKey = null;
+
     // OneOf field names bound to virtual getters and setters
     var $oneOfFields;
 
@@ -21470,6 +22213,17 @@ $root.DownlinkPacket = (function() {
     });
 
     /**
+     * DownlinkPacket _beaconKey.
+     * @member {"beaconKey"|undefined} _beaconKey
+     * @memberof DownlinkPacket
+     * @instance
+     */
+    Object.defineProperty(DownlinkPacket.prototype, "_beaconKey", {
+        get: $util.oneOfGetter($oneOfFields = ["beaconKey"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
      * Creates a new DownlinkPacket instance using the specified properties.
      * @function create
      * @memberof DownlinkPacket
@@ -21513,6 +22267,8 @@ $root.DownlinkPacket = (function() {
             writer.uint32(/* id 9, wireType 0 =*/72).uint32(message.cfgTxnId);
         if (message.reportMask != null && Object.hasOwnProperty.call(message, "reportMask"))
             writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.reportMask);
+        if (message.beaconKey != null && Object.hasOwnProperty.call(message, "beaconKey"))
+            $root.BeaconKeySet.encode(message.beaconKey, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
         return writer;
     };
 
@@ -21589,6 +22345,10 @@ $root.DownlinkPacket = (function() {
                     message.reportMask = reader.uint32();
                     break;
                 }
+            case 11: {
+                    message.beaconKey = $root.BeaconKeySet.decode(reader, reader.uint32());
+                    break;
+                }
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -21650,8 +22410,10 @@ $root.DownlinkPacket = (function() {
             case 16:
             case 17:
             case 18:
+            case 19:
             case 20:
             case 21:
+            case 22:
                 break;
             }
         if (message.highFixParams != null && message.hasOwnProperty("highFixParams")) {
@@ -21702,6 +22464,14 @@ $root.DownlinkPacket = (function() {
             properties._reportMask = 1;
             if (!$util.isInteger(message.reportMask))
                 return "reportMask: integer expected";
+        }
+        if (message.beaconKey != null && message.hasOwnProperty("beaconKey")) {
+            properties._beaconKey = 1;
+            {
+                var error = $root.BeaconKeySet.verify(message.beaconKey);
+                if (error)
+                    return "beaconKey." + error;
+            }
         }
         return null;
     };
@@ -21799,6 +22569,10 @@ $root.DownlinkPacket = (function() {
         case 18:
             message.command = 18;
             break;
+        case "CMD_BEACON_KEY_SET":
+        case 19:
+            message.command = 19;
+            break;
         case "CMD_MAG_CALIBRATE":
         case 20:
             message.command = 20;
@@ -21806,6 +22580,10 @@ $root.DownlinkPacket = (function() {
         case "CMD_MAG_CALIBRATE_ABORT":
         case 21:
             message.command = 21;
+            break;
+        case "CMD_BEACON_KEY_CLEAR":
+        case 22:
+            message.command = 22;
             break;
         }
         if (object.highFixParams != null) {
@@ -21833,6 +22611,11 @@ $root.DownlinkPacket = (function() {
             message.cfgTxnId = object.cfgTxnId >>> 0;
         if (object.reportMask != null)
             message.reportMask = object.reportMask >>> 0;
+        if (object.beaconKey != null) {
+            if (typeof object.beaconKey !== "object")
+                throw TypeError(".DownlinkPacket.beaconKey: object expected");
+            message.beaconKey = $root.BeaconKeySet.fromObject(object.beaconKey);
+        }
         return message;
     };
 
@@ -21896,6 +22679,11 @@ $root.DownlinkPacket = (function() {
             object.reportMask = message.reportMask;
             if (options.oneofs)
                 object._reportMask = "reportMask";
+        }
+        if (message.beaconKey != null && message.hasOwnProperty("beaconKey")) {
+            object.beaconKey = $root.BeaconKeySet.toObject(message.beaconKey, options);
+            if (options.oneofs)
+                object._beaconKey = "beaconKey";
         }
         return object;
     };

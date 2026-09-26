@@ -59,11 +59,13 @@ describe('firmware gate', () => {
 });
 
 describe('regenerated protos carry the calibration', () => {
-  it('CommandType names CMD_MAG_CALIBRATE 20 and CMD_MAG_CALIBRATE_ABORT 21 (19 held)', () => {
+  it('CommandType names CMD_MAG_CALIBRATE 20 and CMD_MAG_CALIBRATE_ABORT 21 (19 is the beacon key set)', () => {
     expect(PB.CommandType.CMD_MAG_CALIBRATE).toBe(MAG_CMD.CALIBRATE);
     expect(PB.CommandType.CMD_MAG_CALIBRATE_ABORT).toBe(MAG_CMD.ABORT);
     expect(MAG_CMD).toEqual({ CALIBRATE: 20, ABORT: 21 });
-    expect(Object.values(PB.CommandType)).not.toContain(19);
+    // old (before the radio-keys protos): expect(Object.values(PB.CommandType)).not.toContain(19);
+    expect(PB.CommandType.CMD_BEACON_KEY_SET).toBe(19);
+    expect(PB.CommandType.CMD_BEACON_KEY_CLEAR).toBe(22);
   });
 
   it("the flow's tables are ble.proto's MagCal* enums, value for value", () => {

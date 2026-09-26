@@ -1,0 +1,128 @@
+{
+  "NOW": 1700000000,
+  "keyHex": "13fa2ccb237dd8d8b4957185cc53d4e8",
+  "gen": 7,
+  "BEACON_KEY": {
+    "SLOT": {
+      "BEACON": 0,
+      "COMMAND": 1
+    },
+    "STATE": {
+      "NONE": 0,
+      "KEYED": 1,
+      "FALLBACK": 2
+    },
+    "RESULT": {
+      "NONE": 0,
+      "APPLIED": 1,
+      "CLEARED": 2,
+      "REJECTED_GEN": 3,
+      "REJECTED_ARG": 4,
+      "STORE_ERROR": 5
+    },
+    "KEY_LEN": 16,
+    "KCV_LEN": 3,
+    "GEN_MAX": 255,
+    "TIMEOUT_MS": 20000
+  },
+  "setFields": {
+    "epoch": 1700000000,
+    "command": 19,
+    "beacon_key": {
+      "slot": 0,
+      "gen": 7,
+      "key": "13fa2ccb237dd8d8b4957185cc53d4e8"
+    }
+  },
+  "clearFields": {
+    "epoch": 1700000000,
+    "command": 22,
+    "beacon_key": {
+      "slot": 0
+    }
+  },
+  "setHex": "0880e2cfaa0610135a16080010071a1013fa2ccb237dd8d8b4957185cc53d4e8",
+  "clearHex": "0880e2cfaa0610165a020800",
+  "setFrameHex": "0a0808001880e2cfaa06122222200880e2cfaa0610135a16080010071a1013fa2ccb237dd8d8b4957185cc53d4e8",
+  "errors": {
+    "shortKey": "a beacon key is exactly 16 bytes",
+    "gen0": "the provision generation is 1..255",
+    "gen256": "the provision generation is 1..255",
+    "genFrac": "the provision generation is 1..255",
+    "commandSlot": "only the beacon slot can be provisioned",
+    "clearCommandSlot": "only the beacon slot can be cleared"
+  },
+  "reports": {
+    "absent": {
+      "supported": false,
+      "state": 0,
+      "gen": 0,
+      "kcv": "",
+      "result": 0,
+      "tx_counter": 0
+    },
+    "empty": {
+      "supported": true,
+      "state": 0,
+      "gen": 0,
+      "kcv": "",
+      "result": 0,
+      "tx_counter": 0
+    },
+    "keyed": {
+      "supported": true,
+      "state": 1,
+      "gen": 7,
+      "kcv": "2b1a1e",
+      "result": 1,
+      "tx_counter": 117440515
+    },
+    "fallback": {
+      "supported": true,
+      "state": 2,
+      "gen": 3,
+      "kcv": "aabbcc",
+      "result": 0,
+      "tx_counter": 67108863
+    }
+  },
+  "texts": {
+    "null": {
+      "state": "This collar’s firmware cannot hold a beacon key; update it first.",
+      "result": null
+    },
+    "{\"supported\":false}": {
+      "state": "This collar’s firmware cannot hold a beacon key; update it first.",
+      "result": "unknown result undefined"
+    },
+    "{\"supported\":false,\"state\":0,\"gen\":0,\"kcv\":\"\",\"result\":0,\"tx_counter\":0}": {
+      "state": "This collar’s firmware cannot hold a beacon key; update it first.",
+      "result": ""
+    },
+    "{\"supported\":true,\"state\":0,\"gen\":0,\"kcv\":\"\",\"result\":0,\"tx_counter\":0}": {
+      "state": "Not provisioned: the collar sends its lost-mode beacon in plaintext, as every collar always has.",
+      "result": ""
+    },
+    "{\"supported\":true,\"state\":1,\"gen\":7,\"kcv\":\"2b1a1e\",\"result\":1,\"tx_counter\":117440515}": {
+      "state": "Encrypted: the collar sends its lost-mode beacon encrypted under this key.",
+      "result": "key stored; in force from the next beacon"
+    },
+    "{\"supported\":true,\"state\":2,\"gen\":3,\"kcv\":\"aabbcc\",\"result\":0,\"tx_counter\":67108863}": {
+      "state": "A key is held but cannot be used, so the collar has fallen back to plaintext beacons and logged why (its key store could not be read, or the beacon counter is exhausted). Provisioning a new generation clears this.",
+      "result": ""
+    },
+    "result:0": "",
+    "result:1": "key stored; in force from the next beacon",
+    "result:2": "key erased; the counter is kept",
+    "result:3": "refused: the collar already holds a newer generation — rotate on the server, then provision again",
+    "result:4": "refused: the collar did not accept the key set (generation out of range, an empty key, or a slot this firmware does not hold)",
+    "result:5": "the collar could not write its key store; the previous state stands",
+    "result:9": "unknown result 9"
+  },
+  "STATE_TEXT": [
+    "Not provisioned: the collar sends its lost-mode beacon in plaintext, as every collar always has.",
+    "Encrypted: the collar sends its lost-mode beacon encrypted under this key.",
+    "A key is held but cannot be used, so the collar has fallen back to plaintext beacons and logged why (its key store could not be read, or the beacon counter is exhausted). Provisioning a new generation clears this."
+  ],
+  "UNSUPPORTED_TEXT": "This collar’s firmware cannot hold a beacon key; update it first."
+}

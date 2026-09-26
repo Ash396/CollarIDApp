@@ -41,6 +41,16 @@ export const MAG_CAL_MIN_FW_BUILD = 398;
  *  js/collar-vocab.js and the server's api/main.py. */
 export const MAG_RATE_MIN_FW_BUILD = 425;
 
+/** First build that holds a lost-mode beacon key (CMD_BEACON_KEY_SET /
+ *  _CLEAR over the BLE config tunnel, CfgEchoPacket.beacon_key; collarID_thread
+ *  docs/DESIGN_radio_security.md E6). PLACEHOLDER: set at the firmware
+ *  merge, the first firmware main build that emits the encrypted 0x4D beacon
+ *  when keyed. Until then no collar reports a build this high, so the card
+ *  stays hidden everywhere. Mirrors RADIO_KEYS_MIN_FW_BUILD in the website's
+ *  js/collar-vocab.js. The card also needs the collar's status echo to carry
+ *  the report at all (absent = firmware without the key store). */
+export const RADIO_KEYS_MIN_FW_BUILD = 9999;
+
 /** The rates the collar can run in rate mode, Hz (powers of two: exact
  *  LPTIM1 reloads on the 32.768 kHz crystal). 0 is interval mode. */
 export const MAG_RATE_HZ: readonly number[] = [1, 2, 4, 8, 16];
@@ -83,6 +93,9 @@ export function bleFeatureGates(fwBuild: number, caps: number) {
      *  MAG_RATE_MIN_FW_BUILD+. Below it the field is ignored and the collar
      *  samples on the minute interval. */
     magRate: fwBuild >= MAG_RATE_MIN_FW_BUILD,
+    /** Lost-mode beacon encryption keys over the BLE tunnel — fw
+     *  RADIO_KEYS_MIN_FW_BUILD+ (a placeholder until the firmware merge). */
+    beaconKey: fwBuild >= RADIO_KEYS_MIN_FW_BUILD,
     /** Thread add-on relay (local device list + DT forward commands).
      *  Gated on the capability characteristic, not the build: WB5M-era
      *  firmware exposes the caps char with bit 0 set; frozen WB15 builds
@@ -145,6 +158,8 @@ export function editorFeatureGates(
 ): FeatureGates {
   const g = bleFeatureGates(fwBuild, caps);
   if (fwBuild > 0 || connected) return g;
+  // beaconKey is not opened here: it is a Home card on a connected collar,
+  // never a schedule-editor option.
   return { ...g, micFormat: true, micRateExt: true, micSens: true, micCodec: true, magRate: true };
   // old: return { ...g, micFormat: true, micRateExt: true, micSens: true, micCodec: true };
 }

@@ -17,6 +17,13 @@ import {
 } from '../utils/geofence';
 import type { Fence, FenceFragment } from '../utils/geofence';
 import {
+  BEACON_KEY,
+  beaconKeyClearFields,
+  beaconKeySetFields,
+} from '../utils/beaconKey';
+import type { BeaconKeyIo } from '../utils/beaconKey';
+import { kcvHex } from '../utils/aes128';
+import {
   hexToBytes,
   hexByteToInt,
   clampInt,
@@ -1062,6 +1069,101 @@ export async function tunnelQueryAllFences(
     if (fence) out.push(fence);
   }
   return { fences: out, echo: lastEcho };
+}
+
+/* -------------------------------------------------------------------------- */
+/*        Lost-mode beacon key (CMD_BEACON_KEY_SET / _CLEAR, tunnel only)     */
+/* -------------------------------------------------------------------------- */
+// One frame each, no transaction; the collar answers with the echo's
+// beacon_key report (utils/beaconKey.ts). The key crosses the link once,
+// inside the SET frame; the echo carries the generation and the key check
+// value, never the key. Port of setBeaconKey / clearBeaconKey in the
+// website's js/ble-cfg-tunnel.js.
+
+/** Write the key set; resolves with the echo. The caller owns the key
+ *  bytes and wipes them once this resolves; nothing here keeps them. */
+export function tunnelSetBeaconKey(
+  device: Device,
+  keyBytes: Uint8Array,
+  gen: number,
+): Promise<PB.CfgEchoPacket> {
+  const f = beaconKeySetFields(keyBytes, gen);
+  const dl = encodeDownlinkPacket({
+    epoch: unixNow(),
+    command: f.command,
+    beaconKey: PB.BeaconKeySet.create({ slot: f.beaconKey.slot, gen: f.beaconKey.gen, key: f.beaconKey.key }),
+  });
+  return tunnelExclusive(() =>
+    tunnelFrameRoundTrip(device, encodeTunnelFrame({ cfgDownlink: dl }), BEACON_KEY.TIMEOUT_MS),
+  );
+}
+
+export function tunnelClearBeaconKey(device: Device): Promise<PB.CfgEchoPacket> {
+  const f = beaconKeyClearFields();
+  const dl = encodeDownlinkPacket({
+    epoch: unixNow(),
+    command: f.command,
+    beaconKey: PB.BeaconKeySet.create({ slot: f.beaconKey.slot }),
+  });
+  return tunnelExclusive(() =>
+    tunnelFrameRoundTrip(device, encodeTunnelFrame({ cfgDownlink: dl }), BEACON_KEY.TIMEOUT_MS),
+  );
+}
+
+/* The mock collar's key store: the collar's own rules (a gen must exceed
+   the current generation; an all-zero key is refused; a clear keeps the
+   counter), with the real KCV so the simulator's echo matches what a
+   server would issue. The key bytes are not kept. */
+const mockBeaconKey = { state: 0, gen: 0, kcv: '', result: 0, txCounter: 0 };
+function mockBeaconKeyEcho(): PB.CfgEchoPacket {
+  const k = mockBeaconKey;
+  return mockEcho({
+    beaconKey: PB.BeaconKeyReport.create({
+      state: k.state,
+      gen: k.gen,
+      kcv: k.kcv ? hexToBytes(k.kcv) : new Uint8Array(0),
+      result: k.result,
+      txCounter: k.txCounter,
+    }),
+  });
+}
+function mockBeaconKeyIo(): BeaconKeyIo {
+  const R = BEACON_KEY.RESULT;
+  const S = BEACON_KEY.STATE;
+  return {
+    status: async () => mockBeaconKeyEcho(),
+    set: async (key, gen) => {
+      const k = mockBeaconKey;
+      if (key.length !== 16 || key.every(b => b === 0) || gen < 1 || gen > 255) k.result = R.REJECTED_ARG;
+      else if (gen <= k.gen) k.result = R.REJECTED_GEN;
+      else {
+        k.state = S.KEYED;
+        k.gen = gen;
+        k.kcv = kcvHex(key);
+        k.txCounter = (gen << 24) >>> 0;
+        k.result = R.APPLIED;
+      }
+      return mockBeaconKeyEcho();
+    },
+    clear: async () => {
+      const k = mockBeaconKey;
+      k.state = S.NONE;
+      k.kcv = '';
+      k.result = R.CLEARED;
+      return mockBeaconKeyEcho();
+    },
+  };
+}
+
+/** The provisioning flow's transport (utils/beaconKey.ts): every call
+ *  writes one frame and resolves with the echo that consumed it. */
+export function beaconKeyIo(device: Device): BeaconKeyIo {
+  if (isMockDevice(device)) return mockBeaconKeyIo();
+  return {
+    status: () => tunnelQueryStatus(device),
+    set: (key, gen) => tunnelSetBeaconKey(device, key, gen),
+    clear: () => tunnelClearBeaconKey(device),
+  };
 }
 
 /* -------------------------------------------------------------------------- */

@@ -1762,6 +1762,9 @@ export class CfgEchoPacket implements ICfgEchoPacket {
     /** CfgEchoPacket engaged. */
     public engaged: boolean;
 
+    /** CfgEchoPacket beaconKey. */
+    public beaconKey?: (IBeaconKeyReport|null);
+
     /** CfgEchoPacket magCal. */
     public magCal?: (IMagCalReport|null);
 
@@ -1977,6 +1980,125 @@ export class MagCalReport implements IMagCalReport {
 
     /**
      * Gets the default type url for MagCalReport
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** BeaconKeyState enum. */
+export enum BeaconKeyState {
+    BEACON_KEY_STATE_NONE = 0,
+    BEACON_KEY_STATE_KEYED = 1,
+    BEACON_KEY_STATE_FALLBACK = 2
+}
+
+/** BeaconKeyResult enum. */
+export enum BeaconKeyResult {
+    BEACON_KEY_RESULT_NONE = 0,
+    BEACON_KEY_RESULT_APPLIED = 1,
+    BEACON_KEY_RESULT_CLEARED = 2,
+    BEACON_KEY_RESULT_REJECTED_GEN = 3,
+    BEACON_KEY_RESULT_REJECTED_ARG = 4,
+    BEACON_KEY_RESULT_STORE_ERROR = 5
+}
+
+/** Represents a BeaconKeyReport. */
+export class BeaconKeyReport implements IBeaconKeyReport {
+
+    /**
+     * Constructs a new BeaconKeyReport.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IBeaconKeyReport);
+
+    /** BeaconKeyReport state. */
+    public state: BeaconKeyState;
+
+    /** BeaconKeyReport gen. */
+    public gen: number;
+
+    /** BeaconKeyReport kcv. */
+    public kcv: Uint8Array;
+
+    /** BeaconKeyReport result. */
+    public result: BeaconKeyResult;
+
+    /** BeaconKeyReport txCounter. */
+    public txCounter: number;
+
+    /**
+     * Creates a new BeaconKeyReport instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns BeaconKeyReport instance
+     */
+    public static create(properties?: IBeaconKeyReport): BeaconKeyReport;
+
+    /**
+     * Encodes the specified BeaconKeyReport message. Does not implicitly {@link BeaconKeyReport.verify|verify} messages.
+     * @param message BeaconKeyReport message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IBeaconKeyReport, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified BeaconKeyReport message, length delimited. Does not implicitly {@link BeaconKeyReport.verify|verify} messages.
+     * @param message BeaconKeyReport message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IBeaconKeyReport, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a BeaconKeyReport message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns BeaconKeyReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): BeaconKeyReport;
+
+    /**
+     * Decodes a BeaconKeyReport message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns BeaconKeyReport
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): BeaconKeyReport;
+
+    /**
+     * Verifies a BeaconKeyReport message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a BeaconKeyReport message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns BeaconKeyReport
+     */
+    public static fromObject(object: { [k: string]: any }): BeaconKeyReport;
+
+    /**
+     * Creates a plain object from a BeaconKeyReport message. Also converts values to other types if specified.
+     * @param message BeaconKeyReport
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: BeaconKeyReport, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this BeaconKeyReport to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for BeaconKeyReport
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
@@ -4798,8 +4920,10 @@ export enum CommandType {
     CMD_CONFIG_REPORT = 16,
     CMD_TEST_FIX = 17,
     CMD_FACTORY_RESET = 18,
+    CMD_BEACON_KEY_SET = 19,
     CMD_MAG_CALIBRATE = 20,
-    CMD_MAG_CALIBRATE_ABORT = 21
+    CMD_MAG_CALIBRATE_ABORT = 21,
+    CMD_BEACON_KEY_CLEAR = 22
 }
 
 /** Represents a GeoPoint. */
@@ -5078,6 +5202,108 @@ export class HighFixParams implements IHighFixParams {
 
     /**
      * Gets the default type url for HighFixParams
+     * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns The default type url
+     */
+    public static getTypeUrl(typeUrlPrefix?: string): string;
+}
+
+/** BeaconKeySlot enum. */
+export enum BeaconKeySlot {
+    BEACON_KEY_SLOT_BEACON = 0,
+    BEACON_KEY_SLOT_COMMAND = 1
+}
+
+/** Represents a BeaconKeySet. */
+export class BeaconKeySet implements IBeaconKeySet {
+
+    /**
+     * Constructs a new BeaconKeySet.
+     * @param [properties] Properties to set
+     */
+    constructor(properties?: IBeaconKeySet);
+
+    /** BeaconKeySet slot. */
+    public slot: BeaconKeySlot;
+
+    /** BeaconKeySet gen. */
+    public gen: number;
+
+    /** BeaconKeySet key. */
+    public key: Uint8Array;
+
+    /**
+     * Creates a new BeaconKeySet instance using the specified properties.
+     * @param [properties] Properties to set
+     * @returns BeaconKeySet instance
+     */
+    public static create(properties?: IBeaconKeySet): BeaconKeySet;
+
+    /**
+     * Encodes the specified BeaconKeySet message. Does not implicitly {@link BeaconKeySet.verify|verify} messages.
+     * @param message BeaconKeySet message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encode(message: IBeaconKeySet, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Encodes the specified BeaconKeySet message, length delimited. Does not implicitly {@link BeaconKeySet.verify|verify} messages.
+     * @param message BeaconKeySet message or plain object to encode
+     * @param [writer] Writer to encode to
+     * @returns Writer
+     */
+    public static encodeDelimited(message: IBeaconKeySet, writer?: $protobuf.Writer): $protobuf.Writer;
+
+    /**
+     * Decodes a BeaconKeySet message from the specified reader or buffer.
+     * @param reader Reader or buffer to decode from
+     * @param [length] Message length if known beforehand
+     * @returns BeaconKeySet
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): BeaconKeySet;
+
+    /**
+     * Decodes a BeaconKeySet message from the specified reader or buffer, length delimited.
+     * @param reader Reader or buffer to decode from
+     * @returns BeaconKeySet
+     * @throws {Error} If the payload is not a reader or valid buffer
+     * @throws {$protobuf.util.ProtocolError} If required fields are missing
+     */
+    public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): BeaconKeySet;
+
+    /**
+     * Verifies a BeaconKeySet message.
+     * @param message Plain object to verify
+     * @returns `null` if valid, otherwise the reason why it is not
+     */
+    public static verify(message: { [k: string]: any }): (string|null);
+
+    /**
+     * Creates a BeaconKeySet message from a plain object. Also converts values to their respective internal types.
+     * @param object Plain object
+     * @returns BeaconKeySet
+     */
+    public static fromObject(object: { [k: string]: any }): BeaconKeySet;
+
+    /**
+     * Creates a plain object from a BeaconKeySet message. Also converts values to other types if specified.
+     * @param message BeaconKeySet
+     * @param [options] Conversion options
+     * @returns Plain object
+     */
+    public static toObject(message: BeaconKeySet, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+    /**
+     * Converts this BeaconKeySet to JSON.
+     * @returns JSON object
+     */
+    public toJSON(): { [k: string]: any };
+
+    /**
+     * Gets the default type url for BeaconKeySet
      * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
      * @returns The default type url
      */
@@ -6494,6 +6720,9 @@ export class DownlinkPacket implements IDownlinkPacket {
     /** DownlinkPacket reportMask. */
     public reportMask?: (number|null);
 
+    /** DownlinkPacket beaconKey. */
+    public beaconKey?: (IBeaconKeySet|null);
+
     /** DownlinkPacket _highFixParams. */
     public _highFixParams?: "highFixParams";
 
@@ -6517,6 +6746,9 @@ export class DownlinkPacket implements IDownlinkPacket {
 
     /** DownlinkPacket _reportMask. */
     public _reportMask?: "reportMask";
+
+    /** DownlinkPacket _beaconKey. */
+    public _beaconKey?: "beaconKey";
 
     /**
      * Creates a new DownlinkPacket instance using the specified properties.

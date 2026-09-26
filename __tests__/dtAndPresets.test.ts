@@ -170,6 +170,7 @@ describe('firmware gating', () => {
       micCodec: false,
       magCal: false,
       magRate: false,
+      beaconKey: false,
     });
     expect(bleFeatureGates(304, 0)).toEqual({
       cfgTunnel: false,
@@ -181,6 +182,7 @@ describe('firmware gating', () => {
       micCodec: false,
       magCal: false,
       magRate: false,
+      beaconKey: false,
     });
   });
   it('opens the extended-rate gate exactly at build 343', () => {

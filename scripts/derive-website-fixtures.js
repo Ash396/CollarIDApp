@@ -216,6 +216,51 @@ async function e2e(opts) {
     notifyRestart5: await e2e({ notify: true, noResp: true, mtu: 247, restartAt: 5 }),
     notifyRestart25: await e2e({ notify: true, noResp: true, mtu: 247, restartAt: 25 }),
   };
+  // ---------------- ble-cfg-tunnel.js: beacon key frames (feat/radio-keys) ----------------
+  // Only when the website checkout carries them (the branch, until merged).
+  if (typeof BT.beaconKeySetFields === 'function') {
+    const key = Buffer.from('13fa2ccb237dd8d8b4957185cc53d4e8', 'hex');   // beacon/vectors.json frames[0].dev_key (kcv 2b1a1e)
+    const fixedNow = () => NOW;
+    const setF = BT.beaconKeySetFields(new Uint8Array(key), 7);
+    const clrF = BT.beaconKeyClearFields();
+    setF.epoch = NOW; clrF.epoch = NOW;
+    const bkErrors = {};
+    for (const [k, fn] of Object.entries({
+      shortKey: () => BT.beaconKeySetFields(new Uint8Array(15), 1),
+      gen0: () => BT.beaconKeySetFields(new Uint8Array(16), 0),
+      gen256: () => BT.beaconKeySetFields(new Uint8Array(16), 256),
+      genFrac: () => BT.beaconKeySetFields(new Uint8Array(16), 1.5),
+      commandSlot: () => BT.beaconKeySetFields(new Uint8Array(16), 1, 1),
+      clearCommandSlot: () => BT.beaconKeyClearFields(1),
+    })) { try { fn(); bkErrors[k] = null; } catch (e) { bkErrors[k] = e.message; } }
+    const echoOf = fields => ({ beacon_key: fields });
+    const reports = {
+      absent: BT.beaconKeyReport({ echo_seq: 1 }),
+      empty: BT.beaconKeyReport(echoOf({})),
+      keyed: BT.beaconKeyReport(echoOf({ state: 1, gen: 7, kcv: Buffer.from('2b1a1e', 'hex'), result: 1, tx_counter: 0x07000003 })),
+      fallback: BT.beaconKeyReport(echoOf({ state: 2, gen: 3, kcv: Buffer.from('aabbcc', 'hex'), result: 0, tx_counter: 0x03ffffff })),
+    };
+    const texts = {};
+    for (const r of [null, { supported: false }, ...Object.values(reports)]) {
+      texts[JSON.stringify(r)] = { state: BT.beaconKeyStateText(r), result: r ? BT.beaconKeyResultText(r) : null };
+    }
+    for (const result of [0, 1, 2, 3, 4, 5, 9]) texts[`result:${result}`] = BT.beaconKeyResultText({ supported: true, result });
+    const bk = {
+      NOW, keyHex: key.toString('hex'), gen: 7,
+      BEACON_KEY: BT.BEACON_KEY,
+      setFields: { ...setF, beacon_key: { ...setF.beacon_key, key: key.toString('hex') } },
+      clearFields: clrF,
+      setHex: dlHex(setF), clearHex: dlHex(clrF),
+      setFrameHex: frameHex({ cfg_downlink: Dl.encode(Dl.create(setF)).finish() }),
+      errors: bkErrors, reports, texts,
+      STATE_TEXT: [0, 1, 2].map(state => BT.beaconKeyStateText({ supported: true, state })),
+      UNSUPPORTED_TEXT: BT.beaconKeyStateText({ supported: false }),
+    };
+    void fixedNow;
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    fs.writeFileSync(path.join(OUT_DIR, 'website-beacon-key.json'), JSON.stringify(bk, null, 2) + '\n');
+  }
+
   const gfOut = { NOW, TXN, GF_ACTIONS: GF.GF_ACTIONS, frags, errors, txnFrames, bleFrames, slotRecords, verdicts,
     ACK_TEXT: BT.ACK_TEXT, RAIL_TEXT: BT.RAIL_TEXT, MAX_FRAGS_PER_TXN: BT.MAX_FRAGS_PER_TXN };
   fs.mkdirSync(OUT_DIR, { recursive: true });

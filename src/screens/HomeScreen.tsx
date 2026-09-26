@@ -22,6 +22,8 @@ import CollarCard from '../components/CollarCard';
 import AccountCard from '../components/AccountCard';
 import MagCalModal from '../components/MagCalModal';
 import FirmwareUpdateModal from '../components/FirmwareUpdateModal';
+import BeaconKeyCard from '../components/BeaconKeyCard';
+import { deriveCollarUid } from '../utils/collarUid';
 import type { MagCalOutcome } from '../utils/magCal';
 import { MIN_SAFE_U5_BLE_BUILD, isU5BleSafe } from '../ble/ota';
 import {
@@ -69,8 +71,9 @@ interface Collar {
 export default function HomeScreen() {
   const [collars, setCollars] = useState<Collar[]>([]);
   const [scanning, setScanning] = useState(false);
-  const { device, setDevice, fwBuild, setFwBuild, caps, setCaps, setSystemUid } =
+  const { device, setDevice, fwBuild, setFwBuild, caps, setCaps, systemUid, setSystemUid } =
     useDevice();
+  // old: const { device, setDevice, fwBuild, setFwBuild, caps, setCaps, setSystemUid } = useDevice();
   const [connectedDevice, setConnectedDevice] = useState<Collar | null>(null);
 
   /* ---------- Magnetometer calibration (fw 398+, over the BLE tunnel) ---------- */
@@ -666,6 +669,16 @@ export default function HomeScreen() {
         firmwareVersion={connectedDevice?.firmwareVersion}
         onClose={() => setFwUpdateOpen(false)}
       />
+
+      {/* Lost-mode beacon encryption keys — fw RADIO_KEYS_MIN_FW_BUILD+ (a
+          placeholder until the firmware merge); the card hides itself when
+          the collar's echo carries no key report. */}
+      {device && gates.beaconKey && (
+        <BeaconKeyCard
+          device={device}
+          uid={deriveCollarUid({ systemUid, name: device.name })?.uid ?? null}
+        />
+      )}
 
       {/* CollarID account — below the Bluetooth list so scanning/connecting
           stays exactly where it was. */}
