@@ -1,12 +1,17 @@
 /**
- * The Map tab's rules (src/utils/liveMap.ts): the script that signs the
- * collarid.org page in, where the WebView may go, which messages count.
- * The injected script is run for real in a sandbox with a fake window.
+ * The Map tab's rules (src/utils/liveMap.ts): the session message the app
+ * posts to the collarid.org page (auth.js?v=3), the fallback script that
+ * signs older site versions in, where the WebView may go, which messages
+ * count. The injected script is run for real in a sandbox with a fake
+ * window.
  */
 import {
-  IN_APP_CSS,
   LIVE_MAP_URL,
+  SESSION_ADOPTED_EVENT,
+  SESSION_EXPIRED_EVENT,
+  SESSION_MESSAGE_TYPE,
   buildSessionInjection,
+  buildSessionMessage,
   decideNavigation,
   hasApiOverride,
   isCollaridUrl,
@@ -154,40 +159,51 @@ describe('buildSessionInjection', () => {
   });
 });
 
-describe('the site header inside the app', () => {
-  it('adds the slim-header style once, before <head> exists', () => {
+describe('the session message (auth.js?v=3 hand-off)', () => {
+  it('the type strings are the site’s', () => {
+    expect(SESSION_MESSAGE_TYPE).toBe('collarid:session');
+    expect(SESSION_ADOPTED_EVENT).toBe('collarid:session-adopted');
+    expect(SESSION_EXPIRED_EVENT).toBe('collarid:session-expired');
+  });
+
+  it('carries the token and the role, as JSON the page parses', () => {
+    const m = buildSessionMessage({ token: FAKE_TOKEN, role: 'admin' });
+    expect(JSON.parse(m!)).toEqual({ type: 'collarid:session', token: FAKE_TOKEN, role: 'admin' });
+  });
+
+  it('defaults the role to "user"; signed out is nothing to post', () => {
+    expect(JSON.parse(buildSessionMessage({ token: FAKE_TOKEN, role: null })!).role).toBe('user');
+    expect(JSON.parse(buildSessionMessage({ token: FAKE_TOKEN })!).role).toBe('user');
+    for (const session of [null, { token: null }, { token: '' }]) {
+      expect(buildSessionMessage(session as any)).toBeNull();
+    }
+  });
+
+  it('a nasty token survives the JSON round trip untouched', () => {
+    const nasty = 'a"b\'c\\d</script>\u2028\u2029&x${y}`z\n';
+    expect(JSON.parse(buildSessionMessage({ token: nasty })!).token).toBe(nasty);
+  });
+
+  it('parseMapMessage takes the adopted reply and the expiry, from collarid.org only', () => {
+    const url = 'https://collarid.org/live-map';
+    expect(parseMapMessage(JSON.stringify({ type: 'collarid:session-adopted' }), url)).toBe('session-adopted');
+    expect(parseMapMessage(JSON.stringify({ type: 'collarid:session-expired' }), url)).toBe('session-expired');
+    expect(parseMapMessage(JSON.stringify({ type: 'collarid:session-adopted' }), 'https://evil.example/')).toBeNull();
+    expect(parseMapMessage(JSON.stringify({ type: 'collarid:session', token: 'x' }), url)).toBeNull();
+    expect(parseMapMessage('"collarid:session-adopted"', url)).toBeNull();
+    expect(parseMapMessage('not json', url)).toBeNull();
+    expect(parseMapMessage(null, url)).toBeNull();
+  });
+});
+
+describe('the fallback script no longer styles the page', () => {
+  // The site styles html.in-app on its own now (auth.js?v=3); the app used
+  // to inject a <style> trimming the nav bar.
+  it('appends nothing to the document', () => {
     const s = buildSessionInjection({ token: FAKE_TOKEN });
     const page = runInPage(s, 'https://collarid.org');
-    expect(page.appended).toHaveLength(1);
-    expect(page.appended[0].id).toBe('collarid-app-style');
-    expect(page.appended[0].textContent).toBe(IN_APP_CSS);
-    // A second run in the same document (never happens, but) adds nothing.
-    vm.runInNewContext(s, {
-      window: { location: { origin: 'https://collarid.org' }, localStorage: makeStorage(), sessionStorage: makeStorage() },
-      document: page.document,
-      JSON,
-    });
-    expect(page.appended).toHaveLength(1);
-  });
-
-  it('on every page load, not just the first sign-in', () => {
-    const s = buildSessionInjection({ token: FAKE_TOKEN });
-    const tab = makeStorage();
-    runInPage(s, 'https://collarid.org', { sessionStorage: tab });
-    const reloaded = runInPage(s, 'https://collarid.org', { sessionStorage: tab });
-    expect(reloaded.localStorage.getItem('collarid_token')).toBeNull();
-    expect(reloaded.appended).toHaveLength(1);
-  });
-
-  it('hides the nav links, keeps the live-status row', () => {
-    expect(IN_APP_CSS).toContain('.nav-bar .nav-pill');
-    expect(IN_APP_CSS).toContain('.nav-bar .nav-signout');
-    expect(IN_APP_CSS).not.toMatch(/#ws-dot|#ws-label|#refresh-interval|\.nav-links\{display:none/);
-  });
-
-  it('never on another origin', () => {
-    const s = buildSessionInjection({ token: FAKE_TOKEN });
-    expect(runInPage(s, 'https://evil.example').appended).toHaveLength(0);
+    expect(page.appended).toHaveLength(0);
+    expect(s).not.toMatch(/createElement\('style'\)|nav-bar/);
   });
 
   it('a page without createElement still gets signed in', () => {

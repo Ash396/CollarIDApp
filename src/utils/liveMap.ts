@@ -1,18 +1,31 @@
 // The Map tab: collarid.org's live map in a WebView, signed in with the
 // app's session.
 //
-// The website keeps its session in localStorage (auth.js: TOKEN_KEY
-// 'collarid_token', ROLE_KEY 'collarid_role'; requireAuth() skips the login
-// box when a token is there). The app hands its token over by writing those
-// two keys before the page's own scripts run — inside the page, and only
-// after the page has checked that it really is https://collarid.org.
+// The contract (auth.js?v=3, the site's feat/live-map-mobile): the page
+// handles the app natively. It adds html.in-app when window.ReactNativeWebView
+// exists and shows only the slim live row at every width, and it takes the
+// session BY MESSAGE: after the page has loaded the app posts
+//   { type: 'collarid:session', token: <jwt>, role }
+// and the page replies { type: 'collarid:session-adopted' } once it is
+// stored. Inside the app the page waits 2 s for that message before showing
+// its own login box. The token never travels in the page URL.
 //
-// Session expiry: auth.js drops the token on any 401 from the API and fires
-// 'collarid:session-expired' on document; live-map then reloads into its own
-// login box. The injected script forwards that event to the app, which checks
+// Session expiry: auth.js drops the token on any 401 from the API and posts
+// { type: 'collarid:session-expired' } to the app (older site versions fire
+// it on document, which the fallback script below forwards). The app checks
 // the token itself (GET /auth/me) and, if the server really retired it, ends
 // the app session too — the Map tab then asks for a sign-in on Home, and the
-// next sign-in builds a fresh WebView with the fresh token.
+// next sign-in builds a fresh WebView.
+//
+// Fallback for one release: older site versions (auth.js before v3) know
+// nothing of the message and read their session from localStorage
+// (TOKEN_KEY 'collarid_token', ROLE_KEY 'collarid_role'), so the app still
+// writes those two keys before the page's own scripts run — inside the page,
+// and only after the page has checked that it really is https://collarid.org.
+// REMOVABLE once the live site is confirmed at auth.js?v=3: drop
+// buildSessionInjection's localStorage block and the injectedJavaScript
+// props in LiveMapScreen (keep the origin check + expired-event forwarding
+// only if an older site is still reachable).
 
 export const COLLARID_ORIGIN = 'https://collarid.org';
 // The site serves extensionless pages (live-map.html 308-redirects here).
@@ -22,21 +35,27 @@ export const LIVE_MAP_URL = `${COLLARID_ORIGIN}/live-map`;
 export const WEB_TOKEN_KEY = 'collarid_token';
 export const WEB_ROLE_KEY = 'collarid_role';
 
+// The message types, as auth.js names them (SESSION_MESSAGE_TYPE,
+// SESSION_ADOPTED_EVENT, SESSION_EXPIRED_EVENT there).
+export const SESSION_MESSAGE_TYPE = 'collarid:session';
+export const SESSION_ADOPTED_EVENT = 'collarid:session-adopted';
 export const SESSION_EXPIRED_EVENT = 'collarid:session-expired';
-// Inside the app the site's nav bar is redundant: the app has its own tabs
-// and sign-out, and the site's other pages (Web Bluetooth ones included)
-// don't belong in the Map tab. At phone width that nav wraps to three rows,
-// so the app keeps only the live-status group (dot, "LIVE", refresh
-// interval) on one slim row. Keyed on collarid.css's nav class names; if the
-// site renames them, the full nav simply shows again.
-const IN_APP_STYLE_ID = 'collarid-app-style';
-export const IN_APP_CSS = [
-  '.nav-bar{padding:6px 14px!important;gap:0!important;flex-wrap:nowrap!important}',
-  '.nav-bar .nav-logo,.nav-bar .nav-pill,.nav-bar .nav-dropdown,' +
-    '.nav-bar .nav-theme-btn,.nav-bar .nav-signout{display:none!important}',
-  '.nav-bar .nav-links{width:auto!important;order:0!important;' +
-    'overflow:visible!important;padding-bottom:0!important;flex-wrap:nowrap!important}',
-].join('');
+// old: the app trimmed the site's nav bar itself (IN_APP_CSS injected as a
+// <style>); the site now styles html.in-app on its own, so that is gone.
+
+/** The session hand-off the app posts to the page after it has loaded
+ *  (webViewRef.postMessage). Signed out -> null: nothing is posted, the
+ *  page shows its own login box after its 2 s grace. */
+export function buildSessionMessage(
+  session: { token: string | null; role?: string | null } | null,
+): string | null {
+  if (!session || !session.token) return null;
+  return JSON.stringify({
+    type: SESSION_MESSAGE_TYPE,
+    token: session.token,
+    role: session.role || 'user',
+  });
+}
 
 // sessionStorage flag: this WebView has had the app's session written once.
 // A later reload (the page's own Sign out, or its 401 handler) must NOT
@@ -56,18 +75,21 @@ export function jsStringLiteral(value: string): string {
 }
 
 /**
- * The script given to injectedJavaScriptBeforeContentLoaded (main frame
- * only). Signed out -> a script that does nothing at all.
+ * The FALLBACK script given to injectedJavaScriptBeforeContentLoaded (main
+ * frame only), for site versions before auth.js?v=3 — removable once the
+ * live site is confirmed there (see the header). Signed out -> a script
+ * that does nothing at all.
  *
  * Inside the page it:
  *  - does nothing unless window.location.origin is exactly
  *    https://collarid.org (a redirect or a stray navigation elsewhere never
  *    receives the token);
- *  - trims the site's nav bar to its live-status row (IN_APP_CSS), on every
- *    page load;
  *  - writes the token and role into the website's own localStorage keys the
- *    first time only (see INJECTED_FLAG);
- *  - forwards the website's session-expired event to the app.
+ *    first time only (see INJECTED_FLAG); a v3 site reads them too
+ *    (requireAuth() takes the stored token first), so the message that
+ *    follows is a no-op there;
+ *  - forwards the website's session-expired document event to the app (a
+ *    v3 site posts it itself; the app's parse takes either).
  */
 export function buildSessionInjection(
   session: { token: string | null; role?: string | null } | null,
@@ -76,14 +98,6 @@ export function buildSessionInjection(
   return `(function () {
   try {
     if (window.location.origin !== ${jsStringLiteral(COLLARID_ORIGIN)}) return;
-    try {
-      if (!document.getElementById(${jsStringLiteral(IN_APP_STYLE_ID)})) {
-        var style = document.createElement('style');
-        style.id = ${jsStringLiteral(IN_APP_STYLE_ID)};
-        style.textContent = ${jsStringLiteral(IN_APP_CSS)};
-        (document.head || document.documentElement).appendChild(style);
-      }
-    } catch (e) {}
     var first = true;
     try { first = !window.sessionStorage.getItem(${jsStringLiteral(INJECTED_FLAG)}); } catch (e) {}
     if (first) {
@@ -160,11 +174,15 @@ export function decideNavigation(req: {
 export function parseMapMessage(
   data: string | null | undefined,
   pageUrl: string | null | undefined,
-): 'session-expired' | null {
+): 'session-expired' | 'session-adopted' | null {
   if (!isCollaridUrl(pageUrl)) return null;
   try {
     const msg = JSON.parse(data ?? '');
-    return msg && msg.type === SESSION_EXPIRED_EVENT ? 'session-expired' : null;
+    if (!msg || typeof msg !== 'object') return null;
+    if (msg.type === SESSION_EXPIRED_EVENT) return 'session-expired';
+    if (msg.type === SESSION_ADOPTED_EVENT) return 'session-adopted';
+    return null;
+    // old: return msg && msg.type === SESSION_EXPIRED_EVENT ? 'session-expired' : null;
   } catch (_) {
     return null;
   }

@@ -1,7 +1,8 @@
 // Map tab: collarid.org's live map, signed in with the app's session.
-// All the rules (what is injected, where the WebView may go, which messages
-// count) live in utils/liveMap.ts, where they are unit-tested.
-import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+// All the rules (the session message, what is still injected for older site
+// versions, where the WebView may go, which messages count) live in
+// utils/liveMap.ts, where they are unit-tested.
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -21,6 +22,7 @@ import { useSession } from '../utils/useSession';
 import {
   LIVE_MAP_URL,
   buildSessionInjection,
+  buildSessionMessage,
   decideNavigation,
   parseMapMessage,
 } from '../utils/liveMap';
@@ -34,11 +36,41 @@ export default function LiveMapScreen() {
   // One automatic rebuild per session when the page reports an expiry the
   // server does not confirm — never a loop.
   const autoRetriedRef = useRef<number | null>(null);
+  // The session hand-off: posted to the page once it has loaded (and again
+  // whenever the app's token changes while the page is up); 'handing' from
+  // the post until the page says it adopted it.
+  const webViewRef = useRef<{ postMessage: (msg: string) => void } | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [handing, setHanding] = useState(false);
 
   const reload = useCallback(() => {
     setLoadError(null);
+    setLoaded(false);
+    setHanding(false);
     setReloadCount(n => n + 1);
   }, []);
+
+  // The message, rebuilt per session (generation), never from a stale token.
+  const sessionMessage = useMemo(
+    () => (session.signedIn ? buildSessionMessage({ token: getToken(), role: getRole() }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session.signedIn, session.generation],
+  );
+  const postSession = useCallback(() => {
+    if (!sessionMessage) return;
+    try {
+      webViewRef.current?.postMessage(sessionMessage);
+      setHanding(true);
+    } catch (_) {
+      /* the page is gone */
+    }
+  }, [sessionMessage]);
+  // Once the page has loaded, and again whenever the token changes while it
+  // is up (a fresh WebView is keyed on the generation anyway; this covers a
+  // token that changes under the same page).
+  useEffect(() => {
+    if (loaded) postSession();
+  }, [loaded, postSession]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -79,7 +111,12 @@ export default function LiveMapScreen() {
   const onMessage = useCallback(
     async (e: WebViewMessageEvent) => {
       const msg = parseMapMessage(e.nativeEvent.data, e.nativeEvent.url);
+      if (msg === 'session-adopted') {
+        setHanding(false);
+        return;
+      }
       if (msg !== 'session-expired') return;
+      setHanding(false);
       // The page dropped its token after a 401. Ask the server ourselves: if
       // the token really is finished, verifySession() ends the app session
       // (same as any other 401) and this tab switches to the sign-in prompt.
@@ -124,14 +161,19 @@ export default function LiveMapScreen() {
   return (
     <View style={styles.container}>
       <WebView
+        ref={webViewRef as any}
         key={`${session.generation}-${reloadCount}`}
         testID="map-webview"
         source={{ uri: LIVE_MAP_URL }}
         // Nothing (localStorage, cookies, cache) outlives this WebView, so
         // nothing survives a sign-out or a switch of account.
         incognito
+        // Fallback for site versions before auth.js?v=3 (utils/liveMap.ts):
+        // removable once the live site is confirmed there.
         injectedJavaScriptBeforeContentLoaded={injection}
         injectedJavaScriptBeforeContentLoadedForMainFrameOnly
+        // The session hand-off proper: posted once the page has loaded.
+        onLoadEnd={() => setLoaded(true)}
         // Every navigation goes through decideNavigation() (the library's
         // whitelist would otherwise hand some URLs to Safari by itself).
         originWhitelist={['*']}
@@ -162,7 +204,10 @@ export default function LiveMapScreen() {
             `The live map did not load (HTTP ${e.nativeEvent.statusCode}).`,
           )
         }
-        onLoadStart={() => setLoadError(null)}
+        onLoadStart={() => {
+          setLoadError(null);
+          setLoaded(false);
+        }}
         startInLoadingState
         renderLoading={() => (
           <View style={[StyleSheet.absoluteFill, styles.center]}>
@@ -173,6 +218,12 @@ export default function LiveMapScreen() {
         setSupportMultipleWindows={false}
         style={styles.webview}
       />
+      {handing && !loadError && (
+        <View style={styles.handingBar} testID="map-handing">
+          <ActivityIndicator size="small" color="#f8b26a" />
+          <Text style={styles.handingText}>Signing the map in…</Text>
+        </View>
+      )}
       {loadError && (
         <View style={styles.errorBar} testID="map-error">
           <Text style={styles.errorText}>{loadError}</Text>
@@ -229,5 +280,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   errorText: { color: '#9A3412', fontSize: 13, flex: 1 },
+  handingBar: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    top: 12,
+    backgroundColor: '#FFFFFFEE',
+    borderColor: '#EEE',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  handingText: { color: '#444', fontSize: 13 },
   linkText: { fontSize: 14, color: '#4A90D9', fontWeight: '600' },
 });

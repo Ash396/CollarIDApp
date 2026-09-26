@@ -540,6 +540,49 @@ describe('Map tab', () => {
     expect(api.getToken()).toBe(FAKE_TOKEN);
   });
 
+  it('posts the session to the page once it has loaded; the page adopting it ends "signing in"', async () => {
+    const WV = require('react-native-webview').WebView as any;
+    WV.__resetPosted();
+    await signInDirect('admin');
+    const r = await render(<LiveMapScreen />);
+    expect(WV.__posted()).toEqual([]); // nothing before the page is up
+    expect(byId(r, 'map-handing')).toBeUndefined();
+    await act(async () => {
+      webview(r).props.onLoadEnd({ nativeEvent: {} });
+    });
+    const posted = WV.__posted();
+    expect(posted).toHaveLength(1);
+    expect(JSON.parse(posted[0])).toEqual({ type: 'collarid:session', token: FAKE_TOKEN, role: 'admin' });
+    expect(byId(r, 'map-handing')).toBeTruthy();
+    await act(async () => {
+      await webview(r).props.onMessage({
+        nativeEvent: {
+          data: JSON.stringify({ type: 'collarid:session-adopted' }),
+          url: 'https://collarid.org/live-map',
+        },
+      });
+    });
+    expect(byId(r, 'map-handing')).toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled(); // adoption asks the server nothing
+    // a fresh page (Reload) is handed the session again on its own load end
+    const opts = mockNavigation.setOptions.mock.calls.at(-1)[0];
+    const header = await render(opts.headerRight());
+    await act(async () => byId(header, 'map-reload')!.props.onPress());
+    expect(WV.__posted()).toHaveLength(1);
+    await act(async () => {
+      webview(r).props.onLoadEnd({ nativeEvent: {} });
+    });
+    expect(WV.__posted()).toHaveLength(2);
+  });
+
+  it('signed out: no message is ever posted', async () => {
+    const WV = require('react-native-webview').WebView as any;
+    WV.__resetPosted();
+    const r = await render(<LiveMapScreen />);
+    expect(webview(r)).toBeUndefined();
+    expect(WV.__posted()).toEqual([]);
+  });
+
   it('ignores messages that are not from collarid.org', async () => {
     await signInDirect();
     const r = await render(<LiveMapScreen />);

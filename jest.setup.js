@@ -105,16 +105,29 @@ jest.mock('react-native-keychain', () => {
 
 // WebView stand-in: a host element carrying every prop, so tests can read
 // the source, the injected script and the navigation/message handlers.
-// __mounts() counts fresh WebViews (a remount = a new page load).
+// __mounts() counts fresh WebViews (a remount = a new page load);
+// __posted() lists every postMessage() the app made through a WebView ref,
+// newest last (and __resetPosted() clears it).
 jest.mock('react-native-webview', () => {
   const React = require('react');
   let mounts = 0;
-  const WebView = React.forwardRef((props, _ref) => {
+  const posted = [];
+  const WebView = React.forwardRef((props, ref) => {
     React.useEffect(() => {
       mounts++;
     }, []);
+    React.useImperativeHandle(ref, () => ({
+      postMessage: msg => {
+        posted.push(msg);
+      },
+      injectJavaScript: () => {},
+    }));
     return React.createElement('RNCWebView', props);
   });
   WebView.__mounts = () => mounts;
+  WebView.__posted = () => posted.slice();
+  WebView.__resetPosted = () => {
+    posted.length = 0;
+  };
   return { __esModule: true, default: WebView, WebView };
 });
